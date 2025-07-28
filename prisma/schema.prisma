@@ -1,0 +1,910 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  AGENT
+  USER
+}
+
+enum OrganizationType {
+  MINISTERE
+  DIRECTION_GENERALE
+  MAIRIE
+  ORGANISME_SOCIAL
+  INSTITUTION_JUDICIAIRE
+  AGENCE_PUBLIQUE
+  INSTITUTION_ELECTORALE
+  PREFECTURE
+  PROVINCE
+  PRESIDENCE
+  PRIMATURE
+  AUTRE
+}
+
+enum ServiceType {
+  // Documents d'État Civil
+  ACTE_NAISSANCE
+  ACTE_MARIAGE
+  ACTE_DECES
+  CERTIFICAT_VIE
+  CERTIFICAT_CELIBAT
+
+  // Documents d'Identité
+  CNI
+  PASSEPORT
+  PERMIS_CONDUIRE
+  CARTE_SEJOUR
+
+  // Documents Judiciaires
+  CASIER_JUDICIAIRE
+  CERTIFICAT_NATIONALITE
+  LEGALISATION
+
+  // Services Municipaux
+  PERMIS_CONSTRUIRE
+  AUTORISATION_COMMERCE
+  CERTIFICAT_RESIDENCE
+  ACTE_FONCIER
+
+  // Services Sociaux
+  IMMATRICULATION_CNSS
+  CARTE_CNAMGS
+  ATTESTATION_CHOMAGE
+  ATTESTATION_TRAVAIL
+}
+
+enum RequestStatus {
+  DRAFT
+  SUBMITTED
+  ASSIGNED
+  IN_PROGRESS
+  DOCUMENTS_PENDING
+  VALIDATED
+  READY
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum NotificationType {
+  DEMANDE_RECUE
+  DEMANDE_ASSIGNEE
+  DEMANDE_VALIDEE
+  DOCUMENT_MANQUANT
+  DOCUMENT_PRET
+  RDV_CONFIRME
+  RAPPEL_RDV
+  STATUT_CHANGE
+  SYSTEM_ALERT
+  PAYMENT_RECEIVED
+  SIGNATURE_REQUESTED
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+}
+
+enum Gender {
+  MASCULIN
+  FEMININ
+  AUTRE
+}
+
+enum MaritalStatus {
+  CELIBATAIRE
+  MARIE
+  DIVORCE
+  VEUF
+  UNION_LIBRE
+}
+
+enum Province {
+  ESTUAIRE
+  HAUT_OGOOUE
+  MOYEN_OGOOUE
+  NGOUNIE
+  NYANGA
+  OGOOUE_IVINDO
+  OGOOUE_LOLO
+  OGOOUE_MARITIME
+  WOLEU_NTEM
+}
+
+enum ProfileStatus {
+  DRAFT
+  SUBMITTED
+  VALIDATED
+  REJECTED
+}
+
+enum DocumentType {
+  PHOTO_IDENTITE
+  ACTE_NAISSANCE
+  JUSTIFICATIF_DOMICILE
+  DIPLOME
+  ATTESTATION_TRAVAIL
+  CASIER_JUDICIAIRE
+  CERTIFICAT_MEDICAL
+  ACTE_MARIAGE
+  CNI_RECTO
+  CNI_VERSO
+  PASSEPORT
+  PERMIS_CONDUIRE
+  BIRTH_CERTIFICATE
+  MARRIAGE_CERTIFICATE
+  DEATH_CERTIFICATE
+  RESIDENCE_PERMIT
+  COMMERCIAL_LICENSE
+  MEDICAL_CERTIFICATE
+}
+
+enum DocumentStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+  EXPIRED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  AIRTEL_MONEY
+  MOOV_MONEY
+  BANK_TRANSFER
+  CASH
+  CARD
+}
+
+enum IntegrationStatus {
+  ACTIVE
+  INACTIVE
+  ERROR
+  MAINTENANCE
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  phone         String?   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole  @default(USER)
+  isActive      Boolean   @default(true)
+  isVerified    Boolean   @default(false)
+
+  // Multi-organization support
+  organizationMemberships UserOrganization[]
+  primaryOrganizationId   String?
+  primaryOrganization     Organization? @relation("PrimaryOrganization", fields: [primaryOrganizationId], references: [id])
+
+  // Profile relation
+  profile Profile?
+
+  // Auth relations
+  accounts Account[]
+  sessions Session[]
+
+  // Service requests
+  submittedRequests ServiceRequest[] @relation("RequestSubmitter")
+  assignedRequests  ServiceRequest[] @relation("RequestAssignee")
+  processedRequests ServiceRequest[] @relation("RequestProcessor")
+
+  // Appointments
+  citizenAppointments Appointment[] @relation("AppointmentCitizen")
+  agentAppointments   Appointment[] @relation("AppointmentAgent")
+
+  // Document management
+  uploadedDocuments  Document[]     @relation("DocumentUploader")
+  verifiedDocuments  Document[]     @relation("DocumentVerifier")
+  userDocuments      UserDocument[] @relation("UserDocuments")
+  validatedDocuments UserDocument[] @relation("DocumentValidator")
+  validatedProfiles  Profile[]      @relation("ProfileValidator")
+
+  // Comments and timeline
+  comments        RequestComment[]
+  timelineEntries RequestTimeline[]
+
+  // Activity tracking
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
+  // Notifications
+  sentNotifications       Notification[]               @relation("NotificationSender")
+  receivedNotifications   Notification[]               @relation("NotificationReceiver")
+  notificationPreferences UserNotificationPreference[]
+
+  // Audit logs
+  auditLogs AuditLog[]
+
+  // OTP management
+  otpTokens OTPToken[]
+
+  // Permissions
+  permissions UserPermission[]
+
+  // Payments
+  payments Payment[]
+
+  @@map("users")
+}
+
+// Multi-organization membership
+model UserOrganization {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           UserRole
+  department     String?
+  isActive       Boolean  @default(true)
+  joinedAt       DateTime @default(now())
+  leftAt         DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("user_organizations")
+}
+
+model Organization {
+  id          String           @id @default(cuid())
+  name        String
+  type        OrganizationType
+  code        String           @unique
+  description String?
+  isActive    Boolean          @default(true)
+
+  // Hierarchy support
+  parentId       String?
+  parent         Organization?   @relation("OrganizationHierarchy", fields: [parentId], references: [id])
+  children       Organization[]  @relation("OrganizationHierarchy")
+
+  // Contact information
+  address String?
+  city    String?
+  phone   String?
+  email   String?
+  website String?
+  logoUrl String?
+
+  // Configuration
+  workingHours Json? // { "monday": { "start": "08:00", "end": "17:00" }, ... }
+  holidays     DateTime[]
+  settings     Json @default("{}")
+
+  // Relations
+  userMemberships   UserOrganization[]
+  primaryUsers      User[]             @relation("PrimaryOrganization")
+  requests          ServiceRequest[]
+  appointments      Appointment[]
+  serviceConfigs    ServiceConfig[]
+  integrations      Integration[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+model ServiceConfig {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  serviceType    ServiceType
+  isActive       Boolean        @default(true)
+  processingDays Int            @default(7)
+  requiredDocs   DocumentType[]
+  description    String?
+  instructions   String?
+  cost           Float?
+
+  // Advanced workflow configuration
+  workflowSteps Json? // Array of workflow steps with conditions
+  slaHours      Int   @default(72) // SLA in hours
+  autoAssign    Boolean @default(false)
+  requiresAppointment Boolean @default(false)
+  maxRequestsPerDay   Int?
+  
+  // Form schema for dynamic forms
+  formSchema Json? // JSON schema for dynamic form generation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, serviceType])
+  @@map("service_configs")
+}
+
+model Profile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Personal Info
+  dateOfBirth   DateTime?
+  placeOfBirth  String?
+  gender        Gender?
+  nationality   String         @default("Gabonaise")
+  maritalStatus MaritalStatus?
+  profession    String?
+  employer      String?
+
+  // Address
+  address    String?
+  city       String?
+  province   Province?
+  postalCode String?
+  country    String    @default("Gabon")
+
+  // Contact
+  alternatePhone   String?
+  emergencyContact Json?
+
+  // Identity Documents
+  cniNumber              String? @unique
+  passportNumber         String? @unique
+  birthCertificateNumber String?
+
+  // Family
+  spouseName String?
+  children   Json?
+
+  // Parents
+  fatherName String?
+  motherName String?
+
+  // Avatar
+  avatarUrl String?
+
+  // Profile completion
+  isComplete           Boolean       @default(false)
+  completionPercentage Int           @default(0)
+  profileStatus        ProfileStatus @default(DRAFT)
+
+  // Validation
+  validatedAt DateTime?
+  validatedBy String?
+  validator   User?     @relation("ProfileValidator", fields: [validatedBy], references: [id])
+
+  // Documents relation
+  documents UserDocument[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model UserDocument {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation("UserDocuments", fields: [userId], references: [id], onDelete: Cascade)
+
+  profileId String?
+  profile   Profile? @relation(fields: [profileId], references: [id])
+
+  type         DocumentType
+  name         String
+  originalName String
+  url          String
+  size         Int
+  mimeType     String
+
+  status DocumentStatus @default(PENDING)
+
+  // Validation
+  validatedAt     DateTime?
+  validatedBy     String?
+  validator       User?     @relation("DocumentValidator", fields: [validatedBy], references: [id])
+  rejectionReason String?
+
+  // Metadata
+  checksum  String?
+  expiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_documents")
+}
+
+model ServiceRequest {
+  id             String        @id @default(cuid())
+  type           ServiceType
+  status         RequestStatus @default(DRAFT)
+  priority       Priority      @default(NORMAL)
+  trackingNumber String        @unique @default(cuid())
+
+  // Relations
+  submittedById String
+  submittedBy   User   @relation("RequestSubmitter", fields: [submittedById], references: [id])
+
+  assignedToId String?
+  assignedTo   User?   @relation("RequestAssignee", fields: [assignedToId], references: [id])
+
+  processedById String?
+  processedBy   User?   @relation("RequestProcessor", fields: [processedById], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  // Request data
+  formData     Json
+  documents    Document[]
+  comments     RequestComment[]
+  timeline     RequestTimeline[]
+  notes        String?
+  privateNotes String?
+
+  // Workflow state
+  currentWorkflowStep String?
+  workflowData        Json?
+
+  // Timeline
+  submittedAt        DateTime?
+  assignedAt         DateTime?
+  processingStarted  DateTime?
+  documentsValidated DateTime?
+  validatedAt        DateTime?
+  readyAt            DateTime?
+  completedAt        DateTime?
+
+  // SLA tracking
+  slaDeadline          DateTime?
+  estimatedCompletion  DateTime?
+  actualProcessingTime Int?
+
+  // Additional fields
+  rejectionReason String?
+  completionNotes String?
+  externalReference String? // Reference in external systems
+
+  // Payment information
+  paymentId String?
+  payment   Payment? @relation(fields: [paymentId], references: [id])
+
+  // Related appointment
+  appointment Appointment?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("service_requests")
+}
+
+model RequestComment {
+  id        String         @id @default(cuid())
+  requestId String
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  content    String
+  isInternal Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("request_comments")
+}
+
+model RequestTimeline {
+  id        String         @id @default(cuid())
+  requestId String
+  request   ServiceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  actorId String?
+  actor   User?   @relation(fields: [actorId], references: [id])
+
+  action  String
+  details Json?
+
+  createdAt DateTime @default(now())
+
+  @@map("request_timeline")
+}
+
+model Document {
+  id           String @id @default(cuid())
+  name         String
+  originalName String
+  type         String
+  size         Int
+  url          String
+  thumbnailUrl String?
+
+  // Relations
+  uploadedById String
+  uploadedBy   User   @relation("DocumentUploader", fields: [uploadedById], references: [id])
+
+  verifiedById String?
+  verifiedBy   User?   @relation("DocumentVerifier", fields: [verifiedById], references: [id])
+
+  requestId String?
+  request   ServiceRequest? @relation(fields: [requestId], references: [id])
+
+  // Document metadata
+  category        String?
+  isRequired      Boolean   @default(false)
+  isVerified      Boolean   @default(false)
+  verifiedAt      DateTime?
+  rejectionReason String?
+  expiresAt       DateTime?
+
+  // Security
+  checksum      String?
+  encryptionKey String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("documents")
+}
+
+model Appointment {
+  id                String            @id @default(cuid())
+  appointmentNumber String            @unique @default(cuid())
+  date              DateTime
+  timeSlot          String // "09:00-09:30"
+  duration          Int               @default(30)
+  status            AppointmentStatus @default(SCHEDULED)
+
+  // Relations
+  citizenId String
+  citizen   User   @relation("AppointmentCitizen", fields: [citizenId], references: [id])
+
+  agentId String
+  agent   User   @relation("AppointmentAgent", fields: [agentId], references: [id])
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  requestId String?        @unique
+  request   ServiceRequest? @relation(fields: [requestId], references: [id])
+
+  // Appointment details
+  serviceType ServiceType
+  purpose     String?
+  notes       String?
+  location    String?
+  meetingUrl  String?
+  qrCode      String?
+
+  // Tracking
+  checkedInAt       DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  cancellationReason String?
+
+  // Notifications
+  reminderSent     Boolean @default(false)
+  confirmationSent Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("appointments")
+}
+
+model Notification {
+  id      String              @id @default(cuid())
+  type    NotificationType
+  channel NotificationChannel
+  title   String
+  message String
+  data    Json?
+
+  // Relations  
+  senderId String?
+  sender   User?   @relation("NotificationSender", fields: [senderId], references: [id])
+
+  receiverId String
+  receiver   User   @relation("NotificationReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  // Status
+  isRead Boolean   @default(false)
+  readAt DateTime?
+
+  // Delivery tracking
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  failedAt     DateTime?
+  errorMessage String?
+  retryCount   Int       @default(0)
+
+  // External references
+  externalId String? // ID from external notification service
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
+}
+
+model UserNotificationPreference {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Preferences by type and channel
+  preferences Json @default("{}")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId])
+  @@map("user_notification_preferences")
+}
+
+model OTPToken {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  token      String
+  type       String   // EMAIL_VERIFICATION, PHONE_VERIFICATION, LOGIN, PASSWORD_RESET
+  channel    String   // EMAIL, SMS
+  attempts   Int      @default(0)
+  maxAttempts Int     @default(3)
+  
+  expiresAt  DateTime
+  usedAt     DateTime?
+  
+  createdAt  DateTime @default(now())
+
+  @@map("otp_tokens")
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  name        String @unique
+  description String?
+  category    String
+  
+  users UserPermission[]
+  
+  createdAt DateTime @default(now())
+  
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String @id @default(cuid())
+  userId       String
+  permissionId String
+  grantedAt    DateTime @default(now())
+  grantedBy    String?
+  expiresAt    DateTime?
+  
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  amount            Float
+  currency          String        @default("XAF")
+  status            PaymentStatus @default(PENDING)
+  method            PaymentMethod
+  
+  // Relations
+  userId            String
+  user              User          @relation(fields: [userId], references: [id])
+  
+  // Service requests using this payment
+  serviceRequests   ServiceRequest[]
+  
+  // Payment details
+  reference         String        @unique
+  externalReference String?       // Reference from payment provider
+  description       String?
+  
+  // Provider information
+  providerName      String?
+  providerResponse  Json?
+  
+  // Timeline
+  initiatedAt       DateTime      @default(now())
+  processedAt       DateTime?
+  completedAt       DateTime?
+  failedAt          DateTime?
+  
+  // Webhook information
+  webhookReceived   Boolean       @default(false)
+  webhookData       Json?
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@map("payments")
+}
+
+model Integration {
+  id             String            @id @default(cuid())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  
+  name           String
+  type           String            // PAYMENT, NOTIFICATION, SIGNATURE, REGISTRY
+  provider       String            // AIRTEL_MONEY, MOOV_MONEY, SENDGRID, etc.
+  status         IntegrationStatus @default(ACTIVE)
+  
+  // Configuration
+  config         Json              // Provider-specific configuration
+  credentials    Json              // Encrypted credentials
+  
+  // Monitoring
+  lastHealthCheck DateTime?
+  healthStatus    String?           // HEALTHY, WARNING, ERROR
+  errorCount      Int               @default(0)
+  lastError       String?
+  
+  // Usage tracking
+  requestCount    Int               @default(0)
+  lastUsedAt      DateTime?
+  
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  
+  @@unique([organizationId, type, provider])
+  @@map("integrations")
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  
+  action     String   // Action performed
+  resource   String?  // Resource affected
+  resourceId String?  // ID of affected resource
+  
+  // Request information
+  ipAddress  String?
+  userAgent  String?
+  endpoint   String?
+  method     String?
+  
+  // Changes made
+  oldValues  Json?
+  newValues  Json?
+  
+  // Additional context
+  details    Json?
+  
+  // Classification
+  severity   String   @default("INFO") // DEBUG, INFO, WARN, ERROR, CRITICAL
+  category   String?  // AUTHENTICATION, AUTHORIZATION, DATA_CHANGE, etc.
+  
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([resource, resourceId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  category    String   @default("GENERAL")
+  isPublic    Boolean  @default(false)
+  
+  updatedBy   String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("system_configs")
+}
+
+model Analytics {
+  id         String   @id @default(cuid())
+  
+  // Metric identification
+  metric     String   // REQUESTS_COUNT, PROCESSING_TIME, USER_SATISFACTION, etc.
+  dimension  String?  // organization_id, service_type, user_role, etc.
+  
+  // Values
+  value      Float
+  count      Int?
+  
+  // Time dimension
+  timestamp  DateTime
+  period     String   // HOURLY, DAILY, WEEKLY, MONTHLY
+  
+  // Additional context
+  metadata   Json?
+  
+  createdAt  DateTime @default(now())
+  
+  @@index([metric, timestamp])
+  @@index([dimension, timestamp])
+  @@map("analytics")
+}

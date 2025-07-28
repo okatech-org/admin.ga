@@ -1,0 +1,246 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 148 100% 20%; /* Vert Gabon */
+    --primary-foreground: 0 0% 98%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 222.2 84% 4.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 148 100% 20%;
+    --chart-1: 148 100% 20%;
+    --chart-2: 45 100% 50%;
+    --chart-3: 210 100% 50%;
+    --chart-4: 27 87% 67%;
+    --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 148 100% 25%;
+    --primary-foreground: 222.2 84% 4.9%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 148 100% 25%;
+    --chart-1: 148 100% 30%;
+    --chart-2: 45 100% 60%;
+    --chart-3: 210 100% 60%;
+    --chart-4: 27 87% 67%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .gabon-gradient {
+    background: linear-gradient(135deg, #009639 0%, #FECB00 50%, #3A75C4 100%);
+  }
+  
+  .gabon-text-gradient {
+    background: linear-gradient(135deg, #009639 0%, #FECB00 50%, #3A75C4 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Progress bar styles using data attributes */
+  .progress-bar-container[data-progress] .progress-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: currentColor;
+    transform: scaleX(calc(attr(data-progress) / 100));
+    transform-origin: left;
+    transition: transform 0.3s ease;
+  }
+  
+  /* Alternative approach for progress bar */
+  .progress-bar-container[data-progress="0"] .progress-bar { width: 0%; }
+  .progress-bar-container[data-progress="10"] .progress-bar { width: 10%; }
+  .progress-bar-container[data-progress="20"] .progress-bar { width: 20%; }
+  .progress-bar-container[data-progress="30"] .progress-bar { width: 30%; }
+  .progress-bar-container[data-progress="40"] .progress-bar { width: 40%; }
+  .progress-bar-container[data-progress="50"] .progress-bar { width: 50%; }
+  .progress-bar-container[data-progress="60"] .progress-bar { width: 60%; }
+  .progress-bar-container[data-progress="70"] .progress-bar { width: 70%; }
+  .progress-bar-container[data-progress="80"] .progress-bar { width: 80%; }
+  .progress-bar-container[data-progress="90"] .progress-bar { width: 90%; }
+  .progress-bar-container[data-progress="100"] .progress-bar { width: 100%; }
+  
+  /* Feature card animation delays using data attributes */
+  .feature-card[data-delay="0"] {
+    animation-delay: 0s;
+  }
+  
+  .feature-card[data-delay="1"] {
+    animation-delay: 0.05s;
+  }
+  
+  .feature-card[data-delay="2"] {
+    animation-delay: 0.1s;
+  }
+  
+  .feature-card[data-delay="3"] {
+    animation-delay: 0.15s;
+  }
+  
+  .feature-card[data-delay="4"] {
+    animation-delay: 0.2s;
+  }
+  
+  .feature-card[data-delay="5"] {
+    animation-delay: 0.25s;
+  }
+  
+  .feature-card[data-delay="6"] {
+    animation-delay: 0.3s;
+  }
+  
+  .feature-card[data-delay="7"] {
+    animation-delay: 0.35s;
+  }
+  
+  /* Stat card animation delays */
+  .stat-card[data-delay="0"] {
+    animation-delay: 0s;
+  }
+  
+  .stat-card[data-delay="1"] {
+    animation-delay: 0.1s;
+  }
+  
+  .stat-card[data-delay="2"] {
+    animation-delay: 0.2s;
+  }
+  
+  .stat-card[data-delay="3"] {
+    animation-delay: 0.3s;
+  }
+  
+  /* Service card animation delays */
+  .service-card[data-delay="0"] {
+    animation-delay: 0s;
+  }
+  
+  .service-card[data-delay="1"] {
+    animation-delay: 0.1s;
+  }
+  
+  .service-card[data-delay="2"] {
+    animation-delay: 0.2s;
+  }
+  
+  .service-card[data-delay="3"] {
+    animation-delay: 0.3s;
+  }
+  
+  .service-card[data-delay="4"] {
+    animation-delay: 0.4s;
+  }
+  
+  .service-card[data-delay="5"] {
+    animation-delay: 0.5s;
+  }
+  
+  /* Progress indicator transform based on data-progress */
+  [data-progress="0"] { transform: translateX(-100%); }
+  [data-progress="10"] { transform: translateX(-90%); }
+  [data-progress="20"] { transform: translateX(-80%); }
+  [data-progress="30"] { transform: translateX(-70%); }
+  [data-progress="40"] { transform: translateX(-60%); }
+  [data-progress="50"] { transform: translateX(-50%); }
+  [data-progress="60"] { transform: translateX(-40%); }
+  [data-progress="70"] { transform: translateX(-30%); }
+  [data-progress="80"] { transform: translateX(-20%); }
+  [data-progress="90"] { transform: translateX(-10%); }
+  [data-progress="100"] { transform: translateX(0%); }
+}
+
+/* Chart indicator styles using data attributes */
+.chart-indicator[data-color] {
+  background-color: var(--chart-color);
+  border-color: var(--chart-color);
+}
+
+.chart-legend-indicator[data-color] {
+  background-color: var(--chart-color);
+}
+
+/* Dynamic color application */
+.chart-indicator[data-color="hsl(var(--chart-1))"],
+.chart-legend-indicator[data-color="hsl(var(--chart-1))"] {
+  --chart-color: hsl(var(--chart-1));
+}
+
+.chart-indicator[data-color="hsl(var(--chart-2))"],
+.chart-legend-indicator[data-color="hsl(var(--chart-2))"] {
+  --chart-color: hsl(var(--chart-2));
+}
+
+.chart-indicator[data-color="hsl(var(--chart-3))"],
+.chart-legend-indicator[data-color="hsl(var(--chart-3))"] {
+  --chart-color: hsl(var(--chart-3));
+}
+
+.chart-indicator[data-color="hsl(var(--chart-4))"],
+.chart-legend-indicator[data-color="hsl(var(--chart-4))"] {
+  --chart-color: hsl(var(--chart-4));
+}
+
+.chart-indicator[data-color="hsl(var(--chart-5))"],
+.chart-legend-indicator[data-color="hsl(var(--chart-5))"] {
+  --chart-color: hsl(var(--chart-5));
+}
+
+/* Fallback for custom colors */
+.chart-indicator:not([data-color=""]),
+.chart-legend-indicator:not([data-color=""]) {
+  background-color: attr(data-color);
+  border-color: attr(data-color);
+}
+
+.progress-bar {
+  width: var(--progress-width);
+}
+
+.feature-card {
+  animation-delay: var(--animation-delay);
+}
