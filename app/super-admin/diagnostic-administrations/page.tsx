@@ -119,7 +119,7 @@ export default function DiagnosticAdministrationsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(analyseParType).map(([type, data]) => (
+                  {Object.entries(analyseParType).map(([type, data]: [string, any]) => (
                     <Card key={type} className="p-4">
                       <div className="flex items-center justify-between mb-3">
                         <Badge variant="outline">{type}</Badge>
@@ -131,7 +131,7 @@ export default function DiagnosticAdministrationsPage() {
                           <span className="font-medium">{data.totalServices}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {data.administrations.slice(0, 3).map(admin => admin.nom).join(', ')}
+                          {data.administrations.slice(0, 3).map((admin: any) => admin.nom).join(', ')}
                           {data.administrations.length > 3 && ` +${data.administrations.length - 3} autres...`}
                         </div>
                       </div>
@@ -151,8 +151,8 @@ export default function DiagnosticAdministrationsPage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {Object.entries(analyseParLocalisation)
-                    .sort(([,a], [,b]) => b - a)
-                    .map(([localisation, count]) => (
+                    .sort(([,a], [,b]) => (b as number) - (a as number))
+                    .map(([localisation, count]: [string, any]) => (
                     <div key={localisation} className="flex items-center justify-between p-3 border rounded">
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-orange-500" />

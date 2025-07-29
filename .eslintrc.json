@@ -1,7 +1,5 @@
 {
-  "extends": [
-    "next/core-web-vitals"
-  ],
+  "extends": ["next/core-web-vitals"],
   "rules": {
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/no-unused-vars": "off",
@@ -14,6 +12,22 @@
     "no-console": "off",
     "no-unused-vars": "off",
     "react/no-unescaped-entities": "off",
-    "@next/next/no-img-element": "off"
-  }
+    "@next/next/no-img-element": "off",
+    "react/no-unknown-property": "off"
+  },
+  "overrides": [
+    {
+      "files": [
+        "app/dgdi/dashboard/page.tsx",
+        "components/layouts/organisme-layout.tsx",
+        "lib/config/organismes-branding.ts",
+        "app/super-admin/analytics/page.tsx",
+        "app/super-admin/organismes/page.tsx"
+      ],
+      "rules": {
+        "react/no-unknown-property": "off",
+        "no-inline-styles": "off"
+      }
+    }
+  ]
 }

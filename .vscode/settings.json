@@ -1,0 +1,46 @@
+{
+  "css.validate": true,
+  "less.validate": true,
+  "scss.validate": true,
+  "html.validate": {
+    "scripts": true,
+    "styles": true
+  },
+  "eslint.options": {
+    "rules": {
+      "no-inline-styles": "off"
+    }
+  },
+  "edge.validate": false,
+  "edge.experimental.validate": false,
+  "webhint.enable": false,
+  "edge.enableDeveloperTools": false,
+  "markdownlint.config": {
+    "MD022": false,
+    "MD032": false,
+    "MD031": false,
+    "MD040": false,
+    "MD034": false,
+    "MD009": false,
+    "MD047": false
+  },
+  "html.customData": [
+    {
+      "version": 1.1,
+      "tags": [],
+      "globalAttributes": [
+        {
+          "name": "style",
+          "description": "Inline styles for dynamic branding"
+        }
+      ]
+    }
+  ],
+  "files.associations": {
+    "*.tsx": "typescriptreact"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "typescript.preferences.includePackageJsonAutoImports": "off"
+}

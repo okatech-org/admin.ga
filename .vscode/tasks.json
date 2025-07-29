@@ -1,0 +1,19 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Disable Edge DevTools Diagnostics",
+      "type": "shell",
+      "command": "echo",
+      "args": ["Edge DevTools diagnostics disabled via configuration"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared"
+      },
+      "problemMatcher": []
+    }
+  ]
+}

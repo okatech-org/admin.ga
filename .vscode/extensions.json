@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next"
+  ],
+  "unwantedRecommendations": [
+    "ms-edgedevtools.vscode-edge-devtools",
+    "ms-vscode.vscode-edge-devtools-networking",
+    "webhint.vscode-webhint"
+  ]
+}

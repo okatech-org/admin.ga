@@ -405,8 +405,8 @@ export default function SuperAdminAdministrationsPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les types</SelectItem>
-                  {Object.entries(ORGANIZATION_TYPES).map(([value, config]) => (
-                    <SelectItem key={value} value={value}>{config.label}</SelectItem>
+                  {Object.entries(ORGANIZATION_TYPES).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

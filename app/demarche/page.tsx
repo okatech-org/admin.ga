@@ -7,6 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { signIn } from 'next-auth/react';
+import { toast } from 'sonner';
 import { 
   FileText, 
   Search, 
@@ -52,16 +59,39 @@ import {
   HelpCircle,
   CheckCircle,
   AlertCircle,
-  Info
+  Info,
+  Eye,
+  EyeOff,
+  UserCheck,
+  Settings
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+// Schéma de validation pour la connexion
+const loginSchema = z.object({
+  email: z.string().email('Adresse email invalide'),
+  password: z.string().min(1, 'Mot de passe requis'),
+});
+
+type LoginInput = z.infer<typeof loginSchema>;
 
 export default function DemarcheGAPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('tous');
   const [selectedOrganisme, setSelectedOrganisme] = useState('tous');
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
   // Catégories de services avec compteur
   const categories = [
@@ -174,6 +204,54 @@ export default function DemarcheGAPage() {
     return servicesParCategorie[selectedCategory] || [];
   };
 
+  // Compte démo citoyen
+  const compteDemoCitoyen = {
+    email: 'demo.citoyen@demarche.ga',
+    password: 'CitoyenDemo2024!',
+    nom: 'Jean MBADINGA',
+    description: 'Compte de démonstration citoyen',
+    destination: 'Dashboard Citoyen'
+  };
+
+  const onSubmit = async (data: LoginInput) => {
+    setIsLoading(true);
+    
+    const toastId = toast.loading('Connexion en cours...');
+
+    try {
+      const result = await signIn('credentials', {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error('Email ou mot de passe incorrect', { id: toastId });
+        setIsLoading(false);
+        return;
+      }
+
+      toast.success('Connexion réussie !', { id: toastId });
+      setIsLoginOpen(false);
+      
+      // Redirection vers le dashboard citoyen pour les comptes USER
+      if (data.email === compteDemoCitoyen.email || data.email.includes('@demarche.ga')) {
+        router.push('/citoyen/dashboard');
+      } else {
+        // Redirection vers auth normale pour autres comptes
+        router.push('/auth/connexion');
+      }
+    } catch (error) {
+      toast.error('Une erreur est survenue. Veuillez réessayer.', { id: toastId });
+      setIsLoading(false);
+    }
+  };
+
+  const fillDemoAccount = () => {
+    form.setValue('email', compteDemoCitoyen.email);
+    form.setValue('password', compteDemoCitoyen.password);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Header DEMARCHE.GA */}
@@ -211,12 +289,137 @@ export default function DemarcheGAPage() {
               </Link>
             </nav>
             <div className="flex items-center space-x-3">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/auth/connexion">
-                  <User className="w-4 h-4 mr-2" />
-                  Connexion
-                </Link>
-              </Button>
+              <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <User className="w-4 h-4 mr-2" />
+                    Connexion
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[500px]">
+                  <DialogHeader>
+                    <DialogTitle className="text-2xl font-bold text-center">Connexion DEMARCHE.GA</DialogTitle>
+                    <DialogDescription className="text-center">
+                      Accédez à votre espace personnel ou testez le compte démo
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-6 mt-6">
+                    {/* Formulaire de connexion */}
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Adresse email</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                  <Input 
+                                    type="email" 
+                                    placeholder="votre@email.ga"
+                                    className="pl-10"
+                                    {...field} 
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="password"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mot de passe</FormLabel>
+                              <FormControl>
+                                <div className="relative">
+                                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                                  <Input
+                                    type={showPassword ? 'text' : 'password'}
+                                    placeholder="Votre mot de passe"
+                                    className="pl-10 pr-10"
+                                    {...field}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                  </button>
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? 'Connexion...' : 'Se connecter'}
+                        </Button>
+                      </form>
+                    </Form>
+
+                    {/* Séparateur */}
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-300" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-white px-2 text-gray-500">Ou essayez le compte démo</span>
+                      </div>
+                    </div>
+
+                    {/* Compte démo citoyen */}
+                    <Card 
+                      className="hover:shadow-lg transition-shadow cursor-pointer group border-2 border-green-200 bg-green-50"
+                      onClick={fillDemoAccount}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <UserCheck className="w-6 h-6 text-white" />
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-gray-900">Compte Démo Citoyen</h3>
+                            <p className="text-sm text-gray-600">{compteDemoCitoyen.nom} - {compteDemoCitoyen.description}</p>
+                            <p className="text-xs text-green-600 font-medium mt-1">→ {compteDemoCitoyen.destination}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-gray-500 font-mono">{compteDemoCitoyen.email}</p>
+                            <p className="text-xs text-gray-400">Cliquer pour remplir</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Liens d'aide */}
+                    <div className="text-center space-y-2">
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/auth/inscription">
+                          Pas encore de compte ? S'inscrire
+                        </Link>
+                      </Button>
+                      <br />
+                      <Button variant="ghost" size="sm" asChild>
+                        <Link href="/demarche/aide">
+                          Besoin d'aide ? Centre d'assistance
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+              
               <Button size="sm" asChild>
                 <Link href="/auth/inscription">
                   <Lock className="w-4 h-4 mr-2" />

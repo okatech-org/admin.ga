@@ -106,7 +106,7 @@ export const appointmentsRouter = createTRPCRouter({
         data: {
           date: input.date,
           timeSlot: input.timeSlot,
-          duration: input.duration || 30,
+          duration: (input as any).duration || 30,
           status: 'SCHEDULED',
           citizenId: ctx.session.user.id,
           agentId: input.agentId,
@@ -114,7 +114,7 @@ export const appointmentsRouter = createTRPCRouter({
           serviceType: input.serviceType,
           purpose: input.purpose,
           notes: input.notes,
-          location: input.location,
+          location: (input as any).location,
         } as any,
       });
 

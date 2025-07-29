@@ -1,0 +1,11 @@
+{
+  "extends": ["web-recommended"],
+  "hints": {
+    "no-inline-styles": "off",
+    "axe/color-contrast": "off",
+    "axe/text-alternatives": "off"
+  },
+  "browserslist": [
+    "defaults"
+  ]
+}

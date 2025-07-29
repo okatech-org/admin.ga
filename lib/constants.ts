@@ -185,5 +185,32 @@ export const DEMO_ACCOUNTS = [
     firstName: 'Citoyen',
     lastName: 'TEST',
     organization: null
+  },
+  // Compte démo principal DEMARCHE.GA - Accès direct depuis la page d'accueil
+  {
+    email: 'demo.citoyen@demarche.ga',
+    password: 'CitoyenDemo2024!',
+    role: 'USER' as const,
+    firstName: 'Jean',
+    lastName: 'MBADINGA',
+    organization: null,
+    isDemo: true,
+    profile: {
+      phone: '+241 06 12 34 56 78',
+      dateOfBirth: '1985-03-15',
+      placeOfBirth: 'Libreville, Gabon',
+      nationality: 'Gabonaise',
+      address: '123 Boulevard Triomphal, Libreville',
+      city: 'Libreville',
+      postalCode: '1234',
+      country: 'Gabon',
+      profession: 'Ingénieur informatique',
+      maritalStatus: 'Marié(e)',
+      emergencyContact: {
+        name: 'Marie MBADINGA',
+        phone: '+241 06 98 76 54 32',
+        relationship: 'Épouse'
+      }
+    }
   }
 ];

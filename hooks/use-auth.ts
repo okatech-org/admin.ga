@@ -16,16 +16,16 @@ export function useAuth(requiredRole?: string) {
 
     // Vérifier si l'utilisateur a le rôle requis
     if (requiredRole && session.user.role !== requiredRole) {
-      // Rediriger vers le dashboard approprié
+      // Rediriger vers l'interface appropriée selon le rôle
       const dashboardRoutes = {
-        SUPER_ADMIN: '/admin/dashboard',
+        SUPER_ADMIN: '/super-admin/dashboard',
         ADMIN: '/admin/dashboard',
         MANAGER: '/manager/dashboard',
         AGENT: '/agent/dashboard',
-        USER: '/citoyen/dashboard'
+        USER: '/citoyen/dashboard' // Interface DEMARCHE.GA
       };
 
-      const redirectPath = dashboardRoutes[session.user.role] || '/';
+      const redirectPath = dashboardRoutes[session.user.role] || '/demarche';
       router.push(redirectPath);
       return;
     }
@@ -66,14 +66,14 @@ export function useAuthRedirect() {
     if (!session?.user) return;
 
     const dashboardRoutes = {
-      SUPER_ADMIN: '/admin/dashboard',
+      SUPER_ADMIN: '/super-admin/dashboard',
       ADMIN: '/admin/dashboard', 
       MANAGER: '/manager/dashboard',
       AGENT: '/agent/dashboard',
-      USER: '/citoyen/dashboard'
+      USER: '/citoyen/dashboard' // Interface DEMARCHE.GA
     };
 
-    const redirectPath = dashboardRoutes[session.user.role] || '/citoyen/dashboard';
+    const redirectPath = dashboardRoutes[session.user.role] || '/demarche';
     router.push(redirectPath);
   };
 

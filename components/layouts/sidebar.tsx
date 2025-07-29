@@ -1,220 +1,196 @@
 /* @ts-nocheck */
 "use client";
 
-import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 import {
-  Home,
-  FileText,
-  Calendar,
+  Building,
   Users,
   Settings,
   BarChart3,
-  Building2,
   Shield,
-  UserCog,
-  ClipboardList,
-  Clock,
-  CheckCircle,
-  LogOut,
-  HelpCircle,
+  FileText,
+  UserPlus,
+  Briefcase,
+  Award,
   Database,
-  Monitor,
-  Cog,
-  PieChart,
-  TrendingUp,
-  Globe,
-  Server,
-  Lock,
-  Cpu,
-  HardDrive
+  TrendingUp
 } from 'lucide-react';
 
-const navigation = {
-  USER: [
-    { name: 'Tableau de bord', href: '/citoyen/dashboard', icon: Home },
-    { name: 'Mes demandes', href: '/citoyen/demandes', icon: FileText },
-    { name: 'Mes rendez-vous', href: '/citoyen/rendez-vous', icon: Calendar },
-    { name: 'Mon profil', href: '/citoyen/profil', icon: Users },
-  ],
-  AGENT: [
-    { name: 'Tableau de bord', href: '/agent/dashboard', icon: Home },
-    { name: 'File d\'attente', href: '/agent/demandes', icon: ClipboardList },
-    { name: 'Mes rendez-vous', href: '/agent/rendez-vous', icon: Calendar },
-    { name: 'Traitées', href: '/agent/traitees', icon: CheckCircle },
-  ],
-  MANAGER: [
-    { name: 'Tableau de bord', href: '/manager/dashboard', icon: Home },
-    { name: 'Équipe', href: '/manager/equipe', icon: Users },
-    { name: 'Demandes', href: '/manager/demandes', icon: FileText },
-    { name: 'Planning', href: '/manager/planning', icon: Calendar },
-    { name: 'Statistiques', href: '/manager/statistiques', icon: BarChart3 },
-  ],
-  ADMIN: [
-    { name: 'Tableau de bord', href: '/admin/dashboard', icon: Home },
-    { name: 'Organisation', href: '/admin/organisation', icon: Building2 },
-    { name: 'Utilisateurs', href: '/admin/utilisateurs', icon: UserCog },
-    { name: 'Demandes', href: '/admin/demandes', icon: FileText },
-    { name: 'Services', href: '/admin/services', icon: Settings },
-    { name: 'Rapports', href: '/admin/rapports', icon: BarChart3 },
-  ],
-  SUPER_ADMIN: [
-    { 
-      section: 'Administration',
-      items: [
-        { name: 'Dashboard Super Admin', href: '/super-admin/dashboard', icon: Shield },
-        { name: 'Tableau de bord', href: '/admin/dashboard', icon: Home },
-      ]
-    },
-    {
-      section: 'Gestion des Organismes',
-      items: [
-        { name: 'Administrations', href: '/super-admin/administrations', icon: Building2 },
-        { name: 'Créer Organisme', href: '/super-admin/organisme/nouveau', icon: Building2 },
-        { name: 'Services Publics', href: '/super-admin/services', icon: FileText },
-      ]
-    },
-    {
-      section: 'Utilisateurs & Sécurité',
-      items: [
-        { name: 'Utilisateurs', href: '/super-admin/utilisateurs', icon: UserCog },
-        { name: 'Comptes Organismes', href: '/super-admin/comptes', icon: Users },
-        { name: 'Permissions', href: '/super-admin/permissions', icon: Lock },
-      ]
-    },
-    {
-      section: 'Système & Monitoring',
-      items: [
-        { name: 'Système', href: '/super-admin/systeme', icon: Server },
-        { name: 'Monitoring', href: '/super-admin/monitoring', icon: Monitor },
-        { name: 'Logs', href: '/super-admin/logs', icon: Database },
-      ]
-    },
-    {
-      section: 'Analytics & Configuration',
-      items: [
-        { name: 'Analytics', href: '/super-admin/analytics', icon: TrendingUp },
-        { name: 'Métriques', href: '/super-admin/metriques', icon: PieChart },
-        { name: 'Configuration', href: '/super-admin/configuration', icon: Cog },
-      ]
-    }
-  ],
-};
+const navigationItems = [
+  {
+    title: 'Vue d\'ensemble',
+    href: '/super-admin/dashboard',
+    icon: BarChart3,
+    description: 'Tableau de bord principal'
+  },
+  {
+    title: 'Analytics Avancées',
+    href: '/super-admin/dashboard-v2',
+    icon: TrendingUp,
+    description: 'Analyses détaillées du système'
+  },
+  {
+    title: 'Gestion Organismes',
+    href: '/super-admin/organismes',
+    icon: Building,
+    description: 'Administrations et organismes'
+  },
+  {
+    title: 'Administrations',
+    href: '/super-admin/administrations',
+    icon: Shield,
+    description: 'Liste des administrations'
+  },
+  {
+    title: 'Diagnostic Admins',
+    href: '/super-admin/diagnostic-administrations',
+    icon: Database,
+    description: 'Diagnostic et analyse'
+  },
+  // Nouvelle section RH et Postes
+  {
+    title: 'Postes Administratifs',
+    href: '/super-admin/postes-administratifs',
+    icon: Briefcase,
+    description: 'Base de données des postes et fonctions',
+    isNew: true
+  },
+  {
+    title: 'Gestion Comptes',
+    href: '/super-admin/gestion-comptes',
+    icon: UserPlus,
+    description: 'Création et gestion des collaborateurs',
+    isNew: true
+  },
+  {
+    title: 'Connexion DEMO',
+    href: '/super-admin/connexion-demo',
+    icon: Award,
+    description: 'Interface de test organismes',
+    isNew: true
+  },
+  {
+    title: 'Utilisateurs',
+    href: '/super-admin/utilisateurs',
+    icon: Users,
+    description: 'Gestion des utilisateurs'
+  },
+  {
+    title: 'Services',
+    href: '/super-admin/services',
+    icon: FileText,
+    description: 'Services administratifs'
+  },
+  {
+    title: 'Configuration',
+    href: '/super-admin/configuration',
+    icon: Settings,
+    description: 'Paramètres système'
+  },
+  {
+    title: 'Système',
+    href: '/super-admin/systeme',
+    icon: Shield,
+    description: 'Administration système'
+  }
+];
 
 export function Sidebar() {
-  const { data: session } = useSession();
   const pathname = usePathname();
+  const { data: session } = useSession();
 
-  if (!session) return null;
-
-  const userNavigation = navigation[session.user.role] || navigation.USER;
-
-  const handleSignOut = () => {
-    toast.loading('Déconnexion en cours...');
-    signOut({ 
-      callbackUrl: '/',
-      redirect: true 
-    }).then(() => {
-      toast.success('Déconnexion réussie');
-    });
-  };
-
-  // Fonction pour rendre la navigation structurée du Super Admin
-  const renderSuperAdminNavigation = () => {
-    return (
-      <div className="space-y-4">
-        {userNavigation.map((section, sectionIndex) => (
-          <div key={sectionIndex}>
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-3">
-              {section.section}
-            </h4>
-            <div className="space-y-1">
-              {section.items.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <span className={cn(
-                      'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors',
-                      isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-                    )}>
-                      <item.icon className="mr-3 h-4 w-4" />
-                      {item.name}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-            {sectionIndex < userNavigation.length - 1 && (
-              <Separator className="mt-4" />
-            )}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // Fonction pour rendre la navigation standard
-  const renderStandardNavigation = () => {
-    return (
-      <div className="space-y-1">
-        {userNavigation.map((item) => {
-          const isActive = pathname === item.href;
-          return (
-            <Link key={item.href} href={item.href}>
-              <span className={cn(
-                'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors',
-                isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground'
-              )}>
-                <item.icon className="mr-3 h-4 w-4" />
-                {item.name}
-              </span>
-            </Link>
-          );
-        })}
-      </div>
-    );
-  };
+  // Vérifier si l'utilisateur est super admin
+  if (session?.user?.role !== 'SUPER_ADMIN') {
+    return null;
+  }
 
   return (
-    <div className="hidden border-r bg-gray-100/40 md:block">
-      <div className="flex h-full max-h-screen flex-col gap-2">
-        <div className="flex h-[60px] items-center border-b px-6">
-          <Link className="flex items-center gap-2 font-semibold" href="/">
-            <Shield className="h-6 w-6" />
-            <span className="">Admin.GA</span>
-          </Link>
-        </div>
-        <ScrollArea className="flex-1 overflow-auto p-3">
-          <nav className="grid items-start gap-2">
-            {session.user.role === 'SUPER_ADMIN' ? renderSuperAdminNavigation() : renderStandardNavigation()}
-          </nav>
-        </ScrollArea>
-        
-        <div className="p-4 border-t">
-          <div className="space-y-2">
-            <Link href="/aide">
-              <span className="group flex items-center rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
-                <HelpCircle className="mr-3 h-4 w-4" />
-                Aide & Support
-              </span>
-            </Link>
-            
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
-              onClick={handleSignOut}
-            >
-              <LogOut className="mr-3 h-4 w-4" />
-              Se déconnecter
-            </Button>
+    <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
+      <div className="p-6">
+        <div className="flex items-center space-x-2 mb-8">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <Shield className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-gray-900">ADMIN.GA</h2>
+            <p className="text-xs text-gray-600">Super Admin</p>
           </div>
         </div>
+
+        <nav className="space-y-2">
+          {navigationItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors group relative',
+                  isActive
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                )}
+              >
+                <Icon className={cn(
+                  'w-5 h-5',
+                  isActive ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
+                )} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span>{item.title}</span>
+                    {item.isNew && (
+                      <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                        Nouveau
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {item.description}
+                  </p>
+                </div>
+
+                {isActive && (
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-l"></div>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Section Information */}
+        <div className="mt-8 pt-8 border-t border-gray-200">
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <Award className="w-5 h-5 text-blue-600" />
+              <h3 className="font-medium text-gray-900">Système RH</h3>
+            </div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Nouvelle fonctionnalité de gestion des postes administratifs et création de comptes collaborateurs intégrée.
+            </p>
+          </div>
+        </div>
+
+        {/* Session info */}
+                 <div className="mt-6 pt-6 border-t border-gray-200">
+           <div className="flex items-center space-x-3">
+             <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+               {session?.user?.firstName?.charAt(0) || 'S'}
+             </div>
+             <div>
+               <p className="text-sm font-medium text-gray-900">
+                 {session?.user?.firstName ? `${session.user.firstName} ${session.user.lastName}` : 'Super Admin'}
+               </p>
+               <p className="text-xs text-gray-600">
+                 {session?.user?.email || 'admin@admin.ga'}
+               </p>
+             </div>
+           </div>
+         </div>
       </div>
     </div>
   );

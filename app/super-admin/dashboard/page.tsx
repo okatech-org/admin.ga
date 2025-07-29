@@ -11,10 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { toast } from 'sonner';
-import { 
-  Building2, 
+import {
+  Building2,
   Shield,
-  MapPin, 
+  MapPin,
   Users,
   FileText,
   BarChart3,
@@ -43,6 +43,7 @@ import {
 import Link from 'next/link';
 import { getAllAdministrations, getAllServices } from '@/lib/data/gabon-administrations';
 import { getOrganismesWithDetailedServices, getGlobalServicesStats } from '@/lib/utils/services-organisme-utils';
+import { systemStats, unifiedOrganismes, systemUsers } from '@/lib/data/unified-system-data';
 
 export default function SuperAdminDashboard() {
   const [selectedTab, setSelectedTab] = useState('overview');
@@ -51,20 +52,23 @@ export default function SuperAdminDashboard() {
   const [selectedOrganisme, setSelectedOrganisme] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // CHARGEMENT DES DONNÉES ENRICHIES AVEC SERVICES DÉTAILLÉS
+  // Charger les vraies données du système unifié
   const allAdministrations = getAllAdministrations();
   const allServicesFromJSON = getAllServices();
+  const unifiedStats = systemStats;
+  const organismes = unifiedOrganismes;
+  const users = systemUsers;
   const organismesWithServices = getOrganismesWithDetailedServices();
   const globalStats = getGlobalServicesStats();
-  
+
   // Debug: log pour vérifier les données
   console.log('🔍 DASHBOARD PRINCIPAL - Organismes chargés:', allAdministrations.length);
   console.log('🔍 DASHBOARD PRINCIPAL - Services chargés:', allServicesFromJSON.length);
   console.log('🔍 DASHBOARD PRINCIPAL - Organismes avec services détaillés:', organismesWithServices.length);
   console.log('🔍 DASHBOARD PRINCIPAL - Stats globales:', globalStats);
-  
-  // Transformation des données JSON avec métriques enrichies
-  const mockOrganisations = allAdministrations.map((org, index) => {
+
+  // Utilisation des données unifiées - plus besoin de mockOrganisations
+  const mockOrganisations = organismes.map((org, index) => {
     // Génération de métriques basées sur le type d'organisme
     const getMetrics = (orgType, idx) => {
       const metricsMap = {
@@ -77,16 +81,16 @@ export default function SuperAdminDashboard() {
         'INSTITUTION_JUDICIAIRE': { users: 35, demands: 300, satisfaction: 78 },
         'SERVICE_SPECIALISE': { users: 25, demands: 150, satisfaction: 75 }
       };
-      
+
       const getTypeKey = (type) => {
         if (type === 'Institution suprême') return 'PRESIDENCE';
         if (type === 'Institution gouvernementale') return 'PRIMATURE';
         return type || 'SERVICE_SPECIALISE';
       };
-      
+
       const key = getTypeKey(orgType);
       const base = metricsMap[key] || metricsMap['SERVICE_SPECIALISE'];
-      
+
       return {
         utilisateurs: base.users + (idx % 50),
         demandes_mois: base.demands + (idx % 200),
@@ -94,12 +98,10 @@ export default function SuperAdminDashboard() {
         status: idx % 9 === 0 ? 'MAINTENANCE' : 'ACTIVE'
       };
     };
-    
+
     const metrics = getMetrics(org.type, index);
-    const displayType = org.type === 'Institution suprême' ? 'PRESIDENCE' :
-                       org.type === 'Institution gouvernementale' ? 'PRIMATURE' :
-                       org.type || 'SERVICE_SPECIALISE';
-    
+    const displayType = org.type || 'SERVICE_SPECIALISE';
+
     return {
       id: index + 1,
       nom: org.nom,
@@ -138,7 +140,7 @@ export default function SuperAdminDashboard() {
   // Types d'organisations complets
   const ORGANIZATION_TYPES = {
     PRESIDENCE: "Présidence",
-    PRIMATURE: "Primature", 
+    PRIMATURE: "Primature",
     MINISTERE: "Ministère",
     DIRECTION_GENERALE: "Direction Générale",
     PROVINCE: "Province",
@@ -200,7 +202,7 @@ export default function SuperAdminDashboard() {
         statistics: stats,
         source: 'JSON_GABON_ADMINISTRATIONS_COMPLETE'
       }, null, 2);
-      
+
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
@@ -208,7 +210,7 @@ export default function SuperAdminDashboard() {
       link.download = `gabon-administrations-COMPLET-${stats.totalOrganisations}-organismes-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      
+
       toast.success(`✅ Export de ${stats.totalOrganisations} organismes gabonais réussi !`);
     } catch (error) {
       toast.error('Erreur lors de l\'export JSON');
@@ -483,20 +485,20 @@ export default function SuperAdminDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {Object.entries(ORGANIZATION_TYPES).map(([key, label]) => {
-                    const organismes = mockOrganisations.filter(org => org.type === key);
-                    const totalUtilisateurs = organismes.reduce((sum, org) => sum + (org.utilisateurs || 0), 0);
-                    const satisfactionMoyenne = organismes.length > 0 
-                      ? Math.round(organismes.reduce((sum, org) => sum + (org.satisfaction || 0), 0) / organismes.length)
+                  {Object.entries(unifiedStats.organismesByType).map(([key, count]) => {
+                    const typeOrganismes = organismes.filter(org => org.type === key);
+                    const totalUtilisateurs = typeOrganismes.reduce((sum, org) => sum + (org.stats?.totalUsers || 0), 0);
+                    const satisfactionMoyenne = typeOrganismes.length > 0
+                      ? Math.round(typeOrganismes.reduce((sum, org) => sum + 85, 0) / typeOrganismes.length) // Valeur fixe pour l'instant
                       : 0;
 
                     return (
-                      <div key={key} className="p-4 border rounded-lg cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedType(key)}>
+                                              <div key={key} className="p-4 border rounded-lg cursor-pointer hover:shadow-lg transition-shadow" onClick={() => setSelectedType(key)}>
                         <div className="flex items-center justify-between mb-2">
                           <Badge className="text-white bg-blue-500">
-                            {label}
+                            {key.replace('_', ' ')}
                           </Badge>
-                          <span className="text-2xl font-bold">{organismes.length}</span>
+                          <span className="text-2xl font-bold">{count}</span>
                         </div>
                         <div className="space-y-1 text-sm">
                           <div className="flex justify-between">
@@ -585,7 +587,7 @@ export default function SuperAdminDashboard() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="p-2 bg-blue-50 rounded">
                           <div className="text-lg font-bold text-blue-600">{org.demandes_mois || 0}</div>
@@ -655,7 +657,7 @@ export default function SuperAdminDashboard() {
           {/* Services Publics */}
           <TabsContent value="services" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockServices.map((service) => (
+              {mockServices.slice(0, 10).map((service, index) => (
                 <Card key={service.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <CardTitle className="text-lg">{service.nom}</CardTitle>
@@ -671,9 +673,9 @@ export default function SuperAdminDashboard() {
                           {service.status}
                         </Badge>
                       </div>
-                      
+
                       <p className="text-sm text-muted-foreground">{service.description}</p>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="text-muted-foreground">Durée:</span>
@@ -684,7 +686,7 @@ export default function SuperAdminDashboard() {
                           <p className="font-medium">{service.cout}</p>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-2 text-center">
                         <div className="p-2 bg-green-50 rounded">
                           <div className="text-lg font-bold text-green-600">{service.satisfaction}%</div>
@@ -707,7 +709,7 @@ export default function SuperAdminDashboard() {
                 </Card>
               ))}
             </div>
-            
+
             <Card>
               <CardContent className="p-6">
                 <div className="text-center">
@@ -732,16 +734,16 @@ export default function SuperAdminDashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {mockOrganisations.slice(0, 4).map((org, index) => (
+                    {organismes.slice(0, 4).map((org, index) => (
                       <div key={org.id} className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="font-medium">{org.nom}</span>
-                          <span className="text-muted-foreground">{org.demandes_mois} demandes</span>
+                          <span className="text-muted-foreground">{org.stats?.totalUsers || 0} utilisateurs</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
-                          <div 
-                            className="bg-blue-500 h-2 rounded-full transition-all duration-500" 
-                            data-width={`${((org.demandes_mois || 0) / 1500) * 100}%`}
+                          <div
+                            className="bg-blue-500 h-2 rounded-full transition-all duration-500"
+                            data-width={`${((org.stats?.totalUsers || 0) / 200) * 100}%`}
                             ref={(el) => {
                               if (el) el.style.width = el.dataset.width || '0%';
                             }}
@@ -864,7 +866,7 @@ export default function SuperAdminDashboard() {
                 Informations complètes pour {selectedOrganisme?.nom}
               </DialogDescription>
             </DialogHeader>
-            
+
             {selectedOrganisme && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -920,7 +922,7 @@ export default function SuperAdminDashboard() {
                 </div>
               </div>
             )}
-            
+
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
                 Fermer
@@ -937,4 +939,4 @@ export default function SuperAdminDashboard() {
       </div>
     </AuthenticatedLayout>
   );
-} 
+}

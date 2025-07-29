@@ -9,6 +9,8 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Flag, Bell } from 'lucide-react';
 import { Sidebar } from './sidebar';
 import { UserMenu } from '../layout/user-menu';
+import { DemarcheLayout } from './demarche-layout';
+import { OrganismeLayout } from './organisme-layout';
 
 interface AuthenticatedLayoutProps {
   children: ReactNode;
@@ -41,9 +43,19 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     return null;
   }
 
+  // Interface DEMARCHE.GA pour les citoyens
+  if (session.user.role === 'USER') {
+    return <DemarcheLayout>{children}</DemarcheLayout>;
+  }
 
+  // Interface spécifique à l'organisme pour ADMIN/MANAGER/AGENT
+  if (['ADMIN', 'MANAGER', 'AGENT'].includes(session.user.role) && session.user.organizationId) {
+    return <OrganismeLayout>{children}</OrganismeLayout>;
+  }
 
-  return (
+  // Interface ADMIN.GA uniquement pour les SUPER_ADMIN
+  if (session.user.role === 'SUPER_ADMIN') {
+    return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -85,4 +97,9 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       </div>
     </div>
   );
+  }
+
+  // Par défaut, rediriger vers l'authentification si aucun layout approprié
+  router.push('/auth/connexion');
+  return null;
 }
