@@ -1,7 +1,7 @@
 /* @ts-nocheck */
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -33,7 +33,7 @@ const loginSchema = z.object({
 
 type LoginInput = z.infer<typeof loginSchema>;
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +113,136 @@ export default function LoginPage() {
   };
 
   return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <Card className="shadow-xl">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            <div className="w-16 h-16 bg-gradient-to-r from-gray-700 to-gray-900 rounded-full flex items-center justify-center">
+              <Lock className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <CardTitle className="text-2xl font-bold">Administration Système</CardTitle>
+          <CardDescription>
+            Connexion sécurisée pour les administrateurs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert className="mb-6 border-red-200 bg-red-50">
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse email</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          type="email"
+                          placeholder="admin@admin.ga"
+                          className="pl-10"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mot de passe</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          type={showPassword ? 'text' : 'password'}
+                          placeholder="Mot de passe administrateur"
+                          className="pl-10 pr-10"
+                          {...field}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button
+                type="submit"
+                className="w-full bg-gray-800 hover:bg-gray-900"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Connexion...' : 'Connexion Administrateur'}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {/* Compte de démonstration système */}
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Compte de Test</h2>
+          <p className="text-gray-600">Administrateur système</p>
+        </div>
+
+        <Card
+          className="hover:shadow-lg transition-shadow cursor-pointer group"
+          onClick={() => fillDemoAccount(compteSysteme.email, compteSysteme.password)}
+        >
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-4">
+              <div className={`w-16 h-16 ${compteSysteme.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <compteSysteme.icon className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-xl text-gray-900">{compteSysteme.title}</h3>
+                <p className="text-gray-600 mt-1">{compteSysteme.description}</p>
+                <p className="text-blue-600 font-medium mt-2">→ {compteSysteme.destination}</p>
+              </div>
+            </div>
+            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-500 font-mono mb-1">Email: {compteSysteme.email}</p>
+              <p className="text-xs text-gray-400">Cliquez pour remplir automatiquement le formulaire</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h3 className="font-semibold text-yellow-900 mb-2">💡 Accès aux Tests</h3>
+          <p className="text-yellow-800 text-sm mb-3">
+            Pour tester les organismes publics et l'espace citoyen, connectez-vous d'abord comme super admin.
+          </p>
+          <p className="text-yellow-700 text-xs">
+            Le volet "Connexion DEMO" sera alors disponible dans le menu de navigation.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
       {/* Header Global */}
       <header className="bg-white border-b border-gray-200 shadow-sm">
@@ -159,131 +289,13 @@ export default function LoginPage() {
           </div>
 
           {/* Connexion Administrative */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <Card className="shadow-xl">
-              <CardHeader className="text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-gradient-to-r from-gray-700 to-gray-900 rounded-full flex items-center justify-center">
-                    <Lock className="w-8 h-8 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-2xl font-bold">Administration Système</CardTitle>
-                <CardDescription>
-                  Connexion sécurisée pour les administrateurs
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {error && (
-                  <Alert className="mb-6 border-red-200 bg-red-50">
-                    <AlertDescription className="text-red-800">{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Adresse email</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                              <Input
-                                type="email"
-                                placeholder="admin@admin.ga"
-                                className="pl-10"
-                                {...field}
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Mot de passe</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                              <Input
-                                type={showPassword ? 'text' : 'password'}
-                                placeholder="Mot de passe administrateur"
-                                className="pl-10 pr-10"
-                                {...field}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-3 h-4 w-4 text-gray-400 hover:text-gray-600"
-                              >
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button
-                      type="submit"
-                      className="w-full bg-gray-800 hover:bg-gray-900"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? 'Connexion...' : 'Connexion Administrateur'}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-
-            {/* Compte de démonstration système */}
-            <div className="space-y-6">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Compte de Test</h2>
-                <p className="text-gray-600">Administrateur système</p>
-              </div>
-
-              <Card
-                className="hover:shadow-lg transition-shadow cursor-pointer group"
-                onClick={() => fillDemoAccount(compteSysteme.email, compteSysteme.password)}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-16 h-16 ${compteSysteme.color} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                      <compteSysteme.icon className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-bold text-xl text-gray-900">{compteSysteme.title}</h3>
-                      <p className="text-gray-600 mt-1">{compteSysteme.description}</p>
-                      <p className="text-blue-600 font-medium mt-2">→ {compteSysteme.destination}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-500 font-mono mb-1">Email: {compteSysteme.email}</p>
-                    <p className="text-xs text-gray-400">Cliquez pour remplir automatiquement le formulaire</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 className="font-semibold text-yellow-900 mb-2">💡 Accès aux Tests</h3>
-                <p className="text-yellow-800 text-sm mb-3">
-                  Pour tester les organismes publics et l'espace citoyen, connectez-vous d'abord comme super admin.
-                </p>
-                <p className="text-yellow-700 text-xs">
-                  Le volet "Connexion DEMO" sera alors disponible dans le menu de navigation.
-                </p>
-              </div>
+          <Suspense fallback={
+            <div className="flex items-center justify-center p-8">
+              <div className="text-gray-500">Chargement...</div>
             </div>
-          </div>
+          }>
+            <LoginForm />
+          </Suspense>
         </div>
       </div>
     </div>
