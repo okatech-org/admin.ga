@@ -133,15 +133,18 @@ export default function SuperAdminUtilisateursPage() {
 
   // Filtrer les organismes selon la recherche et le rôle
   const filteredOrganismes = Object.entries(usersByOrganisme).filter(([orgId, data]: [string, any]) => {
-    const orgMatch = data.organisme.nom.toLowerCase().includes(searchTerm.toLowerCase());
-    const userMatch = data.users.some((user: any) =>
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Vérifications de sécurité pour éviter les erreurs undefined
+    const orgNom = data?.organisme?.nom || '';
+    const orgMatch = orgNom.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const userMatch = data?.users?.some((user: any) =>
+      (user?.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user?.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    ) || false;
 
     // Si un rôle est sélectionné, vérifier que l'organisme a au moins un utilisateur de ce rôle
-    const roleMatch = !selectedRole || data.users.some((user: any) => user.role === selectedRole);
+    const roleMatch = !selectedRole || (data?.users?.some((user: any) => user?.role === selectedRole) || false);
 
     return (orgMatch || userMatch) && roleMatch;
   }).sort((a: [string, any], b: [string, any]) => {

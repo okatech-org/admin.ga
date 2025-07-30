@@ -2,6 +2,7 @@
 // Utilitaires pour la gestion des services et organismes dans le dashboard super admin
 import { getAllAdministrations } from '@/lib/data/gabon-administrations';
 import { getAllServices, getServicesByOrganisme, getOrganismeMapping } from '@/lib/data/gabon-services-detailles';
+import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
 
 export interface ServiceWithDetails {
   code: string;
@@ -34,190 +35,160 @@ export interface OrganismeWithServices {
 
 // Mapper les services détaillés aux organismes existants
 export const getOrganismesWithDetailedServices = (): OrganismeWithServices[] => {
-  const administrations = getAllAdministrations();
+  // Utiliser les organismes enrichis (160) au lieu des administrations de base
+  const organismesEnrichis = Object.values(ORGANISMES_ENRICHIS_GABON);
   const allServices = getAllServices();
   const organismeMapping = getOrganismeMapping();
-  
-  return administrations.map((admin, index) => {
+
+  return organismesEnrichis.map((org, index) => {
     // Récupérer les services détaillés pour cet organisme
-    const servicesDetailles = allServices.filter(service => 
-      service.organisme_responsable === admin.code
+    const servicesDetailles = allServices.filter(service =>
+      service.organisme_responsable === org.code
     );
-    
+
     // Déterminer la catégorie principale
     const getMainCategory = (services: any[]) => {
       if (services.some(s => s.nom.includes('CNI') || s.nom.includes('passeport'))) return 'identite';
       if (services.some(s => s.nom.includes('naissance') || s.nom.includes('mariage'))) return 'etat_civil';
-      if (services.some(s => s.nom.includes('CNSS') || s.nom.includes('emploi'))) return 'travail_emploi';
-      if (services.some(s => s.nom.includes('permis') || s.nom.includes('construire'))) return 'logement';
-      if (services.some(s => s.nom.includes('commerce') || s.nom.includes('entreprise'))) return 'commerce';
-      if (services.some(s => s.nom.includes('impôt') || s.nom.includes('fiscal'))) return 'fiscal';
-      if (services.some(s => s.nom.includes('médical') || s.nom.includes('santé'))) return 'sante_social';
-      if (services.some(s => s.nom.includes('justice') || s.nom.includes('casier'))) return 'justice';
-      return 'administratif';
+      if (services.some(s => s.nom.includes('fiscal') || s.nom.includes('impôt'))) return 'fiscal';
+      if (services.some(s => s.nom.includes('social') || s.nom.includes('pension'))) return 'social';
+      if (services.some(s => s.nom.includes('permis') || s.nom.includes('transport'))) return 'transport';
+      if (services.some(s => s.nom.includes('santé') || s.nom.includes('médical'))) return 'sante';
+      if (services.some(s => s.nom.includes('éducation') || s.nom.includes('diplôme'))) return 'education';
+      if (services.some(s => s.nom.includes('justice') || s.nom.includes('juridique'))) return 'justice';
+      return 'autre';
     };
-    
-    const mainCategory = getMainCategory(servicesDetailles);
-    
-    // Convertir les services détaillés au bon format
-    const servicesWithDetails: ServiceWithDetails[] = servicesDetailles.map(service => ({
-      code: service.code,
-      nom: service.nom,
-      organisme_responsable: service.organisme_responsable,
-      type_organisme: service.type_organisme,
-      cout: service.cout,
-      delai_traitement: service.delai_traitement,
-      validite: service.validite,
-      documents_requis: service.documents_requis,
-      category: mainCategory
-    }));
-    
-    // Générer des métriques basées sur le type d'organisme
-    const generateMetrics = (orgType: string, idx: number) => {
-      const metricsMap = {
-        'PRESIDENCE': { satisfaction: 95, demandes: 50, status: 'ACTIVE' },
-        'PRIMATURE': { satisfaction: 93, demandes: 40, status: 'ACTIVE' },
-        'MINISTERE': { satisfaction: 88, demandes: 800, status: 'ACTIVE' },
-        'DIRECTION_GENERALE': { satisfaction: 85, demandes: 600, status: 'ACTIVE' },
-        'MAIRIE': { satisfaction: 82, demandes: 1200, status: 'ACTIVE' },
-        'ORGANISME_SOCIAL': { satisfaction: 80, demandes: 500, status: 'ACTIVE' },
-        'INSTITUTION_JUDICIAIRE': { satisfaction: 78, demandes: 300, status: 'ACTIVE' },
-        'AGENCE_PUBLIQUE': { satisfaction: 75, demandes: 150, status: 'ACTIVE' }
-      };
-      
-      const base = metricsMap[orgType] || metricsMap['AGENCE_PUBLIQUE'];
-      
-      return {
-        satisfaction: Math.min(95, base.satisfaction + (idx % 15)),
-        demandes_mois: base.demandes + (idx % 100),
-        status: idx % 15 === 0 ? 'MAINTENANCE' : 'ACTIVE'
-      };
+
+    // Générer des services basiques par défaut selon le type d'organisme
+    const generateDefaultServices = (type: string) => {
+      switch (type) {
+        case 'MINISTERE':
+          return ['Coordination sectorielle', 'Élaboration des politiques', 'Supervision administrative'];
+        case 'DIRECTION_GENERALE':
+          return ['Gestion administrative', 'Coordination technique', 'Supervision opérationnelle'];
+        case 'MAIRIE':
+          return ['État civil', 'Urbanisme', 'Services municipaux'];
+        case 'GOUVERNORAT':
+          return ['Administration territoriale', 'Coordination préfectorale', 'Services déconcentrés'];
+        case 'PREFECTURE':
+          return ['Administration locale', 'Services préfectoraux', 'Coordination communale'];
+        case 'ORGANISME_SOCIAL':
+          return ['Prestations sociales', 'Gestion des cotisations', 'Services aux assurés'];
+        case 'ETABLISSEMENT_PUBLIC':
+          return ['Services publics spécialisés', 'Missions statutaires', 'Prestations techniques'];
+        case 'AGENCE_PUBLIQUE':
+          return ['Services d\'agence', 'Missions spécialisées', 'Prestations publiques'];
+        case 'INSTITUTION_JUDICIAIRE':
+          return ['Services judiciaires', 'Procédures légales', 'Administration de la justice'];
+        default:
+          return ['Services administratifs', 'Prestations publiques', 'Missions institutionnelles'];
+      }
     };
-    
-    const metrics = generateMetrics(admin.type, index);
-    
+
     return {
-      id: (index + 1).toString(),
-      nom: admin.nom,
-      code: admin.code || `ORG_${index + 1}`,
-      type: admin.type,
-      localisation: admin.localisation,
-      services_basiques: admin.services,
-      services_detailles: servicesWithDetails,
-      total_services: admin.services.length + servicesDetailles.length,
-      responsable: generateResponsableName(admin.type, index),
-      telephone: generatePhoneNumber(index),
-      website: generateWebsite(admin.code),
-      status: metrics.status as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
-      satisfaction: metrics.satisfaction,
-      demandes_mois: metrics.demandes_mois
+      id: org.code,
+      nom: org.nom,
+      code: org.code,
+      type: org.type,
+      localisation: org.ville || 'Libreville',
+      services_basiques: generateDefaultServices(org.type),
+      services_detailles: servicesDetailles,
+      total_services: generateDefaultServices(org.type).length + servicesDetailles.length,
+      responsable: org.responsable || 'Non spécifié',
+      telephone: org.telephone || '+241 00 00 00 00',
+      website: org.email ? `https://${org.code.toLowerCase()}.gouv.ga` : undefined,
+      status: Math.random() > 0.1 ? 'ACTIVE' : (Math.random() > 0.5 ? 'MAINTENANCE' : 'INACTIVE'),
+      satisfaction: Math.floor(85 + Math.random() * 15), // 85-100%
+      demandes_mois: Math.floor(50 + Math.random() * 500) // 50-550 demandes/mois
     };
   });
 };
 
-// Générer des noms de responsables fictifs mais réalistes
-const generateResponsableName = (orgType: string, index: number): string => {
-  const titres = {
-    'MINISTERE': 'Ministre',
-    'DIRECTION_GENERALE': 'Directeur Général',
-    'MAIRIE': 'Maire',
-    'ORGANISME_SOCIAL': 'Directeur',
-    'AGENCE_PUBLIQUE': 'Directeur Général',
-    'INSTITUTION_JUDICIAIRE': 'Président',
-    'PRESIDENCE': 'Secrétaire Général',
-    'PRIMATURE': 'Secrétaire Général'
-  };
-  
-  const prenoms = ['Jean', 'Marie', 'Paul', 'Sophie', 'Pierre', 'Françoise', 'Michel', 'Catherine', 'André', 'Sylvie'];
-  const noms = ['OBIANG', 'NZENG', 'MBOUMBA', 'BOUKOUMOU', 'NZAMBA', 'ONDO', 'MINTSA', 'ELLA', 'OVONO', 'EYEGHE'];
-  
-  const titre = titres[orgType] || 'Directeur';
-  const prenom = prenoms[index % prenoms.length];
-  const nom = noms[index % noms.length];
-  
-  return `${titre} ${prenom} ${nom}`;
-};
-
-// Générer des numéros de téléphone fictifs
-const generatePhoneNumber = (index: number): string => {
-  const bases = ['07', '06', '05', '04'];
-  const base = bases[index % bases.length];
-  const numero = String(1000000 + (index * 123456) % 9000000).padStart(7, '0');
-  return `+241 ${base} ${numero.substring(0, 2)} ${numero.substring(2, 4)} ${numero.substring(4, 6)}`;
-};
-
-// Générer des sites web fictifs
-const generateWebsite = (code?: string): string => {
-  if (!code) return '';
-  const domain = code.toLowerCase().replace(/_/g, '-');
-  return `https://${domain}.gabon.ga`;
-};
-
-// Obtenir les statistiques globales des services
+// Calcul des statistiques globales avec les organismes enrichis
 export const getGlobalServicesStats = () => {
+  const organismesEnrichis = Object.values(ORGANISMES_ENRICHIS_GABON);
   const organismes = getOrganismesWithDetailedServices();
   const allServices = getAllServices();
-  
-  const totalOrganismes = organismes.length;
-  const totalServices = allServices.length;
-  const totalServicesBasiques = organismes.reduce((sum, org) => sum + org.services_basiques.length, 0);
-  const totalServicesDetailles = organismes.reduce((sum, org) => sum + org.services_detailles.length, 0);
-  
-  const satisfactionMoyenne = Math.round(
-    organismes.reduce((sum, org) => sum + (org.satisfaction || 0), 0) / totalOrganismes
-  );
-  
-  const demandesMoyennes = organismes.reduce((sum, org) => sum + (org.demandes_mois || 0), 0);
-  
-  const organismesByType = organismes.reduce((acc, org) => {
+
+  // Calculer les statistiques par catégorie
+  const servicesByCategory = allServices.reduce((acc: Record<string, number>, service) => {
+    const category = service.category || 'autre';
+    acc[category] = (acc[category] || 0) + 1;
+    return acc;
+  }, {});
+
+  // Calculer les statistiques par type d'organisme
+  const organismesByType = organismesEnrichis.reduce((acc: Record<string, number>, org) => {
     acc[org.type] = (acc[org.type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
-  
-  const servicesByCategory = {
-    'etat_civil': allServices.filter(s => s.nom.includes('naissance') || s.nom.includes('mariage') || s.nom.includes('décès')).length,
-    'identite': allServices.filter(s => s.nom.includes('CNI') || s.nom.includes('passeport') || s.nom.includes('nationalité')).length,
-    'travail_emploi': allServices.filter(s => s.nom.includes('CNSS') || s.nom.includes('emploi') || s.nom.includes('travail')).length,
-    'education': allServices.filter(s => s.nom.includes('inscription') || s.nom.includes('bourse') || s.nom.includes('diplôme')).length,
-    'logement': allServices.filter(s => s.nom.includes('permis') || s.nom.includes('titre') || s.nom.includes('urbanisme')).length,
-    'transport': allServices.filter(s => s.nom.includes('permis de conduire') || s.nom.includes('véhicule') || s.nom.includes('transport')).length,
-    'commerce': allServices.filter(s => s.nom.includes('commerce') || s.nom.includes('RCCM') || s.nom.includes('patente')).length,
-    'justice': allServices.filter(s => s.nom.includes('casier') || s.nom.includes('légalisation') || s.nom.includes('tribunal')).length,
-    'fiscal': allServices.filter(s => s.nom.includes('impôt') || s.nom.includes('fiscal') || s.nom.includes('quitus')).length,
-    'sante_social': allServices.filter(s => s.nom.includes('médical') || s.nom.includes('santé') || s.nom.includes('allocation')).length
-  };
-  
+  }, {});
+
+  const totalServicesDetailles = allServices.length;
+  const totalServicesBasiques = organismes.reduce((sum, org) => sum + org.services_basiques.length, 0);
+
   return {
-    totalOrganismes,
-    totalServices,
+    totalOrganismes: organismesEnrichis.length, // 160 organismes enrichis
+    totalServices: totalServicesDetailles + totalServicesBasiques,
     totalServicesBasiques,
     totalServicesDetailles,
-    satisfactionMoyenne,
-    demandesMoyennes,
-    organismesByType,
+    demandesMoyennes: Math.floor(organismes.reduce((sum, org) => sum + (org.demandes_mois || 0), 0) / organismes.length),
+    satisfactionMoyenne: Math.floor(organismes.reduce((sum, org) => sum + (org.satisfaction || 90), 0) / organismes.length),
+    organismesActifs: organismes.filter(org => org.status === 'ACTIVE').length,
+    organismesMaintenance: organismes.filter(org => org.status === 'MAINTENANCE').length,
     servicesByCategory,
-    organismesActifs: organismes.filter(o => o.status === 'ACTIVE').length,
-    organismesMaintenance: organismes.filter(o => o.status === 'MAINTENANCE').length
+    organismesByType,
+
+    // Nouvelles métriques pour les relations inter-organismes
+    totalRelations: 1117, // Nombre actuel de relations générées
+    densiteRelationnelle: ((1117 / ((organismesEnrichis.length * (organismesEnrichis.length - 1)) / 2)) * 100).toFixed(2),
+    niveauxHierarchiques: 6,
+    groupesAdministratifs: 9,
+    pouvoirsRepresentes: 3 // Exécutif, Législatif, Judiciaire
+  };
+};
+
+// Export des organismes avec services pour compatibilité
+export { getOrganismesWithDetailedServices as getOrganismesWithServices };
+
+// Fonction utilitaire pour obtenir les statistiques consolidées
+export const getConsolidatedStats = () => {
+  const globalStats = getGlobalServicesStats();
+  const organismes = getOrganismesWithDetailedServices();
+
+  return {
+    ...globalStats,
+    organismesDetails: organismes,
+    lastUpdate: new Date().toISOString(),
+    version: '2.0 - Organismes Enrichis (160)',
+
+    // Résumé exécutif
+    resume: {
+      organismes: `${globalStats.totalOrganismes} organismes publics gabonais`,
+      relations: `${globalStats.totalRelations} relations inter-organismes établies`,
+      hierarchie: `${globalStats.niveauxHierarchiques} niveaux hiérarchiques`,
+      couverture: `${globalStats.groupesAdministratifs} groupes administratifs`,
+      pouvoirs: `${globalStats.pouvoirsRepresentes} pouvoirs de l'État représentés`
+    }
   };
 };
 
 // Rechercher dans les services
 export const searchServices = (query: string, orgType?: string, category?: string): ServiceWithDetails[] => {
   const allServices = getAllServices();
-  
+
   return allServices
     .filter(service => {
-      const matchesQuery = !query || 
+      const matchesQuery = !query ||
         service.nom.toLowerCase().includes(query.toLowerCase()) ||
         service.code.toLowerCase().includes(query.toLowerCase()) ||
         service.documents_requis.some(doc => doc.toLowerCase().includes(query.toLowerCase()));
-      
+
       const matchesOrgType = !orgType || service.type_organisme === orgType;
-      
+
       // Catégorie basée sur le nom du service (approximation)
       const serviceCategory = getServiceCategory(service.nom);
       const matchesCategory = !category || serviceCategory === category;
-      
+
       return matchesQuery && matchesOrgType && matchesCategory;
     })
     .map(service => ({
@@ -236,7 +207,7 @@ export const searchServices = (query: string, orgType?: string, category?: strin
 // Déterminer la catégorie d'un service
 const getServiceCategory = (serviceName: string): string => {
   const name = serviceName.toLowerCase();
-  
+
   if (name.includes('naissance') || name.includes('mariage') || name.includes('décès')) return 'etat_civil';
   if (name.includes('cni') || name.includes('passeport') || name.includes('nationalité')) return 'identite';
   if (name.includes('cnss') || name.includes('emploi') || name.includes('travail') || name.includes('chômage')) return 'travail_emploi';
@@ -249,8 +220,8 @@ const getServiceCategory = (serviceName: string): string => {
   if (name.includes('médical') || name.includes('santé') || name.includes('allocation') || name.includes('social')) return 'sante_social';
   if (name.includes('retraite') || name.includes('pension') || name.includes('âge')) return 'retraite';
   if (name.includes('succession') || name.includes('hérédité') || name.includes('inhumer')) return 'succession';
-  
+
   return 'administratif';
 };
 
-// Types et fonctions disponibles par import 
+// Types et fonctions disponibles par import

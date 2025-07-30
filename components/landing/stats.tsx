@@ -17,14 +17,14 @@ export function Stats() {
       description: "Utilisateurs actifs sur la plateforme"
     },
     {
-      value: "25",
-      label: "Administrations",
-      description: "Organismes publics connectés"
+      value: "160",
+      label: "Organismes publics",
+      description: "Administrations gabonaises connectées"
     },
     {
-      value: "120,000+",
-      label: "Documents traités",
-      description: "Demandes traitées avec succès"
+      value: "1,117",
+      label: "Relations actives",
+      description: "Connexions inter-organismes établies"
     },
     {
       value: "98%",
@@ -45,14 +45,14 @@ export function Stats() {
             La Confiance des Gabonais
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Des chiffres qui témoignent de notre engagement pour 
+            Des chiffres qui témoignent de notre engagement pour
             moderniser l'administration gabonaise
           </p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           {stats.map((stat, index) => (
-            <div 
+            <div
               key={index}
               className="text-center p-6 rounded-lg bg-background border hover:shadow-lg transition-shadow animate-fade-in stat-card"
               data-delay={index}

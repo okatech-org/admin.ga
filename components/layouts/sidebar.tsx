@@ -16,7 +16,10 @@ import {
   Briefcase,
   Award,
   Database,
-  TrendingUp
+  TrendingUp,
+  UserCheck,
+  Network,
+  Crown
 } from 'lucide-react';
 
 const navigationItems = [
@@ -37,6 +40,24 @@ const navigationItems = [
     href: '/super-admin/organismes',
     icon: Building,
     description: 'Administrations et organismes'
+  },
+          {
+          title: 'Clients',
+          href: '/super-admin/clients',
+          icon: UserCheck,
+          description: 'Organismes clients ADMIN.GA'
+        },
+        {
+          title: 'Relations Inter-Organismes',
+          href: '/super-admin/relations',
+          icon: Network,
+          description: 'Gestion des relations et partage de données'
+        },
+  {
+    title: 'Structure Administrative',
+    href: '/super-admin/structure-administrative',
+    icon: Crown,
+                  description: 'Structure officielle gabonaise complète (160 organismes)'
   },
   {
     title: 'Administrations',
