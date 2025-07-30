@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, OrganizationType } from '@prisma/client';
+import { PrismaClient, UserRole, OrganizationType, ServiceType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -13,7 +13,6 @@ async function main() {
       type: OrganizationType.MAIRIE,
       code: 'MAIRE_LBV',
       description: 'Mairie de la capitale du Gabon',
-      services: ['ACTE_NAISSANCE', 'ACTE_MARIAGE', 'ACTE_DECES', 'PERMIS_CONSTRUIRE', 'AUTORISATION_COMMERCE'],
       workingHours: {
         monday: { start: '08:00', end: '17:00' },
         tuesday: { start: '08:00', end: '17:00' },
@@ -28,7 +27,6 @@ async function main() {
       type: OrganizationType.DIRECTION_GENERALE,
       code: 'DGDI',
       description: 'Service national de l\'immigration et des documents d\'identité',
-      services: ['PASSEPORT', 'CARTE_SEJOUR', 'CNI'],
       workingHours: {
         monday: { start: '07:30', end: '15:30' },
         tuesday: { start: '07:30', end: '15:30' },
@@ -42,7 +40,6 @@ async function main() {
       type: OrganizationType.ORGANISME_SOCIAL,
       code: 'CNSS',
       description: 'Organisme de sécurité sociale du Gabon',
-      services: ['IMMATRICULATION_CNSS', 'ATTESTATION_TRAVAIL'],
       workingHours: {
         monday: { start: '08:00', end: '17:00' },
         tuesday: { start: '08:00', end: '17:00' },
@@ -67,6 +64,84 @@ async function main() {
   const mairieLibreville = await prisma.organization.findUnique({ where: { code: 'MAIRE_LBV' } });
   const dgdi = await prisma.organization.findUnique({ where: { code: 'DGDI' } });
   const cnss = await prisma.organization.findUnique({ where: { code: 'CNSS' } });
+
+  // Créer les configurations de services
+  if (mairieLibreville) {
+    const mairieServices = [
+      ServiceType.ACTE_NAISSANCE,
+      ServiceType.ACTE_MARIAGE,
+      ServiceType.ACTE_DECES,
+      ServiceType.PERMIS_CONSTRUIRE,
+      ServiceType.AUTORISATION_COMMERCE
+    ];
+
+    for (const serviceType of mairieServices) {
+      await prisma.serviceConfig.upsert({
+        where: {
+          organizationId_serviceType: {
+            organizationId: mairieLibreville.id,
+            serviceType: serviceType
+          }
+        },
+        update: {},
+        create: {
+          organizationId: mairieLibreville.id,
+          serviceType: serviceType,
+          isActive: true,
+          processingDays: 7,
+          cost: 5000
+        }
+      });
+    }
+  }
+
+  if (dgdi) {
+    const dgdiServices = [ServiceType.PASSEPORT, ServiceType.CARTE_SEJOUR, ServiceType.CNI];
+
+    for (const serviceType of dgdiServices) {
+      await prisma.serviceConfig.upsert({
+        where: {
+          organizationId_serviceType: {
+            organizationId: dgdi.id,
+            serviceType: serviceType
+          }
+        },
+        update: {},
+        create: {
+          organizationId: dgdi.id,
+          serviceType: serviceType,
+          isActive: true,
+          processingDays: 14,
+          cost: 10000
+        }
+      });
+    }
+  }
+
+  if (cnss) {
+    const cnssServices = [ServiceType.IMMATRICULATION_CNSS, ServiceType.ATTESTATION_TRAVAIL];
+
+    for (const serviceType of cnssServices) {
+      await prisma.serviceConfig.upsert({
+        where: {
+          organizationId_serviceType: {
+            organizationId: cnss.id,
+            serviceType: serviceType
+          }
+        },
+        update: {},
+        create: {
+          organizationId: cnss.id,
+          serviceType: serviceType,
+          isActive: true,
+          processingDays: 3,
+          cost: 2000
+        }
+      });
+    }
+  }
+
+  console.log('✅ Configurations de services créées');
 
   // Créer les utilisateurs de démonstration selon les spécifications exactes
   const users = [
