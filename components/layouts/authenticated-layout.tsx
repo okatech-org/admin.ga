@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Flag, Bell } from 'lucide-react';
 import { Sidebar } from './sidebar';
+import { SidebarModern } from './sidebar-modern';
 import { UserMenu } from '../layout/user-menu';
 import { DemarcheLayout } from './demarche-layout';
 import { OrganismeLayout } from './organisme-layout';
@@ -88,8 +89,8 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
 
       <div className="flex">
         {/* Sidebar */}
-        <Sidebar />
-        
+        <SidebarModern />
+
         {/* Main Content */}
         <main className="flex-1 p-6">
           {children}

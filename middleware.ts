@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 // Liste des codes d'organismes valides (vous pouvez l'étendre)
 const VALID_ORGANISMES = [
-  'dgdi', 'cnss', 'cnamgs', 'min-jus', 'min-int', 'min-eco', 
+  'dgdi', 'cnss', 'cnamgs', 'min-jus', 'min-int', 'min-eco',
   'min-sante', 'min-transport', 'min-educ', 'mairie-libreville',
   'min-femme', 'min-travail', 'anuttc', 'anac', 'dgi'
 ];
@@ -11,13 +11,13 @@ const VALID_ORGANISMES = [
 function isOrganismeRoute(pathname: string): { isOrganisme: boolean; organisme?: string } {
   // Vérifier si c'est une route d'organisme: /[organisme]/...
   const segments = pathname.split('/').filter(Boolean);
-  
+
   if (segments.length === 0) return { isOrganisme: false };
-  
+
   const firstSegment = segments[0].toLowerCase();
-  
+
   // Vérifier si le premier segment correspond à un organisme
-  const isValidOrganisme = VALID_ORGANISMES.includes(firstSegment) || 
+  const isValidOrganisme = VALID_ORGANISMES.includes(firstSegment) ||
     !!firstSegment.match(/^(min|dir|age|mai)-[a-z-]+$/) ||
     !!firstSegment.match(/^[a-z]{3,6}$/); // codes courts comme dgdi, cnss, etc.
 
@@ -31,7 +31,18 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
-    
+
+    // Redirections pour le menu optimisé du super admin
+    const superAdminRedirects: Record<string, string> = {
+      '/super-admin/administrations': '/super-admin/organismes',
+      '/super-admin/dashboard': '/super-admin/dashboard-unified',
+      '/super-admin/dashboard-v2': '/super-admin/dashboard-unified'
+    };
+
+    if (superAdminRedirects[pathname]) {
+      return NextResponse.redirect(new URL(superAdminRedirects[pathname], req.url));
+    }
+
     // Routes publiques et d'authentification
     const isAuthPage = pathname.startsWith('/auth');
     const isApiAuthRoute = pathname.startsWith('/api/auth');
@@ -51,7 +62,7 @@ export default withAuth(
 
     // Gestion des routes d'organismes
     const { isOrganisme, organisme } = isOrganismeRoute(pathname);
-    
+
     if (isOrganisme) {
       // Routes publiques d'organisme (accueil, services publics)
       const organismePublicRoutes = [
@@ -60,7 +71,7 @@ export default withAuth(
         `/${organisme}/contact`,
         `/${organisme}/recherche`
       ];
-      
+
       if (organismePublicRoutes.some(route => pathname === route || pathname.startsWith(route))) {
         return NextResponse.next();
       }
@@ -142,7 +153,7 @@ export default withAuth(
       // Redirection par défaut selon le rôle
       const defaultRedirects = {
         ADMIN: '/admin/dashboard',
-        MANAGER: '/manager/dashboard', 
+        MANAGER: '/manager/dashboard',
         AGENT: '/agent/dashboard',
         USER: '/demarche' // Les citoyens vont sur DEMARCHE.GA
       };
@@ -165,7 +176,7 @@ export const config = {
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
-     * - _next/image (image optimization files) 
+     * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - public folder
      */

@@ -12,7 +12,9 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && npm run db:seed"
+    "db:reset": "prisma db push --force-reset && npm run db:seed",
+    "import:services": "tsx scripts/import-all-services.ts",
+    "test:services": "node scripts/test-services-count.js"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -71,7 +73,7 @@
     "handlebars": "^4.7.8",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
-    "next": "^14.2.0",
+    "next": "^14.2.30",
     "next-auth": "^4.24.11",
     "next-themes": "^0.3.0",
     "nodemailer": "^6.10.1",
@@ -100,6 +102,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "devDependencies": {
+    "markdownlint-cli": "^0.45.0",
     "prisma": "^6.12.0",
     "tsx": "^4.20.3"
   }

@@ -1,7 +1,6 @@
-/* @ts-nocheck */
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { toast } from 'sonner';
-import { 
-  FileText, 
-  Search, 
+import {
+  FileText,
+  Search,
   Filter,
   Plus,
   Edit,
@@ -37,28 +40,115 @@ import {
   MapPin,
   Scale,
   Calculator,
-  GraduationCap
+  GraduationCap,
+  Loader2,
+  Save,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 // Import des vraies données
 import { getAllServices, getOrganismeMapping } from '@/lib/data/gabon-services-detailles';
+import { getAllExpandedServices, getExpandedServicesCount } from '@/lib/data/expanded-gabon-services';
+
+// Types pour TypeScript
+interface Service {
+  id: number;
+  nom: string;
+  organisme: string;
+  categorie: string;
+  description: string;
+  duree: string;
+  cout: string;
+  status: 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE';
+  satisfaction: number;
+  demandes_mois: number;
+  documents_requis: string[];
+  responsable: string;
+  telephone: string;
+  email: string;
+  derniere_maj: string;
+  lieu: string;
+  code_service: string;
+  validite: string;
+  type_organisme: string;
+}
+
+interface ServiceFormData {
+  nom: string;
+  organisme: string;
+  categorie: string;
+  description: string;
+  duree: string;
+  cout: string;
+  status: 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE';
+  documents_requis: string[];
+  responsable: string;
+  telephone: string;
+  email: string;
+  lieu: string;
+  validite: string;
+}
+
+// États d'application
+interface AppState {
+  isLoading: boolean;
+  error: string | null;
+  isSubmitting: boolean;
+  isDeletingId: number | null;
+}
 
 export default function SuperAdminServicesPage() {
   const router = useRouter();
+
+  // États principaux
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategorie, setSelectedCategorie] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedService, setSelectedService] = useState(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedTab, setSelectedTab] = useState('overview');
 
-  // Récupération des vraies données depuis le fichier JSON
+  // États des modales
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+
+  // États de l'application
+  const [appState, setAppState] = useState<AppState>({
+    isLoading: false,
+    error: null,
+    isSubmitting: false,
+    isDeletingId: null
+  });
+
+  // État du formulaire
+  const [formData, setFormData] = useState<ServiceFormData>({
+    nom: '',
+    organisme: '',
+    categorie: 'ADMINISTRATIF',
+    description: '',
+    duree: '',
+    cout: '',
+    status: 'ACTIVE',
+    documents_requis: [],
+    responsable: '',
+    telephone: '',
+    email: '',
+    lieu: '',
+    validite: ''
+  });
+
+  // État local des services pour simulation CRUD
+  const [localServices, setLocalServices] = useState<Service[]>([]);
+
+  // Récupération des vraies données depuis le fichier JSON (558 services)
   const realServices = useMemo(() => {
-    const services = getAllServices();
+    const services = getAllExpandedServices(); // Utiliser les 558 services étendus
     const organismeMapping = getOrganismeMapping();
-    
+
     return services.map((service, index) => {
       // Mapper les catégories du JSON aux catégories de l'interface
       const mapCategory = (nom: string) => {
@@ -79,21 +169,21 @@ export default function SuperAdminServicesPage() {
       // Générer des métriques réalistes basées sur l'index et le type de service
       const generateMetrics = (serviceNom: string, idx: number) => {
         const baseMetrics = {
-          'CNI_PREMIERE': { satisfaction: 87, demandes: 680, status: 'ACTIVE' },
-          'PASSEPORT_PREMIER': { satisfaction: 94, demandes: 450, status: 'ACTIVE' },
-          'PERMIS_CONDUIRE': { satisfaction: 76, demandes: 320, status: 'ACTIVE' },
-          'ACTE_NAISSANCE': { satisfaction: 92, demandes: 1200, status: 'ACTIVE' },
-          'IMMAT_CNSS': { satisfaction: 82, demandes: 180, status: 'MAINTENANCE' },
-          'CERT_MEDICAL': { satisfaction: 91, demandes: 125, status: 'ACTIVE' }
+          'CNI_PREMIERE': { satisfaction: 87, demandes: 680, status: 'ACTIVE' as const },
+          'PASSEPORT_PREMIER': { satisfaction: 94, demandes: 450, status: 'ACTIVE' as const },
+          'PERMIS_CONDUIRE': { satisfaction: 76, demandes: 320, status: 'ACTIVE' as const },
+          'ACTE_NAISSANCE': { satisfaction: 92, demandes: 1200, status: 'ACTIVE' as const },
+          'IMMAT_CNSS': { satisfaction: 82, demandes: 180, status: 'MAINTENANCE' as const },
+          'CERT_MEDICAL': { satisfaction: 91, demandes: 125, status: 'ACTIVE' as const }
         };
-        
+
         const serviceKey = service.code as keyof typeof baseMetrics;
         const base = baseMetrics[serviceKey] || {
           satisfaction: 75 + (idx % 20),
           demandes: 50 + (idx % 150),
-          status: idx % 10 === 0 ? 'MAINTENANCE' : 'ACTIVE'
+          status: (idx % 10 === 0 ? 'MAINTENANCE' : 'ACTIVE') as 'ACTIVE' | 'MAINTENANCE'
         };
-        
+
         return base;
       };
 
@@ -120,9 +210,19 @@ export default function SuperAdminServicesPage() {
         code_service: service.code,
         validite: service.validite || 'Variable',
         type_organisme: service.type_organisme
-      };
+      } satisfies Service;
     });
   }, []);
+
+  // Initialiser les services locaux au premier rendu
+  useEffect(() => {
+    if (localServices.length === 0) {
+      setLocalServices(realServices);
+    }
+  }, [realServices, localServices.length]);
+
+  // Services effectifs (locaux pour simulation CRUD)
+  const services = localServices.length > 0 ? localServices : realServices;
 
   // Catégories mises à jour pour correspondre aux vraies données
   const CATEGORIES = {
@@ -147,15 +247,15 @@ export default function SuperAdminServicesPage() {
 
   // Calculs de statistiques
   const stats = {
-    total: realServices.length,
-    active: realServices.filter(s => s.status === 'ACTIVE').length,
-    maintenance: realServices.filter(s => s.status === 'MAINTENANCE').length,
-    totalDemandes: realServices.reduce((sum, s) => sum + (s.demandes_mois || 0), 0),
+    total: services.length,
+    active: services.filter(s => s.status === 'ACTIVE').length,
+    maintenance: services.filter(s => s.status === 'MAINTENANCE').length,
+    totalDemandes: services.reduce((sum, s) => sum + (s.demandes_mois || 0), 0),
     satisfactionMoyenne: Math.round(
-      realServices.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / realServices.length
+      services.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / services.length
     ),
     categoriesUniques: Object.keys(CATEGORIES).length,
-    organismes: [...new Set(realServices.map(s => s.organisme))].length
+    organismes: [...new Set(services.map(s => s.organisme))].length
   };
 
   // Services par catégorie
@@ -163,17 +263,17 @@ export default function SuperAdminServicesPage() {
     categorie: cat,
     label: CATEGORIES[cat].label,
     color: CATEGORIES[cat].color,
-    count: realServices.filter(s => s.categorie === cat).length,
-    services: realServices.filter(s => s.categorie === cat),
+    count: services.filter(s => s.categorie === cat).length,
+    services: services.filter(s => s.categorie === cat),
     satisfactionMoyenne: Math.round(
-      realServices.filter(s => s.categorie === cat).reduce((sum, s) => sum + (s.satisfaction || 0), 0) / 
-      realServices.filter(s => s.categorie === cat).length
+      services.filter(s => s.categorie === cat).reduce((sum, s) => sum + (s.satisfaction || 0), 0) /
+      services.filter(s => s.categorie === cat).length
     ),
-    totalDemandes: realServices.filter(s => s.categorie === cat).reduce((sum, s) => sum + (s.demandes_mois || 0), 0)
+    totalDemandes: services.filter(s => s.categorie === cat).reduce((sum, s) => sum + (s.demandes_mois || 0), 0)
   }));
 
   // Filtrage
-  const filteredServices = realServices.filter(service => {
+  const filteredServices = services.filter(service => {
     const matchesSearch = service.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.organisme.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -183,15 +283,57 @@ export default function SuperAdminServicesPage() {
   });
 
   // Actions
-  const handleViewDetails = (service) => {
+  const handleViewDetails = (service: Service) => {
     setSelectedService(service);
     setIsDetailsOpen(true);
     toast.info(`Affichage des détails de ${service.nom}`);
   };
 
-  const handleEdit = (service) => {
+  const handleEdit = (service: Service) => {
+    setSelectedService(service);
+    setFormData({
+      nom: service.nom,
+      organisme: service.organisme,
+      categorie: service.categorie,
+      description: service.description,
+      duree: service.duree,
+      cout: service.cout,
+      status: service.status,
+      documents_requis: service.documents_requis,
+      responsable: service.responsable,
+      telephone: service.telephone,
+      email: service.email,
+      lieu: service.lieu,
+      validite: service.validite
+    });
+    setIsEditModalOpen(true);
     toast.info(`Modification du service ${service.nom}...`);
-    // TODO: Navigation vers page d'édition
+  };
+
+  const handleCreate = () => {
+    setSelectedService(null);
+    setFormData({
+      nom: '',
+      organisme: '',
+      categorie: 'ADMINISTRATIF',
+      description: '',
+      duree: '',
+      cout: '',
+      status: 'ACTIVE',
+      documents_requis: [],
+      responsable: '',
+      telephone: '',
+      email: '',
+      lieu: '',
+      validite: ''
+    });
+    setIsCreateModalOpen(true);
+    toast.info('Création d\'un nouveau service...');
+  };
+
+  const handleDelete = (service: Service) => {
+    setServiceToDelete(service);
+    setIsDeleteDialogOpen(true);
   };
 
   const handleNavigateToAdministrations = () => {
@@ -204,16 +346,179 @@ export default function SuperAdminServicesPage() {
     router.push('/super-admin/organisme/nouveau');
   };
 
+  const handleCloseModals = () => {
+    setIsDetailsOpen(false);
+    setIsEditModalOpen(false);
+    setIsCreateModalOpen(false);
+    setIsDeleteDialogOpen(false);
+    setServiceToDelete(null);
+  };
+
+     const validateForm = (): boolean => {
+     if (!formData.nom.trim()) {
+       toast.error('Le nom du service est requis.');
+       return false;
+     }
+     if (!formData.organisme.trim()) {
+       toast.error('L\'organisme responsable est requis.');
+       return false;
+     }
+     if (!formData.description.trim()) {
+       toast.error('La description est requise.');
+       return false;
+     }
+     if (!formData.duree.trim()) {
+       toast.error('La durée de traitement est requise.');
+       return false;
+     }
+     if (!formData.cout.trim()) {
+       toast.error('Le coût est requis.');
+       return false;
+     }
+     if (!formData.responsable.trim()) {
+       toast.error('Le responsable est requis.');
+       return false;
+     }
+     if (!formData.telephone.trim()) {
+       toast.error('Le numéro de téléphone est requis.');
+       return false;
+     }
+     if (!formData.lieu.trim()) {
+       toast.error('Le lieu est requis.');
+       return false;
+     }
+     if (formData.email && !formData.email.includes('@')) {
+       toast.error('L\'email doit être valide.');
+       return false;
+     }
+     return true;
+   };
+
+   const handleSubmitForm = async (e: React.FormEvent) => {
+     e.preventDefault();
+
+     if (!validateForm()) {
+       return;
+     }
+
+     setAppState(prev => ({ ...prev, isSubmitting: true }));
+
+     try {
+      const newService: Service = {
+        id: selectedService?.id || Date.now(), // Générer un ID unique
+        nom: formData.nom,
+        organisme: formData.organisme,
+        categorie: formData.categorie,
+        description: formData.description,
+        duree: formData.duree,
+        cout: formData.cout,
+        status: formData.status,
+        satisfaction: 0, // Aucune métrique générée ici, juste pour le type
+        demandes_mois: 0, // Aucune métrique générée ici, juste pour le type
+        documents_requis: formData.documents_requis,
+        responsable: formData.responsable,
+        telephone: formData.telephone,
+        email: formData.email,
+        derniere_maj: new Date().toISOString().split('T')[0],
+        lieu: formData.lieu,
+        code_service: '', // Pas de code_service dans le JSON, générer un ID unique
+        validite: formData.validite,
+        type_organisme: '' // Pas de type_organisme dans le JSON
+      };
+
+      if (selectedService) {
+                 // Modification
+         const updatedServices = localServices.map(s => s.id === selectedService.id ? { ...newService, satisfaction: s.satisfaction, demandes_mois: s.demandes_mois } : s);
+         setLocalServices(updatedServices);
+         toast.success(`Service "${newService.nom}" mis à jour avec succès !`);
+       } else {
+         // Création - générer des métriques initiales réalistes
+         newService.id = Date.now();
+         newService.satisfaction = Math.floor(Math.random() * 20) + 70; // Entre 70 et 90%
+         newService.demandes_mois = Math.floor(Math.random() * 100) + 20; // Entre 20 et 120
+         setLocalServices(prev => [...prev, newService]);
+         toast.success(`Service "${newService.nom}" créé avec succès !`);
+       }
+       handleCloseModals();
+              // Ne pas réinitialiser les filtres après modification pour un meilleur UX
+        if (!selectedService) {
+          resetFilters();
+        }
+    } catch (error) {
+      toast.error('Erreur lors de la sauvegarde du service.');
+      console.error(error);
+    } finally {
+      setAppState(prev => ({ ...prev, isSubmitting: false }));
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!serviceToDelete) return;
+
+    setAppState(prev => ({ ...prev, isDeletingId: serviceToDelete.id }));
+    try {
+      const updatedServices = localServices.filter(s => s.id !== serviceToDelete.id);
+             setLocalServices(updatedServices);
+       toast.success(`Service "${serviceToDelete.nom}" supprimé avec succès !`);
+       handleCloseModals();
+       resetFilters();
+    } catch (error) {
+      toast.error('Erreur lors de la suppression du service.');
+      console.error(error);
+    } finally {
+      setAppState(prev => ({ ...prev, isDeletingId: null }));
+    }
+  };
+
+  const handleCancel = () => {
+    handleCloseModals();
+    if (selectedService) {
+      setFormData({
+        nom: selectedService.nom,
+        organisme: selectedService.organisme,
+        categorie: selectedService.categorie,
+        description: selectedService.description,
+        duree: selectedService.duree,
+        cout: selectedService.cout,
+        status: selectedService.status,
+        documents_requis: selectedService.documents_requis,
+        responsable: selectedService.responsable,
+        telephone: selectedService.telephone,
+        email: selectedService.email,
+        lieu: selectedService.lieu,
+        validite: selectedService.validite
+      });
+    }
+  };
+
+    const resetFilters = useCallback(() => {
+    setSearchTerm('');
+    setSelectedCategorie('all');
+    setSelectedStatus('all');
+    toast.info('Filtres réinitialisés');
+  }, []);
+
   const exportToJSON = () => {
     try {
+      setAppState(prev => ({ ...prev, isLoading: true }));
+
       const dataStr = JSON.stringify({
         exported_at: new Date().toISOString(),
         total_services: stats.total,
         services: filteredServices,
         statistics: stats,
-        categories: servicesByCategory
+        categories: servicesByCategory,
+        export_metadata: {
+          filters_applied: {
+            search: searchTerm,
+            category: selectedCategorie,
+            status: selectedStatus
+          },
+          total_services_before_filter: services.length,
+          filtered_services_count: filteredServices.length
+        }
       }, null, 2);
-      
+
       const dataBlob = new Blob([dataStr], { type: 'application/json' });
       const url = URL.createObjectURL(dataBlob);
       const link = document.createElement('a');
@@ -221,10 +526,13 @@ export default function SuperAdminServicesPage() {
       link.download = `services-publics-gabon-${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       URL.revokeObjectURL(url);
-      
-      toast.success('Export JSON réussi !');
+
+      toast.success(`Export JSON réussi ! ${filteredServices.length} services exportés.`);
     } catch (error) {
       toast.error('Erreur lors de l\'export JSON');
+      console.error(error);
+    } finally {
+      setAppState(prev => ({ ...prev, isLoading: false }));
     }
   };
 
@@ -271,11 +579,15 @@ export default function SuperAdminServicesPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportToJSON}>
-              <Download className="mr-2 h-4 w-4" />
+            <Button variant="outline" onClick={exportToJSON} disabled={appState.isLoading}>
+              {appState.isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
               Export JSON
             </Button>
-            <Button onClick={handleNavigateToCreerOrganisme}>
+            <Button onClick={handleCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Nouveau Service
             </Button>
@@ -365,7 +677,7 @@ export default function SuperAdminServicesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {realServices
+                    {services
                       .sort((a, b) => (b.demandes_mois || 0) - (a.demandes_mois || 0))
                       .slice(0, 3)
                       .map((service, index) => (
@@ -397,7 +709,7 @@ export default function SuperAdminServicesPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {realServices
+                    {services
                       .sort((a, b) => (b.satisfaction || 0) - (a.satisfaction || 0))
                       .slice(0, 3)
                       .map((service, index) => (
@@ -496,12 +808,7 @@ export default function SuperAdminServicesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={() => {
-                    setSearchTerm('');
-                    setSelectedCategorie('all');
-                    setSelectedStatus('all');
-                    toast.info('Filtres réinitialisés');
-                  }}>
+                  <Button variant="outline" onClick={resetFilters}>
                     <Filter className="mr-2 h-4 w-4" />
                     Réinitialiser
                   </Button>
@@ -598,6 +905,18 @@ export default function SuperAdminServicesPage() {
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(service)}
+                                disabled={appState.isDeletingId === service.id}
+                              >
+                                {appState.isDeletingId === service.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3 w-3" />
+                                )}
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -613,11 +932,7 @@ export default function SuperAdminServicesPage() {
                     <p className="text-muted-foreground mb-4">
                       Aucun service ne correspond à vos critères de recherche.
                     </p>
-                    <Button variant="outline" onClick={() => {
-                      setSearchTerm('');
-                      setSelectedCategorie('all');
-                      setSelectedStatus('all');
-                    }}>
+                    <Button variant="outline" onClick={resetFilters}>
                       Réinitialiser les filtres
                     </Button>
                   </div>
@@ -662,9 +977,9 @@ export default function SuperAdminServicesPage() {
                         </p>
                       )}
                     </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full mt-4" 
+                    <Button
+                      variant="outline"
+                      className="w-full mt-4"
                       onClick={() => {
                         setSelectedCategorie(cat.categorie);
                         setSelectedTab('services');
@@ -695,7 +1010,7 @@ export default function SuperAdminServicesPage() {
                           <span className="text-muted-foreground">{cat.totalDemandes} demandes</span>
                         </div>
                         <div className="w-full bg-muted rounded-full h-2">
-                          <div 
+                          <div
                             className={`h-2 rounded-full transition-all duration-500 ${cat.color}`}
                             data-width={`${(cat.totalDemandes / stats.totalDemandes) * 100}%`}
                             ref={(el) => {
@@ -751,7 +1066,7 @@ export default function SuperAdminServicesPage() {
                 Informations complètes pour {selectedService?.nom}
               </DialogDescription>
             </DialogHeader>
-            
+
             {selectedService && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -823,19 +1138,245 @@ export default function SuperAdminServicesPage() {
                 </div>
               </div>
             )}
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
-                Fermer
-              </Button>
-              <Button onClick={() => handleEdit(selectedService)}>
-                <Edit className="mr-2 h-4 w-4" />
-                Modifier
-              </Button>
-            </DialogFooter>
+
+                          <DialogFooter>
+                <Button variant="outline" onClick={handleCloseModals}>
+                  Fermer
+                </Button>
+                <Button onClick={() => selectedService && handleEdit(selectedService)} disabled={!selectedService}>
+                  <Edit className="mr-2 h-4 w-4" />
+                  Modifier
+                </Button>
+              </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de création/modification */}
+        <Dialog open={isEditModalOpen || isCreateModalOpen} onOpenChange={handleCloseModals}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedService ? <Edit className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                {selectedService ? 'Modifier le Service' : 'Créer un Nouveau Service'}
+              </DialogTitle>
+              <DialogDescription>
+                {selectedService ? 'Modifiez les détails du service existant.' : 'Définissez les détails du nouveau service.'}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmitForm} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="nom">Nom du Service</Label>
+                  <Input
+                    id="nom"
+                    name="nom"
+                    value={formData.nom}
+                    onChange={(e) => setFormData(prev => ({ ...prev, nom: e.target.value }))}
+                    required
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="organisme">Organisme Responsable</Label>
+                  <Input
+                    id="organisme"
+                    name="organisme"
+                    value={formData.organisme}
+                    onChange={(e) => setFormData(prev => ({ ...prev, organisme: e.target.value }))}
+                    required
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="categorie">Catégorie</Label>
+                  <Select
+                    value={formData.categorie}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, categorie: value }))}
+                    disabled={appState.isSubmitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner une catégorie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(CATEGORIES).map(([value, config]) => (
+                        <SelectItem key={value} value={value}>{config.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="status">Statut</Label>
+                  <Select
+                    value={formData.status}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE' }))}
+                    disabled={appState.isSubmitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un statut" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUS_CONFIG).map(([value, config]) => (
+                        <SelectItem key={value} value={value}>{config.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    required
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="documents_requis">Documents Requis (séparés par une virgule)</Label>
+                  <Textarea
+                    id="documents_requis"
+                    name="documents_requis"
+                    value={formData.documents_requis.join(', ')}
+                    onChange={(e) => setFormData(prev => ({ ...prev, documents_requis: e.target.value.split(',').map(d => d.trim()) }))}
+                    placeholder="Ex: Attestation de domicile, Certificat de naissance, etc."
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="responsable">Responsable</Label>
+                  <Input
+                    id="responsable"
+                    name="responsable"
+                    value={formData.responsable}
+                    onChange={(e) => setFormData(prev => ({ ...prev, responsable: e.target.value }))}
+                    required
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="telephone">Téléphone</Label>
+                  <Input
+                    id="telephone"
+                    name="telephone"
+                    value={formData.telephone}
+                    onChange={(e) => setFormData(prev => ({ ...prev, telephone: e.target.value }))}
+                    required
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label htmlFor="lieu">Lieu</Label>
+                  <Input
+                    id="lieu"
+                    name="lieu"
+                    value={formData.lieu}
+                    onChange={(e) => setFormData(prev => ({ ...prev, lieu: e.target.value }))}
+                    required
+                    disabled={appState.isSubmitting}
+                  />
+                </div>
+                                 <div>
+                   <Label htmlFor="duree">Durée de Traitement</Label>
+                   <Input
+                     id="duree"
+                     name="duree"
+                     value={formData.duree}
+                     onChange={(e) => setFormData(prev => ({ ...prev, duree: e.target.value }))}
+                     placeholder="Ex: 5-7 jours ouvrables"
+                     required
+                     disabled={appState.isSubmitting}
+                   />
+                 </div>
+                 <div>
+                   <Label htmlFor="cout">Coût</Label>
+                   <Input
+                     id="cout"
+                     name="cout"
+                     value={formData.cout}
+                     onChange={(e) => setFormData(prev => ({ ...prev, cout: e.target.value }))}
+                     placeholder="Ex: 10 000 FCFA"
+                     required
+                     disabled={appState.isSubmitting}
+                   />
+                 </div>
+                 <div className="md:col-span-2">
+                   <Label htmlFor="validite">Validité</Label>
+                   <Input
+                     id="validite"
+                     name="validite"
+                     value={formData.validite}
+                     onChange={(e) => setFormData(prev => ({ ...prev, validite: e.target.value }))}
+                     placeholder="Ex: 5 ans, permanente"
+                     disabled={appState.isSubmitting}
+                   />
+                 </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleCancel} disabled={appState.isSubmitting}>
+                  <X className="mr-2 h-4 w-4" />
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={appState.isSubmitting}>
+                  {appState.isSubmitting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {selectedService ? 'Enregistrer les modifications' : 'Créer le service'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de confirmation de suppression */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                Êtes-vous absolument sûr de vouloir supprimer ce service ?
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible. Le service sera définitivement supprimé.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+                         <AlertDialogFooter>
+               <AlertDialogCancel onClick={handleCloseModals} disabled={appState.isDeletingId !== null}>
+                 Annuler
+               </AlertDialogCancel>
+               <AlertDialogAction
+                 onClick={handleDeleteConfirm}
+                 className="bg-red-600 hover:bg-red-700"
+                 disabled={appState.isDeletingId !== null}
+               >
+                 {appState.isDeletingId !== null ? (
+                   <>
+                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                     Suppression...
+                   </>
+                 ) : (
+                   <>
+                     <Trash2 className="mr-2 h-4 w-4" />
+                     Supprimer
+                   </>
+                 )}
+               </AlertDialogAction>
+             </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AuthenticatedLayout>
   );
-} 
+}

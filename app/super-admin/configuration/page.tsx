@@ -1,4 +1,3 @@
-/* @ts-nocheck */
 'use client';
 
 import { useState } from 'react';
@@ -11,10 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
-import { 
-  Settings, 
-  Save, 
+import { ConfigurationErrorDisplay } from '@/components/configuration/configuration-error-display';
+import { ConfigurationImportExport } from '@/components/configuration/configuration-import-export';
+import { useConfiguration } from '@/hooks/use-configuration';
+import {
+  Settings,
+  Save,
   RefreshCw,
   Mail,
   Smartphone,
@@ -34,102 +37,78 @@ import {
   Download,
   AlertTriangle,
   CheckCircle,
-  Bell
+  Bell,
+  TestTube,
+  History
 } from 'lucide-react';
 
-// Configuration mock
-const initialConfig = {
-  general: {
-    siteName: 'Administration.GA',
-    siteDescription: 'Plateforme numérique de l\'administration gabonaise',
-    maintenanceMode: false,
-    allowRegistration: true,
-    defaultLanguage: 'fr',
-    timezone: 'Africa/Libreville'
-  },
-  notifications: {
-    emailEnabled: true,
-    smsEnabled: true,
-    pushEnabled: true,
-    whatsappEnabled: false,
-    defaultEmailTemplate: 'modern',
-    smtpHost: 'smtp.admin.ga',
-    smtpPort: '587',
-    smtpUser: 'noreply@admin.ga',
-    smtpPassword: '••••••••',
-    smsProvider: 'Airtel',
-    smsApiKey: '••••••••'
-  },
-  security: {
-    passwordMinLength: 8,
-    passwordRequireUppercase: true,
-    passwordRequireNumbers: true,
-    passwordRequireSymbols: true,
-    sessionTimeout: 30,
-    maxLoginAttempts: 5,
-    lockoutDuration: 15,
-    twoFactorEnabled: false,
-    ipWhitelist: [],
-    securityHeaders: true
-  },
-  performance: {
-    cacheEnabled: true,
-    cacheDuration: 3600,
-    compressionEnabled: true,
-    cdnEnabled: false,
-    cdnUrl: '',
-    maxFileSize: 10,
-    allowedFileTypes: ['pdf', 'jpg', 'png', 'docx'],
-    databaseBackupSchedule: 'daily',
-    logRetentionDays: 30
-  },
-  integrations: {
-    analyticsEnabled: true,
-    analyticsProvider: 'internal',
-    paymentGateway: 'airtel_money',
-    documentSignature: 'docusign',
-    identityVerification: 'gabonese_id',
-    mapProvider: 'openstreetmap',
-    videoConferencing: 'zoom'
-  },
-  workflow: {
-    autoAssignment: true,
-    escalationEnabled: true,
-    escalationThreshold: 48,
-    reminderSchedule: 24,
-    approvalWorkflow: true,
-    documentValidation: 'manual',
-    qualityControl: true
-  }
-};
-
 export default function SuperAdminConfigurationPage() {
-  const [config, setConfig] = useState(initialConfig);
+  const {
+    config,
+    isLoading,
+    isSaving,
+    isExporting,
+    isImporting,
+    unsavedChanges,
+    errors,
+    lastSaved,
+    hasErrors,
+    hasCriticalErrors,
+    isReady,
+    updateConfig,
+    saveConfiguration,
+    exportConfiguration,
+    importConfiguration,
+    resetToDefaults,
+    testConfiguration,
+    confirmUnsavedChanges
+  } = useConfiguration();
+
   const [activeTab, setActiveTab] = useState('general');
   const [showPasswords, setShowPasswords] = useState(false);
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [showImportExport, setShowImportExport] = useState(false);
 
-  const updateConfig = (section, key, value) => {
-    setConfig(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [key]: value
-      }
-    }));
-    setUnsavedChanges(true);
+  const handleTabChange = (value: string) => {
+    if (unsavedChanges && !confirmUnsavedChanges()) {
+      return;
+    }
+    setActiveTab(value);
   };
 
-  const saveConfiguration = () => {
-    console.log('Sauvegarde de la configuration:', config);
-    setUnsavedChanges(false);
-    // Ici on ferait l'appel API
+  const handleSave = async () => {
+    const result = await saveConfiguration();
+    return result;
   };
 
-  const resetToDefaults = () => {
-    setConfig(initialConfig);
-    setUnsavedChanges(true);
+  const handleReset = async () => {
+    if (window.confirm('Êtes-vous sûr de vouloir réinitialiser la configuration aux valeurs par défaut ?')) {
+      await resetToDefaults();
+    }
   };
+
+  const handleTest = async () => {
+    await testConfiguration();
+  };
+
+  if (isLoading || !isReady || !config || !config.general) {
+    return (
+      <AuthenticatedLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <Skeleton className="h-8 w-64 mb-2" />
+              <Skeleton className="h-4 w-96" />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-32" />
+            </div>
+          </div>
+          <Skeleton className="h-96 w-full" />
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
 
   return (
     <AuthenticatedLayout>
@@ -144,26 +123,92 @@ export default function SuperAdminConfigurationPage() {
             <p className="text-muted-foreground">
               Paramètres globaux et configuration de la plateforme
             </p>
+            {lastSaved && (
+              <p className="text-xs text-muted-foreground mt-1">
+                <History className="h-3 w-3 inline mr-1" />
+                Dernière sauvegarde: {lastSaved.toLocaleString('fr-FR')}
+              </p>
+            )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {unsavedChanges && (
-              <Badge variant="outline" className="text-orange-600">
+              <Badge variant="outline" className="text-orange-600 border-orange-300">
+                <Clock className="h-3 w-3 mr-1" />
                 Modifications non sauvegardées
               </Badge>
             )}
-            <Button variant="outline" onClick={resetToDefaults}>
+            {hasErrors && (
+              <Badge variant={hasCriticalErrors ? "destructive" : "outline"} className={hasCriticalErrors ? "" : "text-yellow-600 border-yellow-300"}>
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {hasCriticalErrors ? "Erreurs critiques" : "Avertissements"}
+              </Badge>
+            )}
+            <Button
+              variant="outline"
+              onClick={handleTest}
+              disabled={isSaving}
+            >
+              <TestTube className="mr-2 h-4 w-4" />
+              Tester
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowImportExport(!showImportExport)}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Import/Export
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={isSaving}
+            >
               <RefreshCw className="mr-2 h-4 w-4" />
               Réinitialiser
             </Button>
-            <Button onClick={saveConfiguration}>
-              <Save className="mr-2 h-4 w-4" />
-              Sauvegarder
+            <Button
+              onClick={handleSave}
+              disabled={isSaving || hasCriticalErrors}
+              className="min-w-[120px]"
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Sauvegarde...</span>
+                </div>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Sauvegarder
+                </>
+              )}
             </Button>
           </div>
         </div>
 
+        {/* Affichage des erreurs */}
+        {hasErrors && (
+          <ConfigurationErrorDisplay
+            errors={errors}
+            onFixError={(error) => {
+              // Naviguer vers l'onglet approprié
+              setActiveTab(error.section);
+            }}
+          />
+        )}
+
+        {/* Section Import/Export */}
+        {showImportExport && (
+          <ConfigurationImportExport
+            onExport={exportConfiguration}
+            onImport={importConfiguration}
+            isExporting={isExporting}
+            isImporting={isImporting}
+          />
+        )}
+
         {/* Onglets de configuration */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="general">Général</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -186,7 +231,7 @@ export default function SuperAdminConfigurationPage() {
                     <Label htmlFor="siteName">Nom du site</Label>
                     <Input
                       id="siteName"
-                      value={config.general.siteName}
+                      value={config.general?.siteName || ''}
                       onChange={(e) => updateConfig('general', 'siteName', e.target.value)}
                     />
                   </div>
@@ -195,7 +240,7 @@ export default function SuperAdminConfigurationPage() {
                     <Label htmlFor="siteDescription">Description</Label>
                     <Textarea
                       id="siteDescription"
-                      value={config.general.siteDescription}
+                      value={config.general?.siteDescription || ''}
                       onChange={(e) => updateConfig('general', 'siteDescription', e.target.value)}
                       rows={3}
                     />
@@ -203,8 +248,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="defaultLanguage">Langue par défaut</Label>
-                    <Select 
-                      value={config.general.defaultLanguage} 
+                    <Select
+                      value={config.general?.defaultLanguage || 'fr'}
                       onValueChange={(value) => updateConfig('general', 'defaultLanguage', value)}
                     >
                       <SelectTrigger>
@@ -219,8 +264,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="timezone">Fuseau horaire</Label>
-                    <Select 
-                      value={config.general.timezone} 
+                    <Select
+                      value={config.general?.timezone || 'Africa/Libreville'}
                       onValueChange={(value) => updateConfig('general', 'timezone', value)}
                     >
                       <SelectTrigger>
@@ -249,7 +294,7 @@ export default function SuperAdminConfigurationPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={config.general.maintenanceMode}
+                      checked={config.general?.maintenanceMode || false}
                       onCheckedChange={(checked) => updateConfig('general', 'maintenanceMode', checked)}
                     />
                   </div>
@@ -262,7 +307,7 @@ export default function SuperAdminConfigurationPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={config.general.allowRegistration}
+                      checked={config.general?.allowRegistration || false}
                       onCheckedChange={(checked) => updateConfig('general', 'allowRegistration', checked)}
                     />
                   </div>
@@ -289,7 +334,7 @@ export default function SuperAdminConfigurationPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={config.notifications.emailEnabled}
+                      checked={config.notifications?.emailEnabled || false}
                       onCheckedChange={(checked) => updateConfig('notifications', 'emailEnabled', checked)}
                     />
                   </div>
@@ -303,7 +348,7 @@ export default function SuperAdminConfigurationPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={config.notifications.smsEnabled}
+                      checked={config.notifications?.smsEnabled || false}
                       onCheckedChange={(checked) => updateConfig('notifications', 'smsEnabled', checked)}
                     />
                   </div>
@@ -317,7 +362,7 @@ export default function SuperAdminConfigurationPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={config.notifications.pushEnabled}
+                      checked={config.notifications?.pushEnabled || false}
                       onCheckedChange={(checked) => updateConfig('notifications', 'pushEnabled', checked)}
                     />
                   </div>
@@ -331,7 +376,7 @@ export default function SuperAdminConfigurationPage() {
                       </div>
                     </div>
                     <Switch
-                      checked={config.notifications.whatsappEnabled}
+                      checked={config.notifications?.whatsappEnabled || false}
                       onCheckedChange={(checked) => updateConfig('notifications', 'whatsappEnabled', checked)}
                     />
                   </div>
@@ -348,7 +393,7 @@ export default function SuperAdminConfigurationPage() {
                     <Label htmlFor="smtpHost">Serveur SMTP</Label>
                     <Input
                       id="smtpHost"
-                      value={config.notifications.smtpHost}
+                      value={config.notifications?.smtpHost || ''}
                       onChange={(e) => updateConfig('notifications', 'smtpHost', e.target.value)}
                     />
                   </div>
@@ -358,7 +403,7 @@ export default function SuperAdminConfigurationPage() {
                       <Label htmlFor="smtpPort">Port</Label>
                       <Input
                         id="smtpPort"
-                        value={config.notifications.smtpPort}
+                        value={config.notifications?.smtpPort || ''}
                         onChange={(e) => updateConfig('notifications', 'smtpPort', e.target.value)}
                       />
                     </div>
@@ -366,7 +411,7 @@ export default function SuperAdminConfigurationPage() {
                       <Label htmlFor="smtpUser">Utilisateur</Label>
                       <Input
                         id="smtpUser"
-                        value={config.notifications.smtpUser}
+                        value={config.notifications?.smtpUser || ''}
                         onChange={(e) => updateConfig('notifications', 'smtpUser', e.target.value)}
                       />
                     </div>
@@ -378,7 +423,7 @@ export default function SuperAdminConfigurationPage() {
                       <Input
                         id="smtpPassword"
                         type={showPasswords ? 'text' : 'password'}
-                        value={config.notifications.smtpPassword}
+                        value={config.notifications?.smtpPassword || ''}
                         onChange={(e) => updateConfig('notifications', 'smtpPassword', e.target.value)}
                       />
                       <Button
@@ -395,8 +440,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="smsProvider">Fournisseur SMS</Label>
-                    <Select 
-                      value={config.notifications.smsProvider} 
+                    <Select
+                      value={config.notifications?.smsProvider || 'Airtel'}
                       onValueChange={(value) => updateConfig('notifications', 'smsProvider', value)}
                     >
                       <SelectTrigger>
@@ -427,7 +472,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="passwordMinLength"
                       type="number"
-                      value={config.security.passwordMinLength}
+                      value={config.security?.passwordMinLength || 8}
                       onChange={(e) => updateConfig('security', 'passwordMinLength', parseInt(e.target.value))}
                     />
                   </div>
@@ -436,7 +481,7 @@ export default function SuperAdminConfigurationPage() {
                     <div className="flex items-center justify-between">
                       <Label>Majuscules requises</Label>
                       <Switch
-                        checked={config.security.passwordRequireUppercase}
+                        checked={config.security?.passwordRequireUppercase || false}
                         onCheckedChange={(checked) => updateConfig('security', 'passwordRequireUppercase', checked)}
                       />
                     </div>
@@ -444,7 +489,7 @@ export default function SuperAdminConfigurationPage() {
                     <div className="flex items-center justify-between">
                       <Label>Chiffres requis</Label>
                       <Switch
-                        checked={config.security.passwordRequireNumbers}
+                        checked={config.security?.passwordRequireNumbers || false}
                         onCheckedChange={(checked) => updateConfig('security', 'passwordRequireNumbers', checked)}
                       />
                     </div>
@@ -452,7 +497,7 @@ export default function SuperAdminConfigurationPage() {
                     <div className="flex items-center justify-between">
                       <Label>Symboles requis</Label>
                       <Switch
-                        checked={config.security.passwordRequireSymbols}
+                        checked={config.security?.passwordRequireSymbols || false}
                         onCheckedChange={(checked) => updateConfig('security', 'passwordRequireSymbols', checked)}
                       />
                     </div>
@@ -471,7 +516,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="sessionTimeout"
                       type="number"
-                      value={config.security.sessionTimeout}
+                      value={config.security?.sessionTimeout || 30}
                       onChange={(e) => updateConfig('security', 'sessionTimeout', parseInt(e.target.value))}
                     />
                   </div>
@@ -481,7 +526,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="maxLoginAttempts"
                       type="number"
-                      value={config.security.maxLoginAttempts}
+                      value={config.security?.maxLoginAttempts || 5}
                       onChange={(e) => updateConfig('security', 'maxLoginAttempts', parseInt(e.target.value))}
                     />
                   </div>
@@ -491,7 +536,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="lockoutDuration"
                       type="number"
-                      value={config.security.lockoutDuration}
+                      value={config.security?.lockoutDuration || 15}
                       onChange={(e) => updateConfig('security', 'lockoutDuration', parseInt(e.target.value))}
                     />
                   </div>
@@ -502,7 +547,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Double authentification</p>
                     </div>
                     <Switch
-                      checked={config.security.twoFactorEnabled}
+                      checked={config.security?.twoFactorEnabled || false}
                       onCheckedChange={(checked) => updateConfig('security', 'twoFactorEnabled', checked)}
                     />
                   </div>
@@ -526,7 +571,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Cache en mémoire des pages</p>
                     </div>
                     <Switch
-                      checked={config.performance.cacheEnabled}
+                      checked={config.performance?.cacheEnabled || false}
                       onCheckedChange={(checked) => updateConfig('performance', 'cacheEnabled', checked)}
                     />
                   </div>
@@ -536,7 +581,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="cacheDuration"
                       type="number"
-                      value={config.performance.cacheDuration}
+                      value={config.performance?.cacheDuration || 3600}
                       onChange={(e) => updateConfig('performance', 'cacheDuration', parseInt(e.target.value))}
                     />
                   </div>
@@ -547,7 +592,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Compression Gzip des réponses</p>
                     </div>
                     <Switch
-                      checked={config.performance.compressionEnabled}
+                      checked={config.performance?.compressionEnabled || false}
                       onCheckedChange={(checked) => updateConfig('performance', 'compressionEnabled', checked)}
                     />
                   </div>
@@ -558,7 +603,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Réseau de distribution de contenu</p>
                     </div>
                     <Switch
-                      checked={config.performance.cdnEnabled}
+                      checked={config.performance?.cdnEnabled || false}
                       onCheckedChange={(checked) => updateConfig('performance', 'cdnEnabled', checked)}
                     />
                   </div>
@@ -576,7 +621,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="maxFileSize"
                       type="number"
-                      value={config.performance.maxFileSize}
+                      value={config.performance?.maxFileSize || 10}
                       onChange={(e) => updateConfig('performance', 'maxFileSize', parseInt(e.target.value))}
                     />
                   </div>
@@ -585,7 +630,7 @@ export default function SuperAdminConfigurationPage() {
                     <Label htmlFor="allowedFileTypes">Types autorisés</Label>
                     <Input
                       id="allowedFileTypes"
-                      value={config.performance.allowedFileTypes.join(', ')}
+                      value={config.performance?.allowedFileTypes?.join(', ') || 'pdf, jpg, png, docx'}
                       onChange={(e) => updateConfig('performance', 'allowedFileTypes', e.target.value.split(', '))}
                       placeholder="pdf, jpg, png, docx"
                     />
@@ -593,8 +638,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="backupSchedule">Fréquence sauvegarde</Label>
-                    <Select 
-                      value={config.performance.databaseBackupSchedule} 
+                    <Select
+                      value={config.performance?.databaseBackupSchedule || 'daily'}
                       onValueChange={(value) => updateConfig('performance', 'databaseBackupSchedule', value)}
                     >
                       <SelectTrigger>
@@ -613,7 +658,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="logRetention"
                       type="number"
-                      value={config.performance.logRetentionDays}
+                      value={config.performance?.logRetentionDays || 30}
                       onChange={(e) => updateConfig('performance', 'logRetentionDays', parseInt(e.target.value))}
                     />
                   </div>
@@ -633,8 +678,8 @@ export default function SuperAdminConfigurationPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="paymentGateway">Passerelle de paiement</Label>
-                    <Select 
-                      value={config.integrations.paymentGateway} 
+                    <Select
+                      value={config.integrations?.paymentGateway || 'airtel_money'}
                       onValueChange={(value) => updateConfig('integrations', 'paymentGateway', value)}
                     >
                       <SelectTrigger>
@@ -650,8 +695,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="documentSignature">Signature électronique</Label>
-                    <Select 
-                      value={config.integrations.documentSignature} 
+                    <Select
+                      value={config.integrations?.documentSignature || 'internal'}
                       onValueChange={(value) => updateConfig('integrations', 'documentSignature', value)}
                     >
                       <SelectTrigger>
@@ -667,8 +712,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="identityVerification">Vérification d'identité</Label>
-                    <Select 
-                      value={config.integrations.identityVerification} 
+                    <Select
+                      value={config.integrations?.identityVerification || 'gabonese_id'}
                       onValueChange={(value) => updateConfig('integrations', 'identityVerification', value)}
                     >
                       <SelectTrigger>
@@ -696,15 +741,15 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Collecte de données d'usage</p>
                     </div>
                     <Switch
-                      checked={config.integrations.analyticsEnabled}
+                      checked={config.integrations?.analyticsEnabled || false}
                       onCheckedChange={(checked) => updateConfig('integrations', 'analyticsEnabled', checked)}
                     />
                   </div>
 
                   <div>
                     <Label htmlFor="analyticsProvider">Fournisseur analytics</Label>
-                    <Select 
-                      value={config.integrations.analyticsProvider} 
+                    <Select
+                      value={config.integrations?.analyticsProvider || 'internal'}
                       onValueChange={(value) => updateConfig('integrations', 'analyticsProvider', value)}
                     >
                       <SelectTrigger>
@@ -720,8 +765,8 @@ export default function SuperAdminConfigurationPage() {
 
                   <div>
                     <Label htmlFor="mapProvider">Fournisseur de cartes</Label>
-                    <Select 
-                      value={config.integrations.mapProvider} 
+                    <Select
+                      value={config.integrations?.mapProvider || 'openstreetmap'}
                       onValueChange={(value) => updateConfig('integrations', 'mapProvider', value)}
                     >
                       <SelectTrigger>
@@ -754,7 +799,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Assigner les demandes automatiquement</p>
                     </div>
                     <Switch
-                      checked={config.workflow.autoAssignment}
+                      checked={config.workflow?.autoAssignment || false}
                       onCheckedChange={(checked) => updateConfig('workflow', 'autoAssignment', checked)}
                     />
                   </div>
@@ -765,7 +810,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Escalader les demandes en retard</p>
                     </div>
                     <Switch
-                      checked={config.workflow.escalationEnabled}
+                      checked={config.workflow?.escalationEnabled || false}
                       onCheckedChange={(checked) => updateConfig('workflow', 'escalationEnabled', checked)}
                     />
                   </div>
@@ -775,7 +820,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="escalationThreshold"
                       type="number"
-                      value={config.workflow.escalationThreshold}
+                      value={config.workflow?.escalationThreshold || 24}
                       onChange={(e) => updateConfig('workflow', 'escalationThreshold', parseInt(e.target.value))}
                     />
                   </div>
@@ -785,7 +830,7 @@ export default function SuperAdminConfigurationPage() {
                     <Input
                       id="reminderSchedule"
                       type="number"
-                      value={config.workflow.reminderSchedule}
+                      value={config.workflow?.reminderSchedule || 12}
                       onChange={(e) => updateConfig('workflow', 'reminderSchedule', parseInt(e.target.value))}
                     />
                   </div>
@@ -804,15 +849,15 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Validation hiérarchique requise</p>
                     </div>
                     <Switch
-                      checked={config.workflow.approvalWorkflow}
+                      checked={config.workflow?.approvalWorkflow || false}
                       onCheckedChange={(checked) => updateConfig('workflow', 'approvalWorkflow', checked)}
                     />
                   </div>
 
                   <div>
                     <Label htmlFor="documentValidation">Validation documents</Label>
-                    <Select 
-                      value={config.workflow.documentValidation} 
+                    <Select
+                      value={config.workflow?.documentValidation || 'manual'}
                       onValueChange={(value) => updateConfig('workflow', 'documentValidation', value)}
                     >
                       <SelectTrigger>
@@ -832,7 +877,7 @@ export default function SuperAdminConfigurationPage() {
                       <p className="text-sm text-muted-foreground">Vérification aléatoire des traitements</p>
                     </div>
                     <Switch
-                      checked={config.workflow.qualityControl}
+                      checked={config.workflow?.qualityControl || false}
                       onCheckedChange={(checked) => updateConfig('workflow', 'qualityControl', checked)}
                     />
                   </div>
@@ -842,28 +887,76 @@ export default function SuperAdminConfigurationPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Actions finales */}
-        <Card>
+        {/* État de la configuration */}
+        <Card className={`transition-colors ${
+          unsavedChanges ? 'border-orange-200' :
+          hasErrors ? 'border-red-200' :
+          'border-green-200'
+        }`}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold">État de la configuration</h3>
+              <div className="space-y-1">
+                <h3 className="font-semibold flex items-center gap-2">
+                  {unsavedChanges ? (
+                    <Clock className="h-4 w-4 text-orange-500" />
+                  ) : hasErrors ? (
+                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  )}
+                  État de la configuration
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  {unsavedChanges ? 'Modifications en attente de sauvegarde' : 'Configuration synchronisée'}
+                  {unsavedChanges
+                    ? 'Modifications en attente de sauvegarde'
+                    : hasErrors
+                    ? 'Configuration avec avertissements'
+                    : 'Configuration synchronisée et fonctionnelle'
+                  }
                 </p>
+                {lastSaved && !unsavedChanges && (
+                  <p className="text-xs text-muted-foreground">
+                    Dernière synchronisation: {lastSaved.toLocaleString('fr-FR')}
+                  </p>
+                )}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline">
-                  <Download className="mr-2 h-4 w-4" />
-                  Exporter config
+                <Button
+                  variant="outline"
+                  onClick={exportConfiguration}
+                  disabled={isExporting || isSaving}
+                >
+                  {isExporting ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                      <span>Export...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Exporter
+                    </>
+                  )}
                 </Button>
-                <Button variant="outline">
-                  <Upload className="mr-2 h-4 w-4" />
-                  Importer config
-                </Button>
-                <Button onClick={saveConfiguration} disabled={!unsavedChanges}>
-                  <Save className="mr-2 h-4 w-4" />
-                  {unsavedChanges ? 'Sauvegarder les modifications' : 'Configuration sauvegardée'}
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving || hasCriticalErrors || (!unsavedChanges && !hasErrors)}
+                  className="min-w-[160px]"
+                >
+                  {isSaving ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Sauvegarde...</span>
+                    </div>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      {unsavedChanges
+                        ? 'Sauvegarder les modifications'
+                        : 'Configuration à jour'
+                      }
+                    </>
+                  )}
                 </Button>
               </div>
             </div>
@@ -872,4 +965,4 @@ export default function SuperAdminConfigurationPage() {
       </div>
     </AuthenticatedLayout>
   );
-} 
+}

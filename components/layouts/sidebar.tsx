@@ -19,21 +19,16 @@ import {
   TrendingUp,
   UserCheck,
   Network,
-  Crown
+  Crown,
+  Home
 } from 'lucide-react';
 
 const navigationItems = [
   {
-    title: 'Vue d\'ensemble',
-    href: '/super-admin/dashboard',
-    icon: BarChart3,
-    description: 'Tableau de bord principal'
-  },
-  {
-    title: 'Analytics Avancées',
-    href: '/super-admin/dashboard-v2',
-    icon: TrendingUp,
-    description: 'Analyses détaillées du système'
+    title: 'Tableau de Bord',
+    href: '/super-admin/dashboard-unified',
+    icon: Home,
+    description: 'Vue d\'ensemble complète du système'
   },
   {
     title: 'Gestion Organismes',
