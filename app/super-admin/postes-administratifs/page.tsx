@@ -53,6 +53,16 @@ import {
   type CategoriePoste
 } from '@/lib/data/postes-administratifs';
 
+import {
+  POSTES_PAR_TYPE_ORGANISME,
+  genererComptesParOrganisme,
+  genererTousLesComptes,
+  getStatistiquesComptes,
+  type CompteUtilisateur
+} from '@/lib/data/postes-administratifs-gabon';
+
+import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
+
 // Types pour la gestion d'état
 interface FormData {
   // Informations personnelles
@@ -86,6 +96,12 @@ export default function PostesAdministratifsPage() {
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const [selectedPoste, setSelectedPoste] = useState<PosteAdministratif | null>(null);
+
+  // États pour les comptes utilisateurs des 160 organismes
+  const [comptesGeneres, setComptesGeneres] = useState<CompteUtilisateur[]>([]);
+  const [organismeSelectionne, setOrganismeSelectionne] = useState<string>('');
+  const [comptesParOrganisme, setComptesParOrganisme] = useState<Record<string, CompteUtilisateur[]>>({});
+  const [generationEnCours, setGenerationEnCours] = useState(false);
 
   // États pour le formulaire de création
   const [formData, setFormData] = useState<FormData>({
@@ -143,6 +159,51 @@ export default function PostesAdministratifsPage() {
     postesAdmin: CATEGORIES_POSTES.find(c => c.id === 'administratif')?.postes.length || 0,
     postesOperationnels: CATEGORIES_POSTES.find(c => c.id === 'operationnel')?.postes.length || 0
   };
+
+  // Données des 160 organismes
+  const organismes = Object.values(ORGANISMES_ENRICHIS_GABON);
+
+  // Fonctions pour la génération de comptes
+  const genererComptesTousOrganismes = async () => {
+    setGenerationEnCours(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulation
+      const comptes = genererTousLesComptes(organismes);
+      setComptesGeneres(comptes);
+
+      // Organiser par organisme
+      const comptesParOrg: Record<string, CompteUtilisateur[]> = {};
+      comptes.forEach(compte => {
+        if (!comptesParOrg[compte.organismeId]) {
+          comptesParOrg[compte.organismeId] = [];
+        }
+        comptesParOrg[compte.organismeId].push(compte);
+      });
+      setComptesParOrganisme(comptesParOrg);
+
+      toast.success(`✅ ${comptes.length} comptes générés pour 160 organismes`);
+    } catch (error) {
+      toast.error('Erreur lors de la génération des comptes');
+    } finally {
+      setGenerationEnCours(false);
+    }
+  };
+
+  const genererComptesOrganisme = (organismeCode: string) => {
+    const organisme = organismes.find(org => org.code === organismeCode);
+    if (!organisme) return;
+
+    const comptes = genererComptesParOrganisme(organisme);
+    setComptesParOrganisme(prev => ({
+      ...prev,
+      [organismeCode]: comptes
+    }));
+
+    toast.success(`✅ ${comptes.length} comptes générés pour ${organisme.nom}`);
+  };
+
+  // Statistiques des comptes générés
+  const statsComptes = comptesGeneres.length > 0 ? getStatistiquesComptes(comptesGeneres) : null;
 
   // Fonctions utilitaires
   const getCategorieIcon = (categorieId: string) => {
@@ -435,11 +496,12 @@ export default function PostesAdministratifsPage() {
         </div>
 
         <Tabs defaultValue="postes" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="postes">Tous les Postes</TabsTrigger>
             <TabsTrigger value="categories">Par Catégories</TabsTrigger>
             <TabsTrigger value="grades">Par Grades</TabsTrigger>
             <TabsTrigger value="directions">Directions Standards</TabsTrigger>
+            <TabsTrigger value="comptes-organismes">Comptes Organismes</TabsTrigger>
             <TabsTrigger value="creation">Créer Compte</TabsTrigger>
           </TabsList>
 
@@ -715,6 +777,183 @@ export default function PostesAdministratifsPage() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Onglet Comptes Organismes */}
+          <TabsContent value="comptes-organismes" className="space-y-6">
+            {/* Header avec génération globale */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-6 w-6" />
+                      Comptes Utilisateurs par Organisme
+                    </CardTitle>
+                    <CardDescription>
+                      Génération automatique des comptes selon la hiérarchie administrative gabonaise
+                    </CardDescription>
+                  </div>
+                  <Button
+                    onClick={genererComptesTousOrganismes}
+                    disabled={generationEnCours}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {generationEnCours ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Génération...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Générer 160 Organismes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardHeader>
+
+              {statsComptes && (
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <p className="text-sm text-blue-600">Total Comptes</p>
+                      <p className="text-2xl font-bold text-blue-700">{statsComptes.total}</p>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <p className="text-sm text-green-600">Directeurs</p>
+                      <p className="text-2xl font-bold text-green-700">{statsComptes.parRole.ADMIN}</p>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <p className="text-sm text-purple-600">Managers</p>
+                      <p className="text-2xl font-bold text-purple-700">{statsComptes.parRole.MANAGER}</p>
+                    </div>
+                    <div className="bg-orange-50 p-4 rounded-lg">
+                      <p className="text-sm text-orange-600">Agents</p>
+                      <p className="text-2xl font-bold text-orange-700">{statsComptes.parRole.AGENT}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              )}
+            </Card>
+
+            {/* Sélection d'organisme */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Sélectionner un Organisme</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Select value={organismeSelectionne} onValueChange={setOrganismeSelectionne}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choisir un organisme..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {organismes.map((org) => (
+                        <SelectItem key={org.code} value={org.code}>
+                          <div className="flex items-center gap-2">
+                            <Building2 className="h-4 w-4" />
+                            {org.nom}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button
+                    onClick={() => organismeSelectionne && genererComptesOrganisme(organismeSelectionne)}
+                    disabled={!organismeSelectionne}
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Générer Comptes
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Affichage des comptes par organisme */}
+            {organismeSelectionne && comptesParOrganisme[organismeSelectionne] && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    Comptes - {organismes.find(o => o.code === organismeSelectionne)?.nom}
+                  </CardTitle>
+                  <CardDescription>
+                    {comptesParOrganisme[organismeSelectionne].length} comptes générés selon la hiérarchie administrative
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {comptesParOrganisme[organismeSelectionne].map((compte) => (
+                      <div key={compte.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="font-semibold">{compte.prenom} {compte.nom}</p>
+                            <p className="text-sm text-gray-600">{compte.poste}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Email</p>
+                            <p className="font-mono text-sm">{compte.email}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Téléphone</p>
+                            <p className="text-sm">{compte.phone}</p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={
+                                compte.role === 'ADMIN' ? 'default' :
+                                compte.role === 'MANAGER' ? 'secondary' : 'outline'
+                              }
+                            >
+                              {compte.role}
+                            </Badge>
+                            <Badge variant="outline">
+                              Niveau {compte.niveau}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Affichage global si comptes générés */}
+            {comptesGeneres.length > 0 && !organismeSelectionne && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Tous les Comptes Générés ({comptesGeneres.length})</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
+                    {Object.entries(comptesParOrganisme).map(([orgCode, comptes]) => (
+                      <div key={orgCode} className="border rounded p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium">
+                              {organismes.find(o => o.code === orgCode)?.nom}
+                            </p>
+                            <p className="text-sm text-gray-600">{comptes.length} comptes</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setOrganismeSelectionne(orgCode)}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Voir
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Onglet Création de Compte */}

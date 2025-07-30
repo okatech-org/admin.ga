@@ -846,13 +846,13 @@ export default function SuperAdminServicesPage() {
                   </span>
                 )}
                 {appState.lastSyncTime && (
-                  <span className="block text-xs text-green-600 mt-1 flex items-center gap-1">
+                  <span className="flex text-xs text-green-600 mt-1 items-center gap-1">
                     <CheckCircle2 className="h-3 w-3" />
                     Dernière sync: {appState.lastSyncTime.toLocaleTimeString()}
                   </span>
                 )}
                 {appState.error && (
-                  <span className="block text-xs text-red-600 mt-1 flex items-center gap-1">
+                  <span className="flex text-xs text-red-600 mt-1 items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
                     Erreur: {appState.error}
                   </span>

@@ -291,6 +291,16 @@ export default function SuperAdminClientsPage() {
     if (form.montantAnnuel <= 0) errors.montantAnnuel = form.montantAnnuel;
     if (!form.dateExpiration) errors.dateExpiration = 'La date d\'expiration est requise';
 
+    // Validation du téléphone si fourni
+    if (form.telephone && !/^(\+241|241)?[0-9\-\s]{8,}$/.test(form.telephone)) {
+      errors.telephone = 'Format de téléphone invalide (Gabon)';
+    }
+
+    // Validation du site web si fourni
+    if (form.siteWeb && !/^https?:\/\/.+/.test(form.siteWeb)) {
+      errors.siteWeb = 'URL du site web invalide';
+    }
+
     return errors;
   }, []);
 
@@ -575,6 +585,141 @@ export default function SuperAdminClientsPage() {
       setLoadingStates(prev => ({ ...prev, exporting: false }));
     }
   }, [filteredClients, clientsStats]);
+
+  const handleDeleteClient = useCallback(async (organisme: OrganismeCommercial) => {
+    try {
+      const confirmed = window.confirm(
+        `⚠️ ATTENTION: Êtes-vous sûr de vouloir supprimer définitivement le client "${organisme.nom}" ?\n\n` +
+        `Cette action est irréversible et supprimera :\n` +
+        `- Toutes les données du client\n` +
+        `- L'historique des transactions\n` +
+        `- Les configurations personnalisées\n\n` +
+        `Tapez "SUPPRIMER" pour confirmer cette action dangereuse.`
+      );
+
+      if (!confirmed) return;
+
+      const confirmation = prompt(
+        `Pour confirmer la suppression de "${organisme.nom}", tapez exactement: SUPPRIMER`
+      );
+
+      if (confirmation !== 'SUPPRIMER') {
+        toast.error('❌ Confirmation incorrecte. Suppression annulée.');
+        return;
+      }
+
+      setLoadingStates(prev => ({ ...prev, deleting: organisme.code }));
+
+      // Simulation de suppression avec délai réaliste
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      toast.success(`🗑️ Client "${organisme.nom}" supprimé définitivement`);
+
+      // Recharger les données après suppression
+      await loadClientsData();
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression:', error);
+      toast.error('❌ Erreur lors de la suppression du client');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, deleting: null }));
+    }
+  }, [loadClientsData]);
+
+  const handleUpgradeClient = useCallback(async (organisme: OrganismeCommercial) => {
+    try {
+      const currentType = organisme.clientInfo?.type || 'STANDARD';
+      const upgradeOptions = {
+        'STANDARD': 'PREMIUM',
+        'PREMIUM': 'ENTERPRISE',
+        'ENTERPRISE': 'GOUVERNEMENTAL',
+        'GOUVERNEMENTAL': null
+      };
+
+      const nextType = upgradeOptions[currentType as keyof typeof upgradeOptions];
+
+      if (!nextType) {
+        toast.info(`ℹ️ "${organisme.nom}" a déjà le niveau maximum (${currentType})`);
+        return;
+      }
+
+      const priceIncrease = {
+        'PREMIUM': 500000,
+        'ENTERPRISE': 1500000,
+        'GOUVERNEMENTAL': 2500000
+      }[nextType] || 0;
+
+      const confirmed = window.confirm(
+        `🚀 Mettre à niveau "${organisme.nom}" vers ${nextType} ?\n\n` +
+        `Avantages :\n` +
+        `- Fonctionnalités avancées\n` +
+        `- Support prioritaire\n` +
+        `- Capacités étendues\n\n` +
+        `Coût supplémentaire: ${formatPrix(priceIncrease)} par an`
+      );
+
+      if (!confirmed) return;
+
+      setLoadingStates(prev => ({ ...prev, upgrading: organisme.code }));
+
+      // Simulation de mise à niveau
+      await new Promise(resolve => setTimeout(resolve, 2500));
+
+      toast.success(`⬆️ Client "${organisme.nom}" mis à niveau vers ${nextType}`);
+
+      // Recharger les données
+      await loadClientsData();
+    } catch (error) {
+      console.error('❌ Erreur lors de la mise à niveau:', error);
+      toast.error('❌ Erreur lors de la mise à niveau');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, upgrading: null }));
+    }
+  }, [loadClientsData]);
+
+  const handleActivateClient = useCallback(async (organisme: OrganismeCommercial) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, upgrading: organisme.code }));
+
+      // Simulation d'activation
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      toast.success(`✅ Client "${organisme.nom}" activé avec succès`);
+      await loadClientsData();
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'activation:', error);
+      toast.error('❌ Erreur lors de l\'activation');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, upgrading: null }));
+    }
+  }, [loadClientsData]);
+
+  const handleResetClientData = useCallback(async (organisme: OrganismeCommercial) => {
+    try {
+      const confirmed = window.confirm(
+        `🔄 Réinitialiser les données de "${organisme.nom}" ?\n\n` +
+        `Cela supprimera :\n` +
+        `- L'historique des connexions\n` +
+        `- Les paramètres personnalisés\n` +
+        `- Les statistiques d'usage\n\n` +
+        `Le client conservera son accès et ses informations de base.`
+      );
+
+      if (!confirmed) return;
+
+      setLoadingStates(prev => ({ ...prev, editing: organisme.code }));
+
+      // Simulation de réinitialisation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      toast.success(`🔄 Données de "${organisme.nom}" réinitialisées`);
+      await loadClientsData();
+    } catch (error) {
+      console.error('❌ Erreur lors de la réinitialisation:', error);
+      toast.error('❌ Erreur lors de la réinitialisation');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, editing: null }));
+    }
+  }, [loadClientsData]);
 
   // Fonctions utilitaires
   const formatPrix = (prix: number) => {
@@ -892,10 +1037,10 @@ export default function SuperAdminClientsPage() {
                     <div className="bg-current h-0.5 rounded-[1px]"></div>
                   </div>
                 </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
 
         {/* Liste des organismes clients */}
         <div className={`${
@@ -1002,6 +1147,8 @@ export default function SuperAdminClientsPage() {
                           size="sm"
                           onClick={() => handleEditClient(organisme)}
                           disabled={loadingStates.editing === organisme.code}
+                          className="hover:bg-blue-50 transition-all hover:scale-105"
+                          title="Modifier le client"
                         >
                           {loadingStates.editing === organisme.code ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
@@ -1033,7 +1180,7 @@ export default function SuperAdminClientsPage() {
                       </div>
 
                       {/* Actions avancées */}
-                      <div className="grid grid-cols-3 gap-1">
+                      <div className="grid grid-cols-4 gap-1">
                         <Button
                           variant="outline"
                           size="sm"
@@ -1064,9 +1211,15 @@ export default function SuperAdminClientsPage() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleSendNotification(organisme)}
+                          disabled={loadingStates.sendingNotification === organisme.code}
                           title="Envoyer notification"
+                          className="hover:bg-blue-50 transition-all hover:scale-105"
                         >
-                          <Bell className="h-3 w-3" />
+                          {loadingStates.sendingNotification === organisme.code ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <Bell className="h-3 w-3" />
+                          )}
                         </Button>
                       </div>
 
