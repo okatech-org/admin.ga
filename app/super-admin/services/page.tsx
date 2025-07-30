@@ -43,7 +43,16 @@ import {
   GraduationCap,
   Loader2,
   Save,
-  X
+  X,
+  ChevronUp,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  ArrowUpDown,
+  SortAsc,
+  SortDesc
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -99,6 +108,19 @@ interface AppState {
   isDeletingId: number | null;
 }
 
+// Types pour la pagination et le tri
+interface PaginationState {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+}
+
+interface SortState {
+  field: keyof Service | null;
+  direction: 'asc' | 'desc';
+}
+
 export default function SuperAdminServicesPage() {
   const router = useRouter();
 
@@ -106,8 +128,22 @@ export default function SuperAdminServicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategorie, setSelectedCategorie] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedOrganisme, setSelectedOrganisme] = useState('all');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedTab, setSelectedTab] = useState('overview');
+
+  // États de pagination et tri
+  const [pagination, setPagination] = useState<PaginationState>({
+    currentPage: 1,
+    itemsPerPage: 20,
+    totalItems: 0,
+    totalPages: 0
+  });
+
+  const [sortState, setSortState] = useState<SortState>({
+    field: null,
+    direction: 'asc'
+  });
 
   // États des modales
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -245,42 +281,145 @@ export default function SuperAdminServicesPage() {
     INACTIVE: { label: 'Inactif', color: 'bg-gray-500', icon: XCircle },
   };
 
-  // Calculs de statistiques
-  const stats = {
-    total: services.length,
-    active: services.filter(s => s.status === 'ACTIVE').length,
-    maintenance: services.filter(s => s.status === 'MAINTENANCE').length,
-    totalDemandes: services.reduce((sum, s) => sum + (s.demandes_mois || 0), 0),
-    satisfactionMoyenne: Math.round(
-      services.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / services.length
-    ),
-    categoriesUniques: Object.keys(CATEGORIES).length,
-    organismes: [...new Set(services.map(s => s.organisme))].length
-  };
+  // Liste des organismes uniques pour le filtre
+  const uniqueOrganismes = useMemo(() => {
+    return [...new Set(services.map(s => s.organisme))].sort();
+  }, [services]);
 
-  // Services par catégorie
-  const servicesByCategory = Object.keys(CATEGORIES).map(cat => ({
-    categorie: cat,
-    label: CATEGORIES[cat].label,
-    color: CATEGORIES[cat].color,
-    count: services.filter(s => s.categorie === cat).length,
-    services: services.filter(s => s.categorie === cat),
-    satisfactionMoyenne: Math.round(
-      services.filter(s => s.categorie === cat).reduce((sum, s) => sum + (s.satisfaction || 0), 0) /
-      services.filter(s => s.categorie === cat).length
-    ),
-    totalDemandes: services.filter(s => s.categorie === cat).reduce((sum, s) => sum + (s.demandes_mois || 0), 0)
-  }));
+  // Fonction de tri
+  const sortServices = useCallback((servicesToSort: Service[], field: keyof Service, direction: 'asc' | 'desc') => {
+    return [...servicesToSort].sort((a, b) => {
+      let aValue = a[field];
+      let bValue = b[field];
 
-  // Filtrage
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.organisme.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategorie === 'all' || service.categorie === selectedCategorie;
-    const matchesStatus = selectedStatus === 'all' || service.status === selectedStatus;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+      // Conversion pour les champs numériques
+      if (field === 'satisfaction' || field === 'demandes_mois') {
+        aValue = Number(aValue);
+        bValue = Number(bValue);
+      }
+
+      // Conversion pour les dates
+      if (field === 'derniere_maj') {
+        aValue = new Date(aValue as string).getTime();
+        bValue = new Date(bValue as string).getTime();
+      }
+
+      if (aValue < bValue) return direction === 'asc' ? -1 : 1;
+      if (aValue > bValue) return direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, []);
+
+  // Filtrage et tri
+  const filteredAndSortedServices = useMemo(() => {
+    let filtered = services.filter(service => {
+      const matchesSearch = service.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           service.organisme.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           service.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           service.responsable.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategorie === 'all' || service.categorie === selectedCategorie;
+      const matchesStatus = selectedStatus === 'all' || service.status === selectedStatus;
+      const matchesOrganisme = selectedOrganisme === 'all' || service.organisme === selectedOrganisme;
+      return matchesSearch && matchesCategory && matchesStatus && matchesOrganisme;
+    });
+
+    // Appliquer le tri si un champ est sélectionné
+    if (sortState.field) {
+      filtered = sortServices(filtered, sortState.field, sortState.direction);
+    }
+
+    return filtered;
+  }, [services, searchTerm, selectedCategorie, selectedStatus, selectedOrganisme, sortState, sortServices]);
+
+  // Pagination
+  const paginatedServices = useMemo(() => {
+    const startIndex = (pagination.currentPage - 1) * pagination.itemsPerPage;
+    const endIndex = startIndex + pagination.itemsPerPage;
+    return filteredAndSortedServices.slice(startIndex, endIndex);
+  }, [filteredAndSortedServices, pagination.currentPage, pagination.itemsPerPage]);
+
+  // Mise à jour de la pagination quand les données changent
+  useEffect(() => {
+    const totalItems = filteredAndSortedServices.length;
+    const totalPages = Math.ceil(totalItems / pagination.itemsPerPage);
+
+    setPagination(prev => ({
+      ...prev,
+      totalItems,
+      totalPages,
+      // Réajuster la page courante si nécessaire
+      currentPage: prev.currentPage > totalPages ? Math.max(1, totalPages) : prev.currentPage
+    }));
+  }, [filteredAndSortedServices.length, pagination.itemsPerPage]);
+
+  // Calculs de statistiques sur les données filtrées
+  const stats = useMemo(() => {
+    const filtered = filteredAndSortedServices;
+    return {
+      total: services.length,
+      totalFiltered: filtered.length,
+      active: filtered.filter(s => s.status === 'ACTIVE').length,
+      maintenance: filtered.filter(s => s.status === 'MAINTENANCE').length,
+      totalDemandes: filtered.reduce((sum, s) => sum + (s.demandes_mois || 0), 0),
+      satisfactionMoyenne: filtered.length > 0 ? Math.round(
+        filtered.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / filtered.length
+      ) : 0,
+      categoriesUniques: Object.keys(CATEGORIES).length,
+      organismes: [...new Set(filtered.map(s => s.organisme))].length
+    };
+  }, [services.length, filteredAndSortedServices]);
+
+  // Services par catégorie pour les données filtrées
+  const servicesByCategory = useMemo(() => {
+    return Object.keys(CATEGORIES).map(cat => {
+      const categoryServices = filteredAndSortedServices.filter(s => s.categorie === cat);
+      return {
+        categorie: cat,
+        label: CATEGORIES[cat].label,
+        color: CATEGORIES[cat].color,
+        count: categoryServices.length,
+        services: categoryServices,
+        satisfactionMoyenne: categoryServices.length > 0 ? Math.round(
+          categoryServices.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / categoryServices.length
+        ) : 0,
+        totalDemandes: categoryServices.reduce((sum, s) => sum + (s.demandes_mois || 0), 0)
+      };
+    }).filter(cat => cat.count > 0); // Ne montrer que les catégories avec des services
+  }, [filteredAndSortedServices]);
+
+  // Fonctions de pagination
+  const goToPage = useCallback((page: number) => {
+    setPagination(prev => ({
+      ...prev,
+      currentPage: Math.max(1, Math.min(page, prev.totalPages))
+    }));
+  }, []);
+
+  const changeItemsPerPage = useCallback((newItemsPerPage: number) => {
+    setPagination(prev => ({
+      ...prev,
+      itemsPerPage: newItemsPerPage,
+      currentPage: 1 // Retourner à la première page
+    }));
+  }, []);
+
+  // Fonction de tri
+  const handleSort = useCallback((field: keyof Service) => {
+    setSortState(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
+  }, []);
+
+  // Fonction pour obtenir l'icône de tri
+  const getSortIcon = useCallback((field: keyof Service) => {
+    if (sortState.field !== field) {
+      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+    }
+    return sortState.direction === 'asc'
+      ? <SortAsc className="h-4 w-4 text-blue-500" />
+      : <SortDesc className="h-4 w-4 text-blue-500" />;
+  }, [sortState]);
 
   // Actions
   const handleViewDetails = (service: Service) => {
@@ -495,6 +634,7 @@ export default function SuperAdminServicesPage() {
     setSearchTerm('');
     setSelectedCategorie('all');
     setSelectedStatus('all');
+    setSelectedOrganisme('all');
     toast.info('Filtres réinitialisés');
   }, []);
 
@@ -505,17 +645,18 @@ export default function SuperAdminServicesPage() {
       const dataStr = JSON.stringify({
         exported_at: new Date().toISOString(),
         total_services: stats.total,
-        services: filteredServices,
+        services: filteredAndSortedServices,
         statistics: stats,
         categories: servicesByCategory,
         export_metadata: {
           filters_applied: {
             search: searchTerm,
             category: selectedCategorie,
-            status: selectedStatus
+            status: selectedStatus,
+            organisme: selectedOrganisme
           },
           total_services_before_filter: services.length,
-          filtered_services_count: filteredServices.length
+          filtered_services_count: filteredAndSortedServices.length
         }
       }, null, 2);
 
@@ -527,7 +668,7 @@ export default function SuperAdminServicesPage() {
       link.click();
       URL.revokeObjectURL(url);
 
-      toast.success(`Export JSON réussi ! ${filteredServices.length} services exportés.`);
+      toast.success(`Export JSON réussi ! ${filteredAndSortedServices.length} services exportés.`);
     } catch (error) {
       toast.error('Erreur lors de l\'export JSON');
       console.error(error);
@@ -574,9 +715,14 @@ export default function SuperAdminServicesPage() {
               <FileText className="h-8 w-8 text-green-500" />
               Gestion des Services Publics
             </h1>
-            <p className="text-muted-foreground">
-              Administration de {stats.total} services publics répartis en {stats.categoriesUniques} catégories
-            </p>
+                          <p className="text-muted-foreground">
+                Administration de {stats.totalFiltered} services publics répartis en {stats.categoriesUniques} catégories
+                {stats.totalFiltered > 20 && (
+                  <span className="block text-sm mt-1">
+                    Page {pagination.currentPage} sur {pagination.totalPages} • {pagination.itemsPerPage} par page
+                  </span>
+                )}
+              </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={exportToJSON} disabled={appState.isLoading}>
@@ -774,7 +920,7 @@ export default function SuperAdminServicesPage() {
               <CardHeader>
                 <CardTitle>Recherche et Filtres</CardTitle>
                 <CardDescription>
-                  Filtrer et rechercher parmi {stats.total} services
+                  Filtrer et rechercher parmi {stats.totalFiltered} services
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -808,6 +954,17 @@ export default function SuperAdminServicesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select value={selectedOrganisme} onValueChange={setSelectedOrganisme}>
+                    <SelectTrigger className="lg:w-48">
+                      <SelectValue placeholder="Organisme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les organismes</SelectItem>
+                      {uniqueOrganismes.map(org => (
+                        <SelectItem key={org} value={org}>{org}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <Button variant="outline" onClick={resetFilters}>
                     <Filter className="mr-2 h-4 w-4" />
                     Réinitialiser
@@ -818,30 +975,86 @@ export default function SuperAdminServicesPage() {
 
             {/* Table des services */}
             <Card>
-              <CardHeader>
-                <CardTitle>
-                  📋 Liste des Services ({filteredServices.length}/{stats.total})
-                </CardTitle>
-                <CardDescription>
-                  Gestion complète des services publics
-                </CardDescription>
-              </CardHeader>
+                              <CardHeader>
+                  <CardTitle>
+                    📋 Liste des Services ({stats.totalFiltered}/{stats.total})
+                  </CardTitle>
+                  <CardDescription>
+                    {stats.totalFiltered < stats.total ? (
+                      <>
+                        Affichage de {stats.totalFiltered} services filtrés sur {stats.total} au total
+                        {sortState.field && (
+                          <span className="ml-2 text-blue-600">
+                            • Trié par {sortState.field} ({sortState.direction === 'asc' ? 'croissant' : 'décroissant'})
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      `Gestion complète des ${stats.total} services publics`
+                    )}
+                  </CardDescription>
+                </CardHeader>
               <CardContent>
                 <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Service</TableHead>
-                        <TableHead>Catégorie</TableHead>
-                        <TableHead>Organisme</TableHead>
-                        <TableHead>Performance</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort('nom')}
+                            className="h-auto p-0 font-medium hover:bg-transparent"
+                          >
+                            Service
+                            {getSortIcon('nom')}
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort('categorie')}
+                            className="h-auto p-0 font-medium hover:bg-transparent"
+                          >
+                            Catégorie
+                            {getSortIcon('categorie')}
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort('organisme')}
+                            className="h-auto p-0 font-medium hover:bg-transparent"
+                          >
+                            Organisme
+                            {getSortIcon('organisme')}
+                          </Button>
+                        </TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort('satisfaction')}
+                            className="h-auto p-0 font-medium hover:bg-transparent"
+                          >
+                            Performance
+                            {getSortIcon('satisfaction')}
+                          </Button>
+                        </TableHead>
                         <TableHead>Coût & Durée</TableHead>
-                        <TableHead>Statut</TableHead>
+                        <TableHead>
+                          <Button
+                            variant="ghost"
+                            onClick={() => handleSort('status')}
+                            className="h-auto p-0 font-medium hover:bg-transparent"
+                          >
+                            Statut
+                            {getSortIcon('status')}
+                          </Button>
+                        </TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredServices.map((service) => (
+                      {paginatedServices.map((service) => (
                         <TableRow key={service.id} className="hover:bg-muted/50">
                           <TableCell>
                             <div>
@@ -925,20 +1138,122 @@ export default function SuperAdminServicesPage() {
                   </Table>
                 </div>
 
-                {filteredServices.length === 0 && (
+                {paginatedServices.length === 0 && filteredAndSortedServices.length === 0 && (
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Aucun service trouvé</h3>
                     <p className="text-muted-foreground mb-4">
-                      Aucun service ne correspond à vos critères de recherche.
+                      {searchTerm || selectedCategorie !== 'all' || selectedStatus !== 'all' || selectedOrganisme !== 'all' ? (
+                        <>
+                          Aucun service ne correspond à vos critères de recherche.
+                          <br />
+                          Essayez de modifier ou supprimer les filtres appliqués.
+                        </>
+                      ) : (
+                        'Aucun service disponible dans la base de données.'
+                      )}
                     </p>
-                    <Button variant="outline" onClick={resetFilters}>
-                      Réinitialiser les filtres
+                    {(searchTerm || selectedCategorie !== 'all' || selectedStatus !== 'all' || selectedOrganisme !== 'all') && (
+                      <Button variant="outline" onClick={resetFilters}>
+                        Réinitialiser les filtres
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                {paginatedServices.length === 0 && filteredAndSortedServices.length > 0 && (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Aucun service sur cette page</h3>
+                    <p className="text-muted-foreground mb-4">
+                      {filteredAndSortedServices.length} services trouvés, mais aucun sur la page {pagination.currentPage}.
+                    </p>
+                    <Button variant="outline" onClick={() => goToPage(1)}>
+                      Retourner à la première page
                     </Button>
                   </div>
                 )}
               </CardContent>
             </Card>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-2 py-4 sm:px-6">
+              <div className="flex-1 flex justify-between sm:hidden">
+                <Button
+                  variant="outline"
+                  onClick={() => goToPage(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage === 1}
+                >
+                  Précédent
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => goToPage(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                >
+                  Suivant
+                </Button>
+              </div>
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => goToPage(1)}
+                    disabled={pagination.currentPage === 1}
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => goToPage(pagination.currentPage - 1)}
+                    disabled={pagination.currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-gray-700">
+                    Page <span className="font-medium">{pagination.currentPage}</span> sur{' '}
+                    <span className="font-medium">{pagination.totalPages}</span>
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => goToPage(pagination.currentPage + 1)}
+                    disabled={pagination.currentPage === pagination.totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => goToPage(pagination.totalPages)}
+                    disabled={pagination.currentPage === pagination.totalPages}
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-700">
+                    Afficher
+                  </span>
+                                     <Select
+                     value={`${pagination.itemsPerPage}`}
+                     onValueChange={(value) => changeItemsPerPage(Number(value))}
+                   >
+                    <SelectTrigger className="h-8 w-[70px]">
+                      <SelectValue placeholder="10" />
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                      {[10, 20, 30, 40, 50].map((pageSize) => (
+                        <SelectItem key={pageSize} value={`${pageSize}`}>
+                          {pageSize}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <span className="text-sm text-gray-700">
+                    entrées
+                  </span>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           {/* Catégories */}
