@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "framework": "nextjs",
-  "installCommand": "npm install && prisma generate",
+  "installCommand": "npm install",
   "env": {
     "SKIP_ENV_VALIDATION": "1"
   },
