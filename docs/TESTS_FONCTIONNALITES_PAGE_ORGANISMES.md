@@ -153,7 +153,7 @@ http://localhost:3000/super-admin/organismes
 - [ ] "GOUVERNORAT" → Uniquement les gouvernorats (≈8)
 - [ ] Etc. pour tous les types disponibles
 
-#### **Vérifications**
+#### **Vérifications Type**
 - [ ] Compteurs corrects dans les options
 - [ ] Icônes appropriées pour chaque type
 - [ ] Cohérence des résultats
@@ -174,7 +174,7 @@ http://localhost:3000/super-admin/organismes
 - [ ] "Haut-Ogooué" → Organismes du Haut-Ogooué
 - [ ] Autres provinces → Filtrage approprié
 
-#### **Vérifications**
+#### **Vérifications Province**
 - [ ] Compteurs par province corrects
 - [ ] Cohérence géographique des résultats
 
@@ -194,7 +194,7 @@ http://localhost:3000/super-admin/organismes
 - [ ] "Maintenance" → Organismes en maintenance (≈6)
 - [ ] "Inactif" → Organismes inactifs (≈2)
 
-#### **Vérifications**
+#### **Vérifications Statut**
 - [ ] Compteurs cohérents avec les statistiques globales
 - [ ] Badges colorés appropriés
 
@@ -318,7 +318,7 @@ http://localhost:3000/super-admin/organismes
 - [ ] **Succès** : Toast de confirmation
 - [ ] **Mise à jour** : Actualisation des données
 
-#### **Tests par Statut**
+#### **Tests Transitions Statut**
 - [ ] ACTIF → MAINTENANCE : Transition correcte
 - [ ] MAINTENANCE → ACTIF : Transition inverse
 - [ ] INACTIF → ACTIF : Si applicable
@@ -345,7 +345,7 @@ http://localhost:3000/super-admin/organismes
 - [ ] **Confirmation** : Toast de succès "✅ Données actualisées"
 - [ ] **État** : Retour à l'état normal du bouton
 
-#### **Vérifications**
+#### **Vérifications Actualisation**
 - [ ] Maintien des filtres appliqués
 - [ ] Onglet actuel conservé
 - [ ] Pas de perte d'état utilisateur
