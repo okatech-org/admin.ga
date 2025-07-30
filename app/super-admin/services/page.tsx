@@ -52,7 +52,10 @@ import {
   ChevronsRight,
   ArrowUpDown,
   SortAsc,
-  SortDesc
+  SortDesc,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -100,12 +103,16 @@ interface ServiceFormData {
   validite: string;
 }
 
-// États d'application
+// États d'application améliorés
 interface AppState {
   isLoading: boolean;
+  isExporting: boolean;
+  isSyncing: boolean;
   error: string | null;
   isSubmitting: boolean;
   isDeletingId: number | null;
+  retryCount: number;
+  lastSyncTime: Date | null;
 }
 
 // Types pour la pagination et le tri
@@ -119,6 +126,11 @@ interface PaginationState {
 interface SortState {
   field: keyof Service | null;
   direction: 'asc' | 'desc';
+}
+
+// Validation améliorée
+interface ValidationErrors {
+  [key: string]: string;
 }
 
 export default function SuperAdminServicesPage() {
@@ -152,15 +164,19 @@ export default function SuperAdminServicesPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
 
-  // États de l'application
+  // États d'application améliorés
   const [appState, setAppState] = useState<AppState>({
     isLoading: false,
+    isExporting: false,
+    isSyncing: false,
     error: null,
     isSubmitting: false,
-    isDeletingId: null
+    isDeletingId: null,
+    retryCount: 0,
+    lastSyncTime: null
   });
 
-  // État du formulaire
+  // État du formulaire avec validation
   const [formData, setFormData] = useState<ServiceFormData>({
     nom: '',
     organisme: '',
@@ -176,6 +192,8 @@ export default function SuperAdminServicesPage() {
     lieu: '',
     validite: ''
   });
+
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
 
   // État local des services pour simulation CRUD
   const [localServices, setLocalServices] = useState<Service[]>([]);
@@ -254,6 +272,7 @@ export default function SuperAdminServicesPage() {
   useEffect(() => {
     if (localServices.length === 0) {
       setLocalServices(realServices);
+      setAppState(prev => ({ ...prev, lastSyncTime: new Date() }));
     }
   }, [realServices, localServices.length]);
 
@@ -393,6 +412,7 @@ export default function SuperAdminServicesPage() {
       ...prev,
       currentPage: Math.max(1, Math.min(page, prev.totalPages))
     }));
+    toast.success(`Navigation vers la page ${page}`);
   }, []);
 
   const changeItemsPerPage = useCallback((newItemsPerPage: number) => {
@@ -401,215 +421,290 @@ export default function SuperAdminServicesPage() {
       itemsPerPage: newItemsPerPage,
       currentPage: 1 // Retourner à la première page
     }));
+    toast.success(`Affichage de ${newItemsPerPage} éléments par page`);
   }, []);
 
   // Fonction de tri
   const handleSort = useCallback((field: keyof Service) => {
-    setSortState(prev => ({
-      field,
-      direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc'
-    }));
+    setSortState(prev => {
+      const newDirection = prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc';
+      toast.success(`Tri par ${field} ${newDirection === 'asc' ? 'croissant' : 'décroissant'}`);
+      return {
+        field,
+        direction: newDirection
+      };
+    });
   }, []);
 
   // Fonction pour obtenir l'icône de tri
   const getSortIcon = useCallback((field: keyof Service) => {
     if (sortState.field !== field) {
-      return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />;
+      return <ArrowUpDown className="h-4 w-4 text-muted-foreground hover:text-blue-500 transition-colors" />;
     }
     return sortState.direction === 'asc'
       ? <SortAsc className="h-4 w-4 text-blue-500" />
       : <SortDesc className="h-4 w-4 text-blue-500" />;
   }, [sortState]);
 
-  // Actions
-  const handleViewDetails = (service: Service) => {
-    setSelectedService(service);
-    setIsDetailsOpen(true);
-    toast.info(`Affichage des détails de ${service.nom}`);
-  };
+  // Validation améliorée du formulaire
+  const validateForm = useCallback((): boolean => {
+    const errors: ValidationErrors = {};
 
-  const handleEdit = (service: Service) => {
-    setSelectedService(service);
-    setFormData({
-      nom: service.nom,
-      organisme: service.organisme,
-      categorie: service.categorie,
-      description: service.description,
-      duree: service.duree,
-      cout: service.cout,
-      status: service.status,
-      documents_requis: service.documents_requis,
-      responsable: service.responsable,
-      telephone: service.telephone,
-      email: service.email,
-      lieu: service.lieu,
-      validite: service.validite
-    });
-    setIsEditModalOpen(true);
-    toast.info(`Modification du service ${service.nom}...`);
-  };
+    // Validation des champs obligatoires
+    if (!formData.nom.trim()) {
+      errors.nom = 'Le nom du service est requis';
+    } else if (formData.nom.length < 3) {
+      errors.nom = 'Le nom doit contenir au moins 3 caractères';
+    }
 
-  const handleCreate = () => {
-    setSelectedService(null);
-    setFormData({
-      nom: '',
-      organisme: '',
-      categorie: 'ADMINISTRATIF',
-      description: '',
-      duree: '',
-      cout: '',
-      status: 'ACTIVE',
-      documents_requis: [],
-      responsable: '',
-      telephone: '',
-      email: '',
-      lieu: '',
-      validite: ''
-    });
-    setIsCreateModalOpen(true);
-    toast.info('Création d\'un nouveau service...');
-  };
+    if (!formData.organisme.trim()) {
+      errors.organisme = 'L\'organisme responsable est requis';
+    }
 
-  const handleDelete = (service: Service) => {
-    setServiceToDelete(service);
-    setIsDeleteDialogOpen(true);
-  };
+    if (!formData.description.trim()) {
+      errors.description = 'La description est requise';
+    } else if (formData.description.length < 10) {
+      errors.description = 'La description doit contenir au moins 10 caractères';
+    }
 
-  const handleNavigateToAdministrations = () => {
-    toast.success('Redirection vers Administrations...');
-    router.push('/super-admin/administrations');
-  };
+    if (!formData.duree.trim()) {
+      errors.duree = 'La durée de traitement est requise';
+    }
 
-  const handleNavigateToCreerOrganisme = () => {
-    toast.success('Redirection vers Créer Organisme...');
-    router.push('/super-admin/organisme/nouveau');
-  };
+    if (!formData.cout.trim()) {
+      errors.cout = 'Le coût est requis';
+    }
 
-  const handleCloseModals = () => {
+    if (!formData.responsable.trim()) {
+      errors.responsable = 'Le responsable est requis';
+    }
+
+    if (!formData.telephone.trim()) {
+      errors.telephone = 'Le numéro de téléphone est requis';
+    } else if (!/^\+241\s?[0-9\s]{8,}$/.test(formData.telephone)) {
+      errors.telephone = 'Format invalide (ex: +241 01 23 45 67)';
+    }
+
+    if (!formData.lieu.trim()) {
+      errors.lieu = 'Le lieu est requis';
+    }
+
+    // Validation de l'email (optionnel mais doit être valide si fourni)
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      errors.email = 'Format d\'email invalide';
+    }
+
+    setValidationErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      toast.error(`${Object.keys(errors).length} erreur(s) de validation détectée(s)`);
+      return false;
+    }
+
+    return true;
+  }, [formData]);
+
+  // Actions avec gestion d'erreurs améliorée
+  const handleViewDetails = useCallback((service: Service) => {
+    try {
+      setSelectedService(service);
+      setIsDetailsOpen(true);
+      toast.success(`Affichage des détails de "${service.nom}"`);
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture des détails');
+      console.error('Error opening details:', error);
+    }
+  }, []);
+
+  const handleEdit = useCallback((service: Service) => {
+    try {
+      setSelectedService(service);
+      setFormData({
+        nom: service.nom,
+        organisme: service.organisme,
+        categorie: service.categorie,
+        description: service.description,
+        duree: service.duree,
+        cout: service.cout,
+        status: service.status,
+        documents_requis: service.documents_requis,
+        responsable: service.responsable,
+        telephone: service.telephone,
+        email: service.email,
+        lieu: service.lieu,
+        validite: service.validite
+      });
+      setValidationErrors({});
+      setIsEditModalOpen(true);
+      toast.success(`Modification du service "${service.nom}"`);
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture de l\'éditeur');
+      console.error('Error opening edit modal:', error);
+    }
+  }, []);
+
+  const handleCreate = useCallback(() => {
+    try {
+      setSelectedService(null);
+      setFormData({
+        nom: '',
+        organisme: '',
+        categorie: 'ADMINISTRATIF',
+        description: '',
+        duree: '',
+        cout: '',
+        status: 'ACTIVE',
+        documents_requis: [],
+        responsable: '',
+        telephone: '',
+        email: '',
+        lieu: '',
+        validite: ''
+      });
+      setValidationErrors({});
+      setIsCreateModalOpen(true);
+      toast.success('Création d\'un nouveau service');
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture du formulaire de création');
+      console.error('Error opening create modal:', error);
+    }
+  }, []);
+
+  const handleDelete = useCallback((service: Service) => {
+    try {
+      setServiceToDelete(service);
+      setIsDeleteDialogOpen(true);
+      toast.warning(`Confirmation de suppression de "${service.nom}"`);
+    } catch (error) {
+      toast.error('Erreur lors de l\'ouverture de la confirmation');
+      console.error('Error opening delete dialog:', error);
+    }
+  }, []);
+
+  const handleNavigateToAdministrations = useCallback(() => {
+    try {
+      toast.loading('Redirection vers Administrations...');
+      router.push('/super-admin/administrations');
+    } catch (error) {
+      toast.error('Erreur lors de la navigation');
+      console.error('Navigation error:', error);
+    }
+  }, [router]);
+
+  const handleNavigateToCreerOrganisme = useCallback(() => {
+    try {
+      toast.loading('Redirection vers Créer Organisme...');
+      router.push('/super-admin/organisme/nouveau');
+    } catch (error) {
+      toast.error('Erreur lors de la navigation');
+      console.error('Navigation error:', error);
+    }
+  }, [router]);
+
+  const handleCloseModals = useCallback(() => {
     setIsDetailsOpen(false);
     setIsEditModalOpen(false);
     setIsCreateModalOpen(false);
     setIsDeleteDialogOpen(false);
     setServiceToDelete(null);
-  };
+    setValidationErrors({});
+  }, []);
 
-     const validateForm = (): boolean => {
-     if (!formData.nom.trim()) {
-       toast.error('Le nom du service est requis.');
-       return false;
-     }
-     if (!formData.organisme.trim()) {
-       toast.error('L\'organisme responsable est requis.');
-       return false;
-     }
-     if (!formData.description.trim()) {
-       toast.error('La description est requise.');
-       return false;
-     }
-     if (!formData.duree.trim()) {
-       toast.error('La durée de traitement est requise.');
-       return false;
-     }
-     if (!formData.cout.trim()) {
-       toast.error('Le coût est requis.');
-       return false;
-     }
-     if (!formData.responsable.trim()) {
-       toast.error('Le responsable est requis.');
-       return false;
-     }
-     if (!formData.telephone.trim()) {
-       toast.error('Le numéro de téléphone est requis.');
-       return false;
-     }
-     if (!formData.lieu.trim()) {
-       toast.error('Le lieu est requis.');
-       return false;
-     }
-     if (formData.email && !formData.email.includes('@')) {
-       toast.error('L\'email doit être valide.');
-       return false;
-     }
-     return true;
-   };
+  const handleSubmitForm = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
 
-   const handleSubmitForm = async (e: React.FormEvent) => {
-     e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
 
-     if (!validateForm()) {
-       return;
-     }
+    setAppState(prev => ({ ...prev, isSubmitting: true, error: null }));
 
-     setAppState(prev => ({ ...prev, isSubmitting: true }));
+    try {
+      // Simulation d'un délai réseau
+      await new Promise(resolve => setTimeout(resolve, 800));
 
-     try {
       const newService: Service = {
-        id: selectedService?.id || Date.now(), // Générer un ID unique
-        nom: formData.nom,
-        organisme: formData.organisme,
+        id: selectedService?.id || Date.now(),
+        nom: formData.nom.trim(),
+        organisme: formData.organisme.trim(),
         categorie: formData.categorie,
-        description: formData.description,
-        duree: formData.duree,
-        cout: formData.cout,
+        description: formData.description.trim(),
+        duree: formData.duree.trim(),
+        cout: formData.cout.trim(),
         status: formData.status,
-        satisfaction: 0, // Aucune métrique générée ici, juste pour le type
-        demandes_mois: 0, // Aucune métrique générée ici, juste pour le type
-        documents_requis: formData.documents_requis,
-        responsable: formData.responsable,
-        telephone: formData.telephone,
-        email: formData.email,
+        satisfaction: selectedService?.satisfaction || Math.floor(Math.random() * 20) + 70,
+        demandes_mois: selectedService?.demandes_mois || Math.floor(Math.random() * 100) + 20,
+        documents_requis: formData.documents_requis.filter(doc => doc.trim()),
+        responsable: formData.responsable.trim(),
+        telephone: formData.telephone.trim(),
+        email: formData.email.trim(),
         derniere_maj: new Date().toISOString().split('T')[0],
-        lieu: formData.lieu,
-        code_service: '', // Pas de code_service dans le JSON, générer un ID unique
-        validite: formData.validite,
-        type_organisme: '' // Pas de type_organisme dans le JSON
+        lieu: formData.lieu.trim(),
+        code_service: selectedService?.code_service || `SRV_${Date.now()}`,
+        validite: formData.validite.trim(),
+        type_organisme: selectedService?.type_organisme || ''
       };
 
       if (selectedService) {
-                 // Modification
-         const updatedServices = localServices.map(s => s.id === selectedService.id ? { ...newService, satisfaction: s.satisfaction, demandes_mois: s.demandes_mois } : s);
-         setLocalServices(updatedServices);
-         toast.success(`Service "${newService.nom}" mis à jour avec succès !`);
-       } else {
-         // Création - générer des métriques initiales réalistes
-         newService.id = Date.now();
-         newService.satisfaction = Math.floor(Math.random() * 20) + 70; // Entre 70 et 90%
-         newService.demandes_mois = Math.floor(Math.random() * 100) + 20; // Entre 20 et 120
-         setLocalServices(prev => [...prev, newService]);
-         toast.success(`Service "${newService.nom}" créé avec succès !`);
-       }
-       handleCloseModals();
-              // Ne pas réinitialiser les filtres après modification pour un meilleur UX
-        if (!selectedService) {
-          resetFilters();
-        }
+        // Modification
+        const updatedServices = localServices.map(s =>
+          s.id === selectedService.id ? { ...newService, satisfaction: s.satisfaction, demandes_mois: s.demandes_mois } : s
+        );
+        setLocalServices(updatedServices);
+        toast.success(`✅ Service "${newService.nom}" mis à jour avec succès !`);
+      } else {
+        // Création
+        setLocalServices(prev => [...prev, newService]);
+        toast.success(`🎉 Service "${newService.nom}" créé avec succès !`);
+      }
+
+      handleCloseModals();
+
+      // Réinitialiser les filtres seulement pour la création
+      if (!selectedService) {
+        resetFilters();
+      }
+
     } catch (error) {
-      toast.error('Erreur lors de la sauvegarde du service.');
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      setAppState(prev => ({ ...prev, error: errorMessage }));
+      toast.error(`❌ Erreur lors de la sauvegarde: ${errorMessage}`);
+      console.error('Save error:', error);
     } finally {
       setAppState(prev => ({ ...prev, isSubmitting: false }));
     }
-  };
+  }, [formData, validateForm, selectedService, localServices, handleCloseModals]);
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!serviceToDelete) return;
 
-    setAppState(prev => ({ ...prev, isDeletingId: serviceToDelete.id }));
+    setAppState(prev => ({ ...prev, isDeletingId: serviceToDelete.id, error: null }));
+
     try {
+      // Simulation d'un délai réseau
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const updatedServices = localServices.filter(s => s.id !== serviceToDelete.id);
-             setLocalServices(updatedServices);
-       toast.success(`Service "${serviceToDelete.nom}" supprimé avec succès !`);
-       handleCloseModals();
-       resetFilters();
+      setLocalServices(updatedServices);
+      toast.success(`🗑️ Service "${serviceToDelete.nom}" supprimé avec succès !`);
+      handleCloseModals();
+
+      // Si on supprime le dernier élément de la page, retourner à la page précédente
+      if (paginatedServices.length === 1 && pagination.currentPage > 1) {
+        goToPage(pagination.currentPage - 1);
+      }
+
     } catch (error) {
-      toast.error('Erreur lors de la suppression du service.');
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
+      setAppState(prev => ({ ...prev, error: errorMessage }));
+      toast.error(`❌ Erreur lors de la suppression: ${errorMessage}`);
+      console.error('Delete error:', error);
     } finally {
       setAppState(prev => ({ ...prev, isDeletingId: null }));
     }
-  };
+  }, [serviceToDelete, localServices, handleCloseModals, paginatedServices.length, pagination.currentPage, goToPage]);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     handleCloseModals();
     if (selectedService) {
       setFormData({
@@ -628,19 +723,41 @@ export default function SuperAdminServicesPage() {
         validite: selectedService.validite
       });
     }
-  };
+    toast.info('🚫 Modifications annulées');
+  }, [selectedService, handleCloseModals]);
 
-    const resetFilters = useCallback(() => {
+  const resetFilters = useCallback(() => {
     setSearchTerm('');
     setSelectedCategorie('all');
     setSelectedStatus('all');
     setSelectedOrganisme('all');
-    toast.info('Filtres réinitialisés');
+    setSortState({ field: null, direction: 'asc' });
+    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    toast.success('🔄 Filtres réinitialisés');
   }, []);
 
-  const exportToJSON = () => {
+  const syncData = useCallback(async () => {
+    setAppState(prev => ({ ...prev, isSyncing: true, error: null }));
+
     try {
-      setAppState(prev => ({ ...prev, isLoading: true }));
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setLocalServices(realServices);
+      setAppState(prev => ({ ...prev, lastSyncTime: new Date() }));
+      toast.success('🔄 Données synchronisées avec succès !');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erreur de synchronisation';
+      setAppState(prev => ({ ...prev, error: errorMessage }));
+      toast.error(`❌ Erreur de synchronisation: ${errorMessage}`);
+    } finally {
+      setAppState(prev => ({ ...prev, isSyncing: false }));
+    }
+  }, [realServices]);
+
+  const exportToJSON = useCallback(async () => {
+    setAppState(prev => ({ ...prev, isExporting: true, error: null }));
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const dataStr = JSON.stringify({
         exported_at: new Date().toISOString(),
@@ -656,7 +773,11 @@ export default function SuperAdminServicesPage() {
             organisme: selectedOrganisme
           },
           total_services_before_filter: services.length,
-          filtered_services_count: filteredAndSortedServices.length
+          filtered_services_count: filteredAndSortedServices.length,
+          sort_applied: sortState.field ? {
+            field: sortState.field,
+            direction: sortState.direction
+          } : null
         }
       }, null, 2);
 
@@ -668,14 +789,16 @@ export default function SuperAdminServicesPage() {
       link.click();
       URL.revokeObjectURL(url);
 
-      toast.success(`Export JSON réussi ! ${filteredAndSortedServices.length} services exportés.`);
+      toast.success(`📥 Export JSON réussi ! ${filteredAndSortedServices.length} services exportés`);
     } catch (error) {
-      toast.error('Erreur lors de l\'export JSON');
-      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur d\'export';
+      setAppState(prev => ({ ...prev, error: errorMessage }));
+      toast.error(`❌ Erreur lors de l'export: ${errorMessage}`);
+      console.error('Export error:', error);
     } finally {
-      setAppState(prev => ({ ...prev, isLoading: false }));
+      setAppState(prev => ({ ...prev, isExporting: false }));
     }
-  };
+  }, [stats, filteredAndSortedServices, servicesByCategory, searchTerm, selectedCategorie, selectedStatus, selectedOrganisme, services.length, sortState]);
 
   return (
     <AuthenticatedLayout>
@@ -722,18 +845,51 @@ export default function SuperAdminServicesPage() {
                     Page {pagination.currentPage} sur {pagination.totalPages} • {pagination.itemsPerPage} par page
                   </span>
                 )}
+                {appState.lastSyncTime && (
+                  <span className="block text-xs text-green-600 mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Dernière sync: {appState.lastSyncTime.toLocaleTimeString()}
+                  </span>
+                )}
+                {appState.error && (
+                  <span className="block text-xs text-red-600 mt-1 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    Erreur: {appState.error}
+                  </span>
+                )}
               </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportToJSON} disabled={appState.isLoading}>
-              {appState.isLoading ? (
+            <Button
+              variant="outline"
+              onClick={syncData}
+              disabled={appState.isSyncing}
+              className="transition-all hover:scale-105"
+            >
+              {appState.isSyncing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="mr-2 h-4 w-4" />
+              )}
+              Sync
+            </Button>
+            <Button
+              variant="outline"
+              onClick={exportToJSON}
+              disabled={appState.isExporting}
+              className="transition-all hover:scale-105"
+            >
+              {appState.isExporting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Download className="mr-2 h-4 w-4" />
               )}
               Export JSON
             </Button>
-            <Button onClick={handleCreate}>
+            <Button
+              onClick={handleCreate}
+              className="transition-all hover:scale-105 bg-gradient-to-r from-green-500 to-blue-500"
+            >
               <Plus className="mr-2 h-4 w-4" />
               Nouveau Service
             </Button>
@@ -1108,6 +1264,8 @@ export default function SuperAdminServicesPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleViewDetails(service)}
+                                className="transition-all hover:scale-105 hover:bg-blue-50 hover:border-blue-200"
+                                title="Voir les détails"
                               >
                                 <Eye className="h-3 w-3" />
                               </Button>
@@ -1115,6 +1273,8 @@ export default function SuperAdminServicesPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleEdit(service)}
+                                className="transition-all hover:scale-105 hover:bg-orange-50 hover:border-orange-200"
+                                title="Modifier"
                               >
                                 <Edit className="h-3 w-3" />
                               </Button>
@@ -1123,6 +1283,8 @@ export default function SuperAdminServicesPage() {
                                 variant="outline"
                                 onClick={() => handleDelete(service)}
                                 disabled={appState.isDeletingId === service.id}
+                                className="transition-all hover:scale-105 hover:bg-red-50 hover:border-red-200 disabled:opacity-50"
+                                title="Supprimer"
                               >
                                 {appState.isDeletingId === service.id ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -1489,7 +1651,11 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, nom: e.target.value }))}
                     required
                     disabled={appState.isSubmitting}
+                    className={validationErrors.nom ? 'border-red-500' : ''}
                   />
+                  {validationErrors.nom && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.nom}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="organisme">Organisme Responsable</Label>
@@ -1500,15 +1666,19 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, organisme: e.target.value }))}
                     required
                     disabled={appState.isSubmitting}
+                    className={validationErrors.organisme ? 'border-red-500' : ''}
                   />
+                  {validationErrors.organisme && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.organisme}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="categorie">Catégorie</Label>
-                  <Select
-                    value={formData.categorie}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, categorie: value }))}
-                    disabled={appState.isSubmitting}
-                  >
+                                      <Select
+                      value={formData.categorie}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, categorie: value }))}
+                      disabled={appState.isSubmitting}
+                    >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner une catégorie" />
                     </SelectTrigger>
@@ -1518,14 +1688,17 @@ export default function SuperAdminServicesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {validationErrors.categorie && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.categorie}</p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="status">Statut</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE' }))}
-                    disabled={appState.isSubmitting}
-                  >
+                                      <Select
+                      value={formData.status}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, status: value as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE' }))}
+                      disabled={appState.isSubmitting}
+                    >
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un statut" />
                     </SelectTrigger>
@@ -1535,6 +1708,9 @@ export default function SuperAdminServicesPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {validationErrors.status && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.status}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="description">Description</Label>
@@ -1545,7 +1721,11 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     required
                     disabled={appState.isSubmitting}
+                    className={validationErrors.description ? 'border-red-500' : ''}
                   />
+                  {validationErrors.description && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.description}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="documents_requis">Documents Requis (séparés par une virgule)</Label>
@@ -1556,7 +1736,11 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, documents_requis: e.target.value.split(',').map(d => d.trim()) }))}
                     placeholder="Ex: Attestation de domicile, Certificat de naissance, etc."
                     disabled={appState.isSubmitting}
+                    className={validationErrors.documents_requis ? 'border-red-500' : ''}
                   />
+                  {validationErrors.documents_requis && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.documents_requis}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="responsable">Responsable</Label>
@@ -1567,7 +1751,11 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, responsable: e.target.value }))}
                     required
                     disabled={appState.isSubmitting}
+                    className={validationErrors.responsable ? 'border-red-500' : ''}
                   />
+                  {validationErrors.responsable && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.responsable}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="telephone">Téléphone</Label>
@@ -1578,7 +1766,11 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, telephone: e.target.value }))}
                     required
                     disabled={appState.isSubmitting}
+                    className={validationErrors.telephone ? 'border-red-500' : ''}
                   />
+                  {validationErrors.telephone && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.telephone}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="email">Email</Label>
@@ -1589,7 +1781,11 @@ export default function SuperAdminServicesPage() {
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                     disabled={appState.isSubmitting}
+                    className={validationErrors.email ? 'border-red-500' : ''}
                   />
+                  {validationErrors.email && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2">
                   <Label htmlFor="lieu">Lieu</Label>
@@ -1600,7 +1796,11 @@ export default function SuperAdminServicesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, lieu: e.target.value }))}
                     required
                     disabled={appState.isSubmitting}
+                    className={validationErrors.lieu ? 'border-red-500' : ''}
                   />
+                  {validationErrors.lieu && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.lieu}</p>
+                  )}
                 </div>
                                  <div>
                    <Label htmlFor="duree">Durée de Traitement</Label>
@@ -1612,7 +1812,11 @@ export default function SuperAdminServicesPage() {
                      placeholder="Ex: 5-7 jours ouvrables"
                      required
                      disabled={appState.isSubmitting}
+                     className={validationErrors.duree ? 'border-red-500' : ''}
                    />
+                   {validationErrors.duree && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.duree}</p>
+                  )}
                  </div>
                  <div>
                    <Label htmlFor="cout">Coût</Label>
@@ -1624,7 +1828,11 @@ export default function SuperAdminServicesPage() {
                      placeholder="Ex: 10 000 FCFA"
                      required
                      disabled={appState.isSubmitting}
+                     className={validationErrors.cout ? 'border-red-500' : ''}
                    />
+                   {validationErrors.cout && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.cout}</p>
+                  )}
                  </div>
                  <div className="md:col-span-2">
                    <Label htmlFor="validite">Validité</Label>
@@ -1635,7 +1843,11 @@ export default function SuperAdminServicesPage() {
                      onChange={(e) => setFormData(prev => ({ ...prev, validite: e.target.value }))}
                      placeholder="Ex: 5 ans, permanente"
                      disabled={appState.isSubmitting}
+                     className={validationErrors.validite ? 'border-red-500' : ''}
                    />
+                   {validationErrors.validite && (
+                    <p className="text-red-500 text-xs mt-1">{validationErrors.validite}</p>
+                  )}
                  </div>
               </div>
               <div className="flex justify-end gap-2">
