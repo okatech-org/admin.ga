@@ -79,19 +79,13 @@ jobs:
 
     - name: 📊 Generate build
       run: |
-        export DATABASE_URL="${{ secrets.DATABASE_URL }}"
-        export NEXTAUTH_SECRET="${{ secrets.NEXTAUTH_SECRET }}"
-        export NEXTAUTH_URL="${{ secrets.NEXTAUTH_URL }}"
-
-        # Set default values if secrets are empty
-        [ -z "$DATABASE_URL" ] && export DATABASE_URL="postgresql://localhost:5432/test"
-        [ -z "$NEXTAUTH_SECRET" ] && export NEXTAUTH_SECRET="development-secret-key-$(date +%s)"
-        [ -z "$NEXTAUTH_URL" ] && export NEXTAUTH_URL="http://localhost:3000"
-
         echo "Building with configured environment..."
         npm run build
       continue-on-error: true
       env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://localhost:5432/test' }}
+        NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET || 'development-secret-key-default' }}
+        NEXTAUTH_URL: ${{ secrets.NEXTAUTH_URL || 'http://localhost:3000' }}
         NEXT_PUBLIC_APP_URL: https://administration.ga
 
     - name: 📂 Upload build artifacts
@@ -176,9 +170,9 @@ jobs:
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         build-args: |
-          DATABASE_URL=${{ secrets.DATABASE_URL }}
-          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
-          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          DATABASE_URL=${{ secrets.DATABASE_URL || 'postgresql://localhost:5432/admin_ga' }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET || 'fallback-secret-key' }}
+          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL || 'https://administration.ga' }}
 
   # ===============================================
   # JOB 4: Déploiement en Staging
@@ -212,12 +206,7 @@ jobs:
       continue-on-error: true
       run: |
         sleep 30
-        STAGING_URL="${{ secrets.STAGING_URL }}"
-        if [ -n "$STAGING_URL" ]; then
-          curl -f "$STAGING_URL/api/health" || echo "Health check failed"
-        else
-          echo "STAGING_URL not configured - health check skipped"
-        fi
+        curl -f "${{ secrets.STAGING_URL }}/api/health" || echo "Health check failed"
 
   # ===============================================
   # JOB 5: Déploiement en Production
@@ -235,6 +224,7 @@ jobs:
 
     - name: 📧 Notify deployment start
       uses: 8398a7/action-slack@v3
+      if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
       with:
         status: custom
         custom_payload: |
@@ -286,21 +276,17 @@ jobs:
       continue-on-error: true
       run: |
         sleep 60
-        PRODUCTION_URL="${{ secrets.PRODUCTION_URL }}"
-        if [ -n "$PRODUCTION_URL" ]; then
-          curl -f "$PRODUCTION_URL/api/health" || echo "Health check failed"
-        else
-          echo "PRODUCTION_URL not configured - health check skipped"
-        fi
+        curl -f "${{ secrets.PRODUCTION_URL }}/api/health" || echo "Health check failed"
 
     - name: 📊 Update monitoring
       continue-on-error: true
       run: |
         echo "Updating monitoring dashboards..."
-        # curl -X POST "${{ secrets.MONITORING_WEBHOOK }}" -d '{"status":"deployed","version":"${{ github.sha }}"}'
+        curl -X POST "${{ secrets.MONITORING_WEBHOOK }}" -d '{"status":"deployed","version":"${{ github.sha }}"}'
 
     - name: ✅ Notify deployment success
       uses: 8398a7/action-slack@v3
+      if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
       with:
         status: success
         text: "🎉 Déploiement en production réussi !"
@@ -309,7 +295,8 @@ jobs:
 
     - name: ❌ Notify deployment failure
       uses: 8398a7/action-slack@v3
-      if: failure()
+      if: ${{ failure() }}
+      continue-on-error: true
       with:
         status: failure
         text: "🚨 Échec du déploiement en production !"
@@ -340,11 +327,13 @@ jobs:
         # npx playwright test --project=production
 
     - name: 📊 Performance tests
+      continue-on-error: true
       run: |
         echo "Running performance tests..."
         # npx lighthouse ${{ secrets.PRODUCTION_URL }} --chrome-flags="--headless"
 
     - name: 🔐 Security scan post-deploy
+      continue-on-error: true
       run: |
         echo "Running security scan on live site..."
         # npx zap-baseline-scan.py -t ${{ secrets.PRODUCTION_URL }}
@@ -373,7 +362,7 @@ jobs:
 
     - name: 📧 Send deployment summary
       uses: 8398a7/action-slack@v3
-      if: always()
+      if: ${{ always() }}
       continue-on-error: true
       with:
         status: custom

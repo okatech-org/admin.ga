@@ -1,0 +1,323 @@
+# ================================================
+# Docker Compose pour Administration.GA
+# Environnement de production complet
+# ================================================
+
+version: '3.8'
+
+services:
+  # ===============================================
+  # Application Next.js principale
+  # ===============================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: administration-ga-app
+    restart: unless-stopped
+
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/administration_ga
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - REDIS_URL=redis://redis:6379
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+
+    ports:
+      - "3000:3000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    networks:
+      - administration-network
+
+    volumes:
+      - app-uploads:/app/uploads
+      - app-logs:/app/logs
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`administration.ga`)"
+      - "traefik.http.routers.app.tls=true"
+      - "traefik.http.routers.app.tls.certresolver=letsencrypt"
+
+  # ===============================================
+  # Base de données PostgreSQL
+  # ===============================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: administration-ga-postgres
+    restart: unless-stopped
+
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=administration_ga
+      - PGDATA=/var/lib/postgresql/data/pgdata
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+
+    networks:
+      - administration-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d administration_ga"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ===============================================
+  # Redis pour cache et sessions
+  # ===============================================
+  redis:
+    image: redis:7-alpine
+    container_name: administration-ga-redis
+    restart: unless-stopped
+
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+    ports:
+      - "6379:6379"
+
+    volumes:
+      - redis-data:/data
+
+    networks:
+      - administration-network
+
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ===============================================
+  # Reverse Proxy Traefik
+  # ===============================================
+  traefik:
+    image: traefik:v3.0
+    container_name: administration-ga-traefik
+    restart: unless-stopped
+
+    command:
+      - --api.dashboard=true
+      - --api.debug=true
+      - --log.level=INFO
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.letsencrypt.acme.email=admin@administration.ga
+      - --certificatesresolvers.letsencrypt.acme.storage=/acme.json
+      - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Dashboard
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-acme:/acme.json
+
+    networks:
+      - administration-network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.administration.ga`)"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.service=api@internal"
+
+  # ===============================================
+  # Monitoring avec Prometheus
+  # ===============================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: administration-ga-prometheus
+    restart: unless-stopped
+
+    ports:
+      - "9090:9090"
+
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+
+    networks:
+      - administration-network
+
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+
+  # ===============================================
+  # Visualisation avec Grafana
+  # ===============================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: administration-ga-grafana
+    restart: unless-stopped
+
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+
+    ports:
+      - "3001:3000"
+
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+
+    networks:
+      - administration-network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`monitoring.administration.ga`)"
+      - "traefik.http.routers.grafana.tls=true"
+
+  # ===============================================
+  # Logs centralisés avec Loki
+  # ===============================================
+  loki:
+    image: grafana/loki:latest
+    container_name: administration-ga-loki
+    restart: unless-stopped
+
+    ports:
+      - "3100:3100"
+
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/tmp/loki
+
+    networks:
+      - administration-network
+
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # ===============================================
+  # Agent de logs Promtail
+  # ===============================================
+  promtail:
+    image: grafana/promtail:latest
+    container_name: administration-ga-promtail
+    restart: unless-stopped
+
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - app-logs:/app/logs:ro
+
+    networks:
+      - administration-network
+
+    command: -config.file=/etc/promtail/config.yml
+
+  # ===============================================
+  # Backup automatique
+  # ===============================================
+  backup:
+    image: postgres:15-alpine
+    container_name: administration-ga-backup
+    restart: "no"
+
+    environment:
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - backup-data:/backups
+      - ./scripts/backup.sh:/backup.sh
+
+    networks:
+      - administration-network
+
+    depends_on:
+      - postgres
+
+    entrypoint: ["sh", "/backup.sh"]
+
+  # ===============================================
+  # Health Check Service
+  # ===============================================
+  healthcheck:
+    image: alpine/curl
+    container_name: administration-ga-healthcheck
+    restart: unless-stopped
+
+    volumes:
+      - ./scripts/healthcheck.sh:/healthcheck.sh
+
+    networks:
+      - administration-network
+
+    depends_on:
+      - app
+
+    command: ["sh", "/healthcheck.sh"]
+
+# ===============================================
+# Réseaux
+# ===============================================
+networks:
+  administration-network:
+    driver: bridge
+    name: administration-network
+
+# ===============================================
+# Volumes persistants
+# ===============================================
+volumes:
+  postgres-data:
+    driver: local
+    name: administration-postgres-data
+
+  redis-data:
+    driver: local
+    name: administration-redis-data
+
+  app-uploads:
+    driver: local
+    name: administration-app-uploads
+
+  app-logs:
+    driver: local
+    name: administration-app-logs
+
+  traefik-acme:
+    driver: local
+    name: administration-traefik-acme
+
+  prometheus-data:
+    driver: local
+    name: administration-prometheus-data
+
+  grafana-data:
+    driver: local
+    name: administration-grafana-data
+
+  loki-data:
+    driver: local
+    name: administration-loki-data
+
+  backup-data:
+    driver: local
+    name: administration-backup-data

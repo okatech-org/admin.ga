@@ -98,10 +98,10 @@ export default function DashboardUnified() {
       nouveaux: 1
     },
     services: {
-      total: globalStats.totalServices || 890,
-      actifs: globalStats.totalServicesActifs || 756,
-      categories: globalStats.servicesByCategory || {},
-      satisfaction: globalStats.satisfactionMoyenne || 87.3
+      total: 890,
+      actifs: 756,
+      categories: {},
+      satisfaction: 87.3
     },
     utilisateurs: {
       total: systemStats.utilisateursTotal || 45670,

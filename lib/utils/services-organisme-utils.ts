@@ -59,6 +59,25 @@ export const getOrganismesWithDetailedServices = (): OrganismeWithServices[] => 
       return 'autre';
     };
 
+    // Déterminer la catégorie d'un service individuel
+    const getServiceCategory = (service: any) => {
+      if (service.nom.includes('CNI') || service.nom.includes('passeport')) return 'identite';
+      if (service.nom.includes('naissance') || service.nom.includes('mariage')) return 'etat_civil';
+      if (service.nom.includes('fiscal') || service.nom.includes('impôt')) return 'fiscal';
+      if (service.nom.includes('social') || service.nom.includes('pension')) return 'social';
+      if (service.nom.includes('permis') || service.nom.includes('transport')) return 'transport';
+      if (service.nom.includes('santé') || service.nom.includes('médical')) return 'sante';
+      if (service.nom.includes('éducation') || service.nom.includes('diplôme')) return 'education';
+      if (service.nom.includes('justice') || service.nom.includes('juridique')) return 'justice';
+      return 'autre';
+    };
+
+    // Mapper les services pour ajouter la propriété category
+    const servicesAvecCategory: ServiceWithDetails[] = servicesDetailles.map(service => ({
+      ...service,
+      category: getServiceCategory(service)
+    }));
+
     // Générer des services basiques par défaut selon le type d'organisme
     const generateDefaultServices = (type: string) => {
       switch (type) {
@@ -92,8 +111,8 @@ export const getOrganismesWithDetailedServices = (): OrganismeWithServices[] => 
       type: org.type,
       localisation: org.ville || 'Libreville',
       services_basiques: generateDefaultServices(org.type),
-      services_detailles: servicesDetailles,
-      total_services: generateDefaultServices(org.type).length + servicesDetailles.length,
+      services_detailles: servicesAvecCategory,
+      total_services: generateDefaultServices(org.type).length + servicesAvecCategory.length,
       responsable: org.responsable || 'Non spécifié',
       telephone: org.telephone || '+241 00 00 00 00',
       website: org.email ? `https://${org.code.toLowerCase()}.gouv.ga` : undefined,
@@ -111,8 +130,20 @@ export const getGlobalServicesStats = () => {
   const allServices = getAllServices();
 
   // Calculer les statistiques par catégorie
+  const getServiceCategory = (service: any) => {
+    if (service.nom.includes('CNI') || service.nom.includes('passeport')) return 'identite';
+    if (service.nom.includes('naissance') || service.nom.includes('mariage')) return 'etat_civil';
+    if (service.nom.includes('fiscal') || service.nom.includes('impôt')) return 'fiscal';
+    if (service.nom.includes('social') || service.nom.includes('pension')) return 'social';
+    if (service.nom.includes('permis') || service.nom.includes('transport')) return 'transport';
+    if (service.nom.includes('santé') || service.nom.includes('médical')) return 'sante';
+    if (service.nom.includes('éducation') || service.nom.includes('diplôme')) return 'education';
+    if (service.nom.includes('justice') || service.nom.includes('juridique')) return 'justice';
+    return 'autre';
+  };
+
   const servicesByCategory = allServices.reduce((acc: Record<string, number>, service) => {
-    const category = service.category || 'autre';
+    const category = getServiceCategory(service);
     acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});

@@ -143,6 +143,7 @@ export default function SuperAdminServicesPage() {
   const [selectedOrganisme, setSelectedOrganisme] = useState('all');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedTab, setSelectedTab] = useState('overview');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   // États de pagination et tri
   const [pagination, setPagination] = useState<PaginationState>({
@@ -163,6 +164,17 @@ export default function SuperAdminServicesPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [serviceToDelete, setServiceToDelete] = useState<Service | null>(null);
+
+  // États des modales de statistiques interactives
+  const [isServicesListOpen, setIsServicesListOpen] = useState(false);
+  const [isOrganismesListOpen, setIsOrganismesListOpen] = useState(false);
+  const [isDemandesDetailOpen, setIsDemandesDetailOpen] = useState(false);
+  const [isSatisfactionDetailOpen, setIsSatisfactionDetailOpen] = useState(false);
+
+  // États pour la gestion des organismes/clients
+  const [isConvertingToClient, setIsConvertingToClient] = useState<string | null>(null);
+  const [clientStatuses, setClientStatuses] = useState<Record<string, 'PROSPECT' | 'CLIENT' | 'INACTIVE'>>({});
+  const [selectedOrganismeForView, setSelectedOrganismeForView] = useState<string | null>(null);
 
   // États d'application améliorés
   const [appState, setAppState] = useState<AppState>({
@@ -305,6 +317,64 @@ export default function SuperAdminServicesPage() {
     return [...new Set(services.map(s => s.organisme))].sort();
   }, [services]);
 
+    // Fonction utilitaire pour déterminer le statut par défaut
+  const getDefaultClientStatus = useCallback((organisme: string, orgServices: any[]) => {
+    if (orgServices.length >= 15 && orgServices.reduce((sum, s) => sum + s.satisfaction, 0) / orgServices.length >= 85) {
+      return 'CLIENT';
+    } else if (orgServices.length >= 5) {
+      return 'PROSPECT';
+    } else {
+      return 'INACTIVE';
+    }
+  }, []);
+
+  // Données détaillées pour les modales interactives
+  const detailedStats = useMemo(() => {
+    const organismesWithStats = uniqueOrganismes.map(organisme => {
+      const orgServices = services.filter(s => s.organisme === organisme);
+
+      // Utiliser le statut depuis l'état ou calculer le défaut
+      const clientStatus = clientStatuses[organisme] || getDefaultClientStatus(organisme, orgServices);
+
+      return {
+        nom: organisme,
+        code: organisme, // Utiliser le nom comme code pour la démo
+        nombreServices: orgServices.length,
+        servicesActifs: orgServices.filter(s => s.status === 'ACTIVE').length,
+        servicesMaintenance: orgServices.filter(s => s.status === 'MAINTENANCE').length,
+        totalDemandes: orgServices.reduce((sum, s) => sum + (s.demandes_mois || 0), 0),
+        satisfactionMoyenne: orgServices.length > 0 ? Math.round(
+          orgServices.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / orgServices.length
+        ) : 0,
+        services: orgServices,
+        clientStatus,
+        revenue: orgServices.reduce((sum, s) => sum + (s.demandes_mois * 2500), 0), // Estimation du chiffre d'affaires
+        lastActivity: new Date(2024, 11, Math.floor(Math.random() * 30) + 1).toISOString().split('T')[0],
+        website: `https://${organisme.toLowerCase().replace(/[^a-z]/g, '-')}.gouv.ga`,
+        contactEmail: `contact@${organisme.toLowerCase().replace(/[^a-z]/g, '-')}.gouv.ga`
+      };
+    }).sort((a, b) => {
+      // Trier par statut client d'abord, puis par nombre de services
+      const statusOrder = { 'CLIENT': 3, 'PROSPECT': 2, 'INACTIVE': 1 };
+      if (statusOrder[a.clientStatus] !== statusOrder[b.clientStatus]) {
+        return statusOrder[b.clientStatus] - statusOrder[a.clientStatus];
+      }
+      return b.nombreServices - a.nombreServices;
+    });
+
+    const servicesParDemandes = [...services]
+      .sort((a, b) => (b.demandes_mois || 0) - (a.demandes_mois || 0));
+
+    const servicesParSatisfaction = [...services]
+      .sort((a, b) => (b.satisfaction || 0) - (a.satisfaction || 0));
+
+    return {
+      organismes: organismesWithStats,
+      servicesParDemandes,
+      servicesParSatisfaction
+    };
+  }, [services, uniqueOrganismes, clientStatuses, getDefaultClientStatus]);
+
   // Fonction de tri
   const sortServices = useCallback((servicesToSort: Service[], field: keyof Service, direction: 'asc' | 'desc') => {
     return [...servicesToSort].sort((a, b) => {
@@ -384,7 +454,7 @@ export default function SuperAdminServicesPage() {
         filtered.reduce((sum, s) => sum + (s.satisfaction || 0), 0) / filtered.length
       ) : 0,
       categoriesUniques: Object.keys(CATEGORIES).length,
-      organismes: [...new Set(filtered.map(s => s.organisme))].length
+      organismes: [...new Set(services.map(s => s.organisme))].length // Compter sur TOUS les services, pas seulement les filtrés
     };
   }, [services.length, filteredAndSortedServices]);
 
@@ -608,6 +678,16 @@ export default function SuperAdminServicesPage() {
     setIsDeleteDialogOpen(false);
     setServiceToDelete(null);
     setValidationErrors({});
+
+    // Fermer les modales de statistiques
+    setIsServicesListOpen(false);
+    setIsOrganismesListOpen(false);
+    setIsDemandesDetailOpen(false);
+    setIsSatisfactionDetailOpen(false);
+
+    // Nettoyer les états de gestion des organismes
+    setIsConvertingToClient(null);
+    setSelectedOrganismeForView(null);
   }, []);
 
   const handleSubmitForm = useCallback(async (e: React.FormEvent) => {
@@ -734,6 +814,76 @@ export default function SuperAdminServicesPage() {
     setSortState({ field: null, direction: 'asc' });
     setPagination(prev => ({ ...prev, currentPage: 1 }));
     toast.success('🔄 Filtres réinitialisés');
+  }, []);
+
+  // Handlers pour les cartes de statistiques interactives
+  const handleServicesClick = useCallback(() => {
+    setIsServicesListOpen(true);
+    toast.info('📋 Affichage de la liste complète des services');
+  }, []);
+
+  const handleOrganismesClick = useCallback(() => {
+    setIsOrganismesListOpen(true);
+    toast.info('🏢 Affichage de la liste des organismes');
+  }, []);
+
+  const handleDemandesClick = useCallback(() => {
+    setIsDemandesDetailOpen(true);
+    toast.info('📊 Affichage du détail des demandes mensuelles');
+  }, []);
+
+  const handleSatisfactionClick = useCallback(() => {
+    setIsSatisfactionDetailOpen(true);
+    toast.info('⭐ Affichage du détail de la satisfaction');
+  }, []);
+
+  // Fonctions de gestion des organismes/clients
+  const handleConvertToClient = useCallback(async (organismeCode: string, organismeNom: string) => {
+    setIsConvertingToClient(organismeCode);
+
+    try {
+      // Simulation de l'API de conversion
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      setClientStatuses(prev => ({
+        ...prev,
+        [organismeNom]: 'CLIENT'
+      }));
+
+      toast.success(`🎉 ${organismeNom} a été converti en client avec succès !`);
+    } catch (error) {
+      toast.error(`❌ Erreur lors de la conversion de ${organismeNom}`);
+    } finally {
+      setIsConvertingToClient(null);
+    }
+  }, []);
+
+  const handleViewOrganisme = useCallback((organismeCode: string, organismeNom: string, website: string) => {
+    // Ouvrir dans un nouvel onglet
+    window.open(website, '_blank');
+    toast.info(`🌐 Ouverture de la page d'accueil de ${organismeNom}`);
+  }, []);
+
+  const handleManageClient = useCallback((organismeCode: string, organismeNom: string) => {
+    // Redirection vers la gestion client
+    router.push(`/super-admin/clients/${organismeCode}`);
+    toast.info(`⚙️ Redirection vers la gestion de ${organismeNom}`);
+  }, [router]);
+
+  const handleToggleStatus = useCallback((organismeNom: string, currentStatus: string) => {
+    const statusMap = {
+      'CLIENT': 'PROSPECT',
+      'PROSPECT': 'INACTIVE',
+      'INACTIVE': 'PROSPECT'
+    };
+
+    const newStatus = statusMap[currentStatus] || 'PROSPECT';
+    setClientStatuses(prev => ({
+      ...prev,
+      [organismeNom]: newStatus as 'PROSPECT' | 'CLIENT' | 'INACTIVE'
+    }));
+
+    toast.success(`📊 Statut de ${organismeNom} changé vers ${newStatus}`);
   }, []);
 
   const syncData = useCallback(async () => {
@@ -896,62 +1046,86 @@ export default function SuperAdminServicesPage() {
           </div>
         </div>
 
-        {/* Statistiques globales */}
+        {/* Statistiques globales interactives */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card
+            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-green-200 hover:border-green-400"
+            onClick={handleServicesClick}
+          >
             <CardContent className="p-6">
               <div className="flex items-center">
                 <FileText className="h-8 w-8 text-green-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">Total Services</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.total}</p>
                   <p className="text-xs text-muted-foreground">
                     {stats.active} actifs, {stats.maintenance} en maintenance
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1 font-medium">
+                    👆 Cliquez pour voir la liste
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card
+            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-blue-200 hover:border-blue-400"
+            onClick={handleOrganismesClick}
+          >
             <CardContent className="p-6">
               <div className="flex items-center">
                 <Building2 className="h-8 w-8 text-blue-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">Organismes</p>
-                  <p className="text-2xl font-bold">{stats.organismes}</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.organismes}</p>
                   <p className="text-xs text-muted-foreground">
                     {stats.categoriesUniques} catégories de services
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1 font-medium">
+                    👆 Cliquez pour voir la liste
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card
+            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-purple-200 hover:border-purple-400"
+            onClick={handleDemandesClick}
+          >
             <CardContent className="p-6">
               <div className="flex items-center">
                 <TrendingUp className="h-8 w-8 text-purple-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">Demandes Mensuelles</p>
-                  <p className="text-2xl font-bold">{stats.totalDemandes.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-purple-600">{stats.totalDemandes.toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">
                     Volume d'activité total
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1 font-medium">
+                    👆 Cliquez pour voir le détail
                   </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card
+            className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 border-yellow-200 hover:border-yellow-400"
+            onClick={handleSatisfactionClick}
+          >
             <CardContent className="p-6">
               <div className="flex items-center">
                 <Star className="h-8 w-8 text-yellow-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">Satisfaction Moyenne</p>
-                  <p className="text-2xl font-bold">{stats.satisfactionMoyenne}%</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.satisfactionMoyenne}%</p>
                   <p className="text-xs text-muted-foreground">
                     Qualité de service globale
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1 font-medium">
+                    👆 Cliquez pour voir le détail
                   </p>
                 </div>
               </div>
@@ -1071,234 +1245,531 @@ export default function SuperAdminServicesPage() {
 
           {/* Services */}
           <TabsContent value="services" className="space-y-6">
-            {/* Filtres */}
+            {/* Barre de contrôle intelligente */}
             <Card>
               <CardHeader>
-                <CardTitle>Recherche et Filtres</CardTitle>
-                <CardDescription>
-                  Filtrer et rechercher parmi {stats.totalFiltered} services
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col lg:flex-row gap-4">
-                  <div className="flex-1">
-                    <Input
-                      placeholder="🔍 Rechercher par nom, organisme ou description..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      🔍 Recherche et Filtres Intelligents
+                      <Badge variant="secondary" className="text-xs">
+                        {stats.totalFiltered}/{stats.total}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      Navigation intuitive parmi {stats.totalFiltered} services
+                    </CardDescription>
                   </div>
-                  <Select value={selectedCategorie} onValueChange={setSelectedCategorie}>
-                    <SelectTrigger className="lg:w-48">
-                      <SelectValue placeholder="Catégorie" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Toutes catégories</SelectItem>
-                      {Object.entries(CATEGORIES).map(([value, config]) => (
-                        <SelectItem key={value} value={value}>{config.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                    >
+                      <FileText className="h-4 w-4 mr-1" />
+                      Grille
+                    </Button>
+                    <Button
+                      variant={viewMode === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setViewMode('table')}
+                    >
+                      <BarChart3 className="h-4 w-4 mr-1" />
+                      Tableau
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Recherche principale */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="🔍 Rechercher par nom, organisme, description ou responsable..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Filtres rapides par catégorie */}
+                <div>
+                  <p className="text-sm font-medium mb-2">Filtres rapides par catégorie :</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      variant={selectedCategorie === 'all' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategorie('all')}
+                    >
+                      Toutes ({stats.total})
+                    </Button>
+                    {Object.entries(CATEGORIES).slice(0, 6).map(([value, config]) => {
+                      const count = servicesByCategory.find(cat => cat.categorie === value)?.count || 0;
+                      return (
+                        <Button
+                          key={value}
+                          variant={selectedCategorie === value ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => setSelectedCategorie(value)}
+                          className={selectedCategorie === value ? `${config.color} text-white` : ''}
+                        >
+                          {config.label} ({count})
+                        </Button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Filtres avancés */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className="lg:w-48">
-                      <SelectValue placeholder="Statut" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrer par statut" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tous les statuts</SelectItem>
-                      {Object.entries(STATUS_CONFIG).map(([value, config]) => (
-                        <SelectItem key={value} value={value}>{config.label}</SelectItem>
-                      ))}
+                      <SelectItem value="all">Tous les statuts ({stats.total})</SelectItem>
+                      <SelectItem value="ACTIVE">
+                        Actifs ({stats.active})
+                      </SelectItem>
+                      <SelectItem value="MAINTENANCE">
+                        Maintenance ({stats.maintenance})
+                      </SelectItem>
+                      <SelectItem value="INACTIVE">
+                        Inactifs ({stats.total - stats.active - stats.maintenance})
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+
                   <Select value={selectedOrganisme} onValueChange={setSelectedOrganisme}>
-                    <SelectTrigger className="lg:w-48">
-                      <SelectValue placeholder="Organisme" />
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filtrer par organisme" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Tous les organismes</SelectItem>
-                      {uniqueOrganismes.map(org => (
+                      <SelectItem value="all">Tous les organismes ({uniqueOrganismes.length})</SelectItem>
+                      {uniqueOrganismes.slice(0, 10).map(org => (
                         <SelectItem key={org} value={org}>{org}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={resetFilters}>
-                    <Filter className="mr-2 h-4 w-4" />
-                    Réinitialiser
+
+                  <Button variant="outline" onClick={resetFilters} className="w-full">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Réinitialiser tout
                   </Button>
                 </div>
+
+                {/* Indicateurs de filtres actifs */}
+                {(searchTerm || selectedCategorie !== 'all' || selectedStatus !== 'all' || selectedOrganisme !== 'all') && (
+                  <div className="flex flex-wrap gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <span className="text-sm font-medium text-blue-800">Filtres actifs :</span>
+                    {searchTerm && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        Recherche: "{searchTerm}"
+                        <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setSearchTerm('')} />
+                      </Badge>
+                    )}
+                    {selectedCategorie !== 'all' && (
+                      <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                        {CATEGORIES[selectedCategorie]?.label}
+                        <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setSelectedCategorie('all')} />
+                      </Badge>
+                    )}
+                    {selectedStatus !== 'all' && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        {STATUS_CONFIG[selectedStatus]?.label}
+                        <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setSelectedStatus('all')} />
+                      </Badge>
+                    )}
+                    {selectedOrganisme !== 'all' && (
+                      <Badge variant="secondary" className="bg-orange-100 text-orange-800">
+                        {selectedOrganisme}
+                        <X className="h-3 w-3 ml-1 cursor-pointer" onClick={() => setSelectedOrganisme('all')} />
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
-            {/* Table des services */}
+            {/* Affichage intelligent des services */}
             <Card>
-                              <CardHeader>
-                  <CardTitle>
-                    📋 Liste des Services ({stats.totalFiltered}/{stats.total})
-                  </CardTitle>
-                  <CardDescription>
-                    {stats.totalFiltered < stats.total ? (
-                      <>
-                        Affichage de {stats.totalFiltered} services filtrés sur {stats.total} au total
-                        {sortState.field && (
-                          <span className="ml-2 text-blue-600">
-                            • Trié par {sortState.field} ({sortState.direction === 'asc' ? 'croissant' : 'décroissant'})
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      `Gestion complète des ${stats.total} services publics`
-                    )}
-                  </CardDescription>
-                </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('nom')}
-                            className="h-auto p-0 font-medium hover:bg-transparent"
-                          >
-                            Service
-                            {getSortIcon('nom')}
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('categorie')}
-                            className="h-auto p-0 font-medium hover:bg-transparent"
-                          >
-                            Catégorie
-                            {getSortIcon('categorie')}
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('organisme')}
-                            className="h-auto p-0 font-medium hover:bg-transparent"
-                          >
-                            Organisme
-                            {getSortIcon('organisme')}
-                          </Button>
-                        </TableHead>
-                        <TableHead>
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('satisfaction')}
-                            className="h-auto p-0 font-medium hover:bg-transparent"
-                          >
-                            Performance
-                            {getSortIcon('satisfaction')}
-                          </Button>
-                        </TableHead>
-                        <TableHead>Coût & Durée</TableHead>
-                        <TableHead>
-                          <Button
-                            variant="ghost"
-                            onClick={() => handleSort('status')}
-                            className="h-auto p-0 font-medium hover:bg-transparent"
-                          >
-                            Statut
-                            {getSortIcon('status')}
-                          </Button>
-                        </TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedServices.map((service) => (
-                        <TableRow key={service.id} className="hover:bg-muted/50">
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{service.nom}</div>
-                              <div className="text-sm text-muted-foreground">{service.description}</div>
-                              <div className="text-xs text-muted-foreground">Resp: {service.responsable}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`text-white ${CATEGORIES[service.categorie]?.color}`}>
-                              {CATEGORIES[service.categorie]?.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
-                              {service.organisme}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <Star className="h-4 w-4 text-yellow-500" />
-                                <span className="font-medium">{service.satisfaction}%</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                {service.demandes_mois} demandes/mois
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2">
-                                <DollarSign className="h-4 w-4 text-green-500" />
-                                <span className="font-medium">{service.cout}</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {service.duree}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`text-white ${STATUS_CONFIG[service.status]?.color}`}>
-                              {STATUS_CONFIG[service.status]?.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleViewDetails(service)}
-                                className="transition-all hover:scale-105 hover:bg-blue-50 hover:border-blue-200"
-                                title="Voir les détails"
-                              >
-                                <Eye className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleEdit(service)}
-                                className="transition-all hover:scale-105 hover:bg-orange-50 hover:border-orange-200"
-                                title="Modifier"
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleDelete(service)}
-                                disabled={appState.isDeletingId === service.id}
-                                className="transition-all hover:scale-105 hover:bg-red-50 hover:border-red-200 disabled:opacity-50"
-                                title="Supprimer"
-                              >
-                                {appState.isDeletingId === service.id ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-3 w-3" />
-                                )}
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {viewMode === 'grid' ? '🏢' : '📋'} {viewMode === 'grid' ? 'Services par Catégorie' : 'Tableau Détaillé'}
+                      <Badge variant="outline">
+                        {stats.totalFiltered}/{stats.total}
+                      </Badge>
+                    </CardTitle>
+                    <CardDescription>
+                      {stats.totalFiltered < stats.total ? (
+                        <>
+                          Affichage de {stats.totalFiltered} services filtrés sur {stats.total} au total
+                          {sortState.field && (
+                            <span className="ml-2 text-blue-600">
+                              • Trié par {sortState.field} ({sortState.direction === 'asc' ? 'croissant' : 'décroissant'})
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        `Gestion complète des ${stats.total} services publics`
+                      )}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => changeItemsPerPage(20)}
+                      className={pagination.itemsPerPage === 20 ? 'bg-blue-50' : ''}
+                    >
+                      20/page
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => changeItemsPerPage(50)}
+                      className={pagination.itemsPerPage === 50 ? 'bg-blue-50' : ''}
+                    >
+                      50/page
+                    </Button>
+                  </div>
                 </div>
+              </CardHeader>
+              <CardContent>
+                {/* Mode Grille - Affichage par catégories */}
+                {viewMode === 'grid' && (
+                  <div className="space-y-6">
+                    {/* Navigation rapide par catégories */}
+                    <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200 mb-6">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">🧭 Navigation rapide par catégories</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {servicesByCategory.map((cat) => (
+                          <Button
+                            key={cat.categorie}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              document.getElementById(`category-${cat.categorie}`)?.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                              });
+                            }}
+                            className="text-xs hover:scale-105 transition-transform"
+                          >
+                            <span className={`w-2 h-2 rounded-full mr-2 ${cat.color}`}></span>
+                            {cat.label} ({cat.count})
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Statistiques contextuelles rapides */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="text-lg font-bold text-blue-600">{servicesByCategory.length}</div>
+                        <div className="text-xs text-blue-800">Catégories actives</div>
+                      </div>
+                      <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                        <div className="text-lg font-bold text-green-600">{stats.satisfactionMoyenne}%</div>
+                        <div className="text-xs text-green-800">Satisfaction moyenne</div>
+                      </div>
+                      <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="text-lg font-bold text-purple-600">{Math.round(stats.totalDemandes / stats.totalFiltered)}</div>
+                        <div className="text-xs text-purple-800">Demandes moy./service</div>
+                      </div>
+                      <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <div className="text-lg font-bold text-orange-600">{stats.organismes}</div>
+                        <div className="text-xs text-orange-800">Organismes concernés</div>
+                      </div>
+                    </div>
+
+                    {servicesByCategory.map((category) => (
+                      <div key={category.categorie} id={`category-${category.categorie}`} className="space-y-4 scroll-mt-20">
+                        {/* En-tête de catégorie */}
+                        <div className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <Badge className={`text-white ${category.color} px-3 py-1`}>
+                              {category.label}
+                            </Badge>
+                            <div className="text-sm text-gray-600">
+                              <span className="font-medium">{category.count} services</span>
+                              <span className="mx-2">•</span>
+                              <span>{category.satisfactionMoyenne}% satisfaction</span>
+                              <span className="mx-2">•</span>
+                              <span>{category.totalDemandes} demandes/mois</span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedCategorie(category.categorie);
+                              setViewMode('table');
+                            }}
+                          >
+                            Voir en tableau
+                          </Button>
+                        </div>
+
+                        {/* Services de la catégorie */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {category.services.slice(
+                            (pagination.currentPage - 1) * pagination.itemsPerPage,
+                            pagination.currentPage * pagination.itemsPerPage
+                          ).map((service) => (
+                            <Card key={service.id} className="hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+                              <CardContent className="p-4">
+                                <div className="space-y-3">
+                                  {/* En-tête du service */}
+                                  <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                      <h4 className="font-semibold text-sm line-clamp-2">{service.nom}</h4>
+                                      <p className="text-xs text-gray-600 flex items-center gap-1 mt-1">
+                                        <Building2 className="h-3 w-3" />
+                                        {service.organisme}
+                                      </p>
+                                    </div>
+                                    <Badge className={`text-white ${STATUS_CONFIG[service.status]?.color} text-xs`}>
+                                      {STATUS_CONFIG[service.status]?.label}
+                                    </Badge>
+                                  </div>
+
+                                  {/* Métriques clés */}
+                                  <div className="grid grid-cols-2 gap-3 text-xs">
+                                    <div className="flex items-center gap-1">
+                                      <Star className="h-3 w-3 text-yellow-500" />
+                                      <span className="font-medium">{service.satisfaction}%</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <TrendingUp className="h-3 w-3 text-blue-500" />
+                                      <span>{service.demandes_mois}/mois</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <DollarSign className="h-3 w-3 text-green-500" />
+                                      <span className="font-medium">{service.cout}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3 text-purple-500" />
+                                      <span>{service.duree}</span>
+                                    </div>
+                                  </div>
+
+                                  {/* Responsable */}
+                                  <div className="text-xs text-gray-600">
+                                    <span className="font-medium">Resp:</span> {service.responsable}
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="flex items-center gap-1 pt-2 border-t">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleViewDetails(service)}
+                                      className="flex-1 h-7 text-xs"
+                                    >
+                                      <Eye className="h-3 w-3 mr-1" />
+                                      Voir
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleEdit(service)}
+                                      className="flex-1 h-7 text-xs"
+                                    >
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      Éditer
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleDelete(service)}
+                                      disabled={appState.isDeletingId === service.id}
+                                      className="h-7 w-7 p-0 text-red-600 hover:bg-red-50"
+                                    >
+                                      {appState.isDeletingId === service.id ? (
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                      ) : (
+                                        <Trash2 className="h-3 w-3" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Bouton de retour en haut */}
+                    {servicesByCategory.length > 3 && (
+                      <div className="flex justify-center pt-6">
+                        <Button
+                          variant="outline"
+                          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                          className="gap-2 hover:bg-blue-50"
+                        >
+                          <ChevronUp className="h-4 w-4" />
+                          Retour en haut
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Mode Tableau - Affichage classique */}
+                {viewMode === 'table' && (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort('nom')}
+                              className="h-auto p-0 font-medium hover:bg-transparent"
+                            >
+                              Service
+                              {getSortIcon('nom')}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort('categorie')}
+                              className="h-auto p-0 font-medium hover:bg-transparent"
+                            >
+                              Catégorie
+                              {getSortIcon('categorie')}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort('organisme')}
+                              className="h-auto p-0 font-medium hover:bg-transparent"
+                            >
+                              Organisme
+                              {getSortIcon('organisme')}
+                            </Button>
+                          </TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort('satisfaction')}
+                              className="h-auto p-0 font-medium hover:bg-transparent"
+                            >
+                              Performance
+                              {getSortIcon('satisfaction')}
+                            </Button>
+                          </TableHead>
+                          <TableHead>Coût & Durée</TableHead>
+                          <TableHead>
+                            <Button
+                              variant="ghost"
+                              onClick={() => handleSort('status')}
+                              className="h-auto p-0 font-medium hover:bg-transparent"
+                            >
+                              Statut
+                              {getSortIcon('status')}
+                            </Button>
+                          </TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedServices.map((service) => (
+                          <TableRow key={service.id} className="hover:bg-muted/50">
+                            <TableCell>
+                              <div>
+                                <div className="font-medium">{service.nom}</div>
+                                <div className="text-sm text-muted-foreground">{service.description}</div>
+                                <div className="text-xs text-muted-foreground">Resp: {service.responsable}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-white ${CATEGORIES[service.categorie]?.color}`}>
+                                {CATEGORIES[service.categorie]?.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Building2 className="h-4 w-4 mr-1 text-muted-foreground" />
+                                {service.organisme}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <Star className="h-4 w-4 text-yellow-500" />
+                                  <span className="font-medium">{service.satisfaction}%</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {service.demandes_mois} demandes/mois
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <DollarSign className="h-4 w-4 text-green-500" />
+                                  <span className="font-medium">{service.cout}</span>
+                                </div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  {service.duree}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-white ${STATUS_CONFIG[service.status]?.color}`}>
+                                {STATUS_CONFIG[service.status]?.label}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleViewDetails(service)}
+                                  className="transition-all hover:scale-105 hover:bg-blue-50 hover:border-blue-200"
+                                  title="Voir les détails"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEdit(service)}
+                                  className="transition-all hover:scale-105 hover:bg-orange-50 hover:border-orange-200"
+                                  title="Modifier"
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleDelete(service)}
+                                  disabled={appState.isDeletingId === service.id}
+                                  className="transition-all hover:scale-105 hover:bg-red-50 hover:border-red-200 disabled:opacity-50"
+                                  title="Supprimer"
+                                >
+                                  {appState.isDeletingId === service.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-3 w-3" />
+                                  )}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
 
                 {paginatedServices.length === 0 && filteredAndSortedServices.length === 0 && (
                   <div className="text-center py-8">
@@ -1530,6 +2001,421 @@ export default function SuperAdminServicesPage() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Modales de statistiques interactives */}
+
+        {/* Modal Liste des Services */}
+        <Dialog open={isServicesListOpen} onOpenChange={setIsServicesListOpen}>
+          <DialogContent className="max-w-6xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-green-500" />
+                Liste Complète des Services ({stats.total} services)
+              </DialogTitle>
+              <DialogDescription>
+                Tous les services publics disponibles dans le système
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
+              {services.map((service) => (
+                <Card key={service.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm line-clamp-2">{service.nom}</h4>
+                      <p className="text-xs text-gray-600 flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        {service.organisme}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <Badge className={`text-white ${CATEGORIES[service.categorie]?.color} text-xs`}>
+                          {CATEGORIES[service.categorie]?.label}
+                        </Badge>
+                        <Badge className={`text-white ${STATUS_CONFIG[service.status]?.color} text-xs`}>
+                          {STATUS_CONFIG[service.status]?.label}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Star className="h-3 w-3 text-yellow-500" />
+                          <span>{service.satisfaction}%</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <TrendingUp className="h-3 w-3 text-blue-500" />
+                          <span>{service.demandes_mois}/mois</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={() => setIsServicesListOpen(false)}>
+                Fermer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+                {/* Modal Liste des Organismes - Version enrichie avec gestion clients */}
+        <Dialog open={isOrganismesListOpen} onOpenChange={setIsOrganismesListOpen}>
+          <DialogContent className="max-w-7xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-blue-500" />
+                Gestion des Organismes & Clients ({stats.organismes} organismes)
+              </DialogTitle>
+              <DialogDescription>
+                Gérez vos organismes publics, convertissez-les en clients et accédez à leurs configurations
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Statistiques de répartition par statut */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-xl font-bold text-green-600">
+                  {detailedStats.organismes.filter(o => o.clientStatus === 'CLIENT').length}
+                </div>
+                <div className="text-sm text-gray-600">Clients Actifs</div>
+              </div>
+              <div className="text-center p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="text-xl font-bold text-blue-600">
+                  {detailedStats.organismes.filter(o => o.clientStatus === 'PROSPECT').length}
+                </div>
+                <div className="text-sm text-gray-600">Prospects</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <div className="text-xl font-bold text-gray-600">
+                  {detailedStats.organismes.filter(o => o.clientStatus === 'INACTIVE').length}
+                </div>
+                <div className="text-sm text-gray-600">Inactifs</div>
+              </div>
+            </div>
+
+            {/* Liste des organismes organisée par statut */}
+            <div className="space-y-6 max-h-96 overflow-y-auto">
+              {['CLIENT', 'PROSPECT', 'INACTIVE'].map(status => {
+                const organismesStatus = detailedStats.organismes.filter(o => o.clientStatus === status);
+                if (organismesStatus.length === 0) return null;
+
+                const statusConfig = {
+                  'CLIENT': { label: '💼 Clients Actifs', color: 'border-green-500', bgColor: 'bg-green-50', textColor: 'text-green-700' },
+                  'PROSPECT': { label: '🎯 Prospects', color: 'border-blue-500', bgColor: 'bg-blue-50', textColor: 'text-blue-700' },
+                  'INACTIVE': { label: '💤 Inactifs', color: 'border-gray-500', bgColor: 'bg-gray-50', textColor: 'text-gray-700' }
+                };
+
+                return (
+                  <div key={status} className={`border-l-4 ${statusConfig[status].color} pl-4`}>
+                    <h3 className={`text-lg font-semibold mb-3 ${statusConfig[status].textColor}`}>
+                      {statusConfig[status].label} ({organismesStatus.length})
+                    </h3>
+
+                    <div className="space-y-3">
+                      {organismesStatus.map((organisme, index) => (
+                        <Card key={organisme.nom} className={`hover:shadow-lg transition-all duration-200 ${statusConfig[status].bgColor} border-l-4 ${statusConfig[status].color}`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-full ${statusConfig[status].color.replace('border', 'bg')} text-white flex items-center justify-center text-sm font-bold`}>
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h4 className="font-semibold text-lg">{organisme.nom}</h4>
+                                    <Badge
+                                      className={`text-xs px-2 py-1 cursor-pointer transition-colors ${
+                                        organisme.clientStatus === 'CLIENT' ? 'bg-green-500 hover:bg-green-600' :
+                                        organisme.clientStatus === 'PROSPECT' ? 'bg-blue-500 hover:bg-blue-600' :
+                                        'bg-gray-500 hover:bg-gray-600'
+                                      } text-white`}
+                                      onClick={() => handleToggleStatus(organisme.nom, organisme.clientStatus)}
+                                      title="Cliquer pour changer le statut"
+                                    >
+                                      {organisme.clientStatus}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-sm text-gray-600 space-y-1">
+                                    <p>📧 {organisme.contactEmail}</p>
+                                    <p>🌐 {organisme.website}</p>
+                                    <p>📅 Dernière activité: {organisme.lastActivity}</p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="text-right">
+                                <p className="text-xl font-bold text-blue-600">{organisme.satisfactionMoyenne}%</p>
+                                <p className="text-xs text-gray-600">satisfaction</p>
+                                <p className="text-lg font-bold text-green-600 mt-1">{organisme.revenue.toLocaleString()} FCFA</p>
+                                <p className="text-xs text-gray-600">revenue estimé</p>
+                              </div>
+                            </div>
+
+                            {/* Métriques détaillées */}
+                            <div className="grid grid-cols-5 gap-3 text-sm mb-4">
+                              <div className="text-center p-2 bg-white rounded shadow-sm">
+                                <div className="font-bold text-green-600">{organisme.servicesActifs}</div>
+                                <div className="text-xs text-gray-600">Actifs</div>
+                              </div>
+                              <div className="text-center p-2 bg-white rounded shadow-sm">
+                                <div className="font-bold text-yellow-600">{organisme.servicesMaintenance}</div>
+                                <div className="text-xs text-gray-600">Maintenance</div>
+                              </div>
+                              <div className="text-center p-2 bg-white rounded shadow-sm">
+                                <div className="font-bold text-purple-600">{organisme.totalDemandes}</div>
+                                <div className="text-xs text-gray-600">Demandes/mois</div>
+                              </div>
+                              <div className="text-center p-2 bg-white rounded shadow-sm">
+                                <div className="font-bold text-blue-600">{organisme.nombreServices}</div>
+                                <div className="text-xs text-gray-600">Total services</div>
+                              </div>
+                              <div className="text-center p-2 bg-white rounded shadow-sm">
+                                <div className="font-bold text-indigo-600">{Math.round(organisme.revenue / organisme.nombreServices).toLocaleString()}</div>
+                                <div className="text-xs text-gray-600">Rev/service</div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleViewOrganisme(organisme.code, organisme.nom, organisme.website)}
+                                className="transition-all hover:scale-105 bg-blue-50 hover:bg-blue-100 border-blue-200"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Voir le site
+                              </Button>
+
+                              {organisme.clientStatus === 'CLIENT' ? (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleManageClient(organisme.code, organisme.nom)}
+                                  className="transition-all hover:scale-105 bg-green-500 hover:bg-green-600"
+                                >
+                                  <Settings className="h-3 w-3 mr-1" />
+                                  Gérer Client
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleConvertToClient(organisme.code, organisme.nom)}
+                                  disabled={isConvertingToClient === organisme.code}
+                                  className="transition-all hover:scale-105 bg-green-500 hover:bg-green-600"
+                                >
+                                  {isConvertingToClient === organisme.code ? (
+                                    <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                  ) : (
+                                    <Plus className="h-3 w-3 mr-1" />
+                                  )}
+                                  Convertir en Client
+                                </Button>
+                              )}
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setSelectedCategorie('all');
+                                  setSelectedOrganisme(organisme.nom);
+                                  setSelectedTab('services');
+                                  setIsOrganismesListOpen(false);
+                                }}
+                                className="transition-all hover:scale-105 bg-purple-50 hover:bg-purple-100 border-purple-200"
+                              >
+                                <FileText className="h-3 w-3 mr-1" />
+                                Voir Services
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="transition-all hover:scale-105 bg-orange-50 hover:bg-orange-100 border-orange-200"
+                              >
+                                <BarChart3 className="h-3 w-3 mr-1" />
+                                Analytics
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="text-sm text-gray-600">
+                💡 Cliquez sur les badges de statut pour les modifier • Les organismes sont triés par statut et performance
+              </div>
+              <Button variant="outline" onClick={() => setIsOrganismesListOpen(false)}>
+                Fermer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal Détails des Demandes */}
+        <Dialog open={isDemandesDetailOpen} onOpenChange={setIsDemandesDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-purple-500" />
+                Détail des Demandes Mensuelles ({stats.totalDemandes.toLocaleString()} demandes)
+              </DialogTitle>
+              <DialogDescription>
+                Services les plus demandés et analyse du volume d'activité
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">🔥 Top 10 des Services les Plus Demandés</h3>
+                <div className="space-y-3">
+                  {detailedStats.servicesParDemandes.slice(0, 10).map((service, index) => (
+                    <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg bg-gradient-to-r from-purple-50 to-blue-50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium">{service.nom}</p>
+                          <p className="text-sm text-gray-600">{service.organisme}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-purple-600">{service.demandes_mois}</p>
+                        <p className="text-xs text-gray-600">demandes/mois</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">📊 Répartition par Organisme</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {detailedStats.organismes.slice(0, 6).map((organisme) => (
+                    <div key={organisme.nom} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-sm">{organisme.nom}</span>
+                        <span className="text-lg font-bold text-purple-600">{organisme.totalDemandes}</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div
+                          className="bg-purple-600 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${(organisme.totalDemandes / stats.totalDemandes) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={() => setIsDemandesDetailOpen(false)}>
+                Fermer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal Détails de la Satisfaction */}
+        <Dialog open={isSatisfactionDetailOpen} onOpenChange={setIsSatisfactionDetailOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-500" />
+                Détail de la Satisfaction ({stats.satisfactionMoyenne}% moyenne)
+              </DialogTitle>
+              <DialogDescription>
+                Services les mieux notés et analyse de la qualité de service
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">⭐ Top 10 des Services les Mieux Notés</h3>
+                <div className="space-y-3">
+                  {detailedStats.servicesParSatisfaction.slice(0, 10).map((service, index) => (
+                    <div key={service.id} className="flex items-center justify-between p-3 border rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-yellow-500 text-white flex items-center justify-center text-sm font-bold">
+                          {index + 1}
+                        </div>
+                        <div>
+                          <p className="font-medium">{service.nom}</p>
+                          <p className="text-sm text-gray-600">{service.organisme}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xl font-bold text-yellow-600">{service.satisfaction}%</p>
+                        <p className="text-xs text-gray-600">satisfaction</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">🏢 Satisfaction par Organisme</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {detailedStats.organismes
+                    .sort((a, b) => b.satisfactionMoyenne - a.satisfactionMoyenne)
+                    .slice(0, 8)
+                    .map((organisme) => (
+                    <div key={organisme.nom} className="p-3 border rounded-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="font-medium text-sm">{organisme.nom}</span>
+                        <span className="text-lg font-bold text-yellow-600">{organisme.satisfactionMoyenne}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div
+                          className="bg-yellow-500 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${organisme.satisfactionMoyenne}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">{organisme.nombreServices} services</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-4">📈 Distribution de la Satisfaction</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {services.filter(s => s.satisfaction >= 90).length}
+                    </div>
+                    <div className="text-sm text-gray-600">Excellents (≥90%)</div>
+                  </div>
+                  <div className="text-center p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {services.filter(s => s.satisfaction >= 75 && s.satisfaction < 90).length}
+                    </div>
+                    <div className="text-sm text-gray-600">Bons (75-89%)</div>
+                  </div>
+                  <div className="text-center p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">
+                      {services.filter(s => s.satisfaction < 75).length}
+                    </div>
+                    <div className="text-sm text-gray-600">À améliorer (&lt;75%)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={() => setIsSatisfactionDetailOpen(false)}>
+                Fermer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Modal de détails */}
         <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>

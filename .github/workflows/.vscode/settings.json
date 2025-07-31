@@ -1,0 +1,8 @@
+{
+  "yaml.schemas": {
+    "https://json.schemastore.org/github-workflow.json": "*.yml"
+  },
+  "yaml.validate": true,
+  "yaml.completion": true,
+  "problems.decorations.enabled": false
+}

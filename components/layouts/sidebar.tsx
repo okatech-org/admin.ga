@@ -63,7 +63,7 @@ const navigationItems = [
   {
     title: 'Diagnostic Admins',
     href: '/super-admin/diagnostic-administrations',
-    icon: Database,
+    icon: TrendingUp,
     description: 'Diagnostic et analyse'
   },
   // Nouvelle section RH et Postes
@@ -99,6 +99,13 @@ const navigationItems = [
     href: '/super-admin/services',
     icon: FileText,
     description: 'Services administratifs'
+  },
+  {
+    title: 'Base de Données',
+    href: '/super-admin/base-donnees',
+    icon: Database,
+    description: 'Gestion et visualisation de la base de données',
+    isNew: true
   },
   {
     title: 'Configuration',

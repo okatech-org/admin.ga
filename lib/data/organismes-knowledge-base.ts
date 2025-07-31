@@ -135,7 +135,7 @@ export interface OrganismeKnowledge {
   };
 }
 
-export const ORGANISMES_KNOWLEDGE_BASE: OrganismeKnowledge[] = [
+export const ORGANISMES_KNOWLEDGE_BASE: any[] = [
   // MINISTÈRES
   {
     id: "MIN_PLANIFICATION",

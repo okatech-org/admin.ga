@@ -5,7 +5,7 @@ export const GABON_SERVICES_DETAILLES = {
   "description": "Tous les services possibles qu'un citoyen gabonais peut effectuer dans sa vie auprès des administrations publiques",
   "version": "2025.1",
   "date_mise_a_jour": "2025-07-27",
-  
+
   "parcours_de_vie": {
     "naissance_enfance": {
       "description": "Démarches de la naissance à la majorité",
@@ -87,7 +87,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "education_formation": {
       "description": "Démarches liées à l'éducation et à la formation",
       "demarches": [
@@ -183,7 +183,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "identite_citoyennete": {
       "description": "Documents d'identité et de citoyenneté",
       "demarches": [
@@ -285,7 +285,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "travail_emploi": {
       "description": "Démarches liées au travail et à l'emploi",
       "demarches": [
@@ -392,7 +392,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "logement_habitat": {
       "description": "Démarches liées au logement et à l'habitat",
       "demarches": [
@@ -484,7 +484,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "famille_mariage": {
       "description": "Démarches familiales et matrimoniales",
       "demarches": [
@@ -590,7 +590,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "sante_social": {
       "description": "Démarches de santé et sociales",
       "demarches": [
@@ -680,7 +680,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "transport_mobilite": {
       "description": "Démarches liées au transport et à la mobilité",
       "demarches": [
@@ -790,7 +790,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "commerce_entreprise": {
       "description": "Démarches commerciales et entrepreneuriales",
       "demarches": [
@@ -884,7 +884,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "justice_legal": {
       "description": "Démarches judiciaires et légales",
       "demarches": [
@@ -972,7 +972,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "fiscalite_impots": {
       "description": "Démarches fiscales et d'impôts",
       "demarches": [
@@ -1059,7 +1059,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "retraite_vieillesse": {
       "description": "Démarches de retraite et vieillesse",
       "demarches": [
@@ -1128,7 +1128,7 @@ export const GABON_SERVICES_DETAILLES = {
         }
       ]
     },
-    
+
     "deces_succession": {
       "description": "Démarches liées au décès et succession",
       "demarches": [
@@ -1221,7 +1221,7 @@ export const GABON_SERVICES_DETAILLES = {
       ]
     }
   },
-  
+
   "mapping_services_organismes": {
     "DGDI": {
       "nom": "Direction Générale de la Documentation et de l'Immigration",
@@ -1353,9 +1353,17 @@ export const GABON_SERVICES_DETAILLES = {
     "CNNG": {
       "nom": "Chambre Nationale des Notaires",
       "services": ["ACTE_NOTARIE"]
+    },
+    "MIN_ENVIR": {
+      "nom": "Ministère de l'Environnement",
+      "services": ["ETUDE_IMPACT", "AUTOR_ENVIRONNEMENT"]
+    },
+    "AGENCE_ECO": {
+      "nom": "Agence Nationale de Promotion Économique",
+      "services": ["INCITATION_INVEST", "SUBVENTION_ECO"]
     }
   },
-  
+
   "categories_services": {
     "etat_civil": {
       "nom": "État Civil",
@@ -1460,19 +1468,19 @@ export const GABON_SERVICES_DETAILLES = {
       ]
     }
   },
-  
+
   "delais_types": {
     "immediat": "Immédiat",
     "24_48h": "24-48 heures",
     "7_15j": "7-15 jours",
     "15_30j": "15-30 jours",
-    "30_45j": "30-45 jours", 
+    "30_45j": "30-45 jours",
     "2_3m": "2-3 mois",
     "3_6m": "3-6 mois",
     "6_12m": "6-12 mois",
     "12_24m": "12-24 mois"
   },
-  
+
   "cout_types": {
     "gratuit": "Gratuit",
     "faible": "1 000 - 10 000 FCFA",
@@ -1485,7 +1493,7 @@ export const GABON_SERVICES_DETAILLES = {
 // Types dérivés pour TypeScript
 export type ServiceCode = string;
 export type OrganismeCode = string;
-export type CategoryService = 
+export type CategoryService =
   | 'etat_civil'
   | 'identite'
   | 'travail_emploi'
@@ -1522,7 +1530,7 @@ export interface MappingServiceOrganisme {
 // Utilitaires pour récupérer les données
 export const getAllServices = (): ServiceDetaille[] => {
   const allServices: ServiceDetaille[] = [];
-  
+
   Object.values(GABON_SERVICES_DETAILLES.parcours_de_vie).forEach(parcours => {
     if (parcours.demarches) {
       parcours.demarches.forEach(service => {
@@ -1530,12 +1538,12 @@ export const getAllServices = (): ServiceDetaille[] => {
       });
     }
   });
-  
+
   return allServices;
 };
 
 export const getServicesByOrganisme = (organismeCode: OrganismeCode): ServiceDetaille[] => {
-  return getAllServices().filter(service => 
+  return getAllServices().filter(service =>
     service.organisme_responsable === organismeCode
   );
 };
@@ -1543,8 +1551,8 @@ export const getServicesByOrganisme = (organismeCode: OrganismeCode): ServiceDet
 export const getServicesByCategory = (category: CategoryService): ServiceDetaille[] => {
   const categoryServices = GABON_SERVICES_DETAILLES.categories_services[category];
   if (!categoryServices) return [];
-  
-  return getAllServices().filter(service => 
+
+  return getAllServices().filter(service =>
     (categoryServices.services as any).includes(service.code)
   );
 };
@@ -1567,4 +1575,4 @@ export const linkServiceToOrganisme = (serviceCode: ServiceCode, organismeCode: 
   return false;
 };
 
-// Export déjà défini plus haut dans le fichier 
+// Export déjà défini plus haut dans le fichier

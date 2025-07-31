@@ -200,10 +200,11 @@ interface SupportTicket {
   title: string;
   description: string;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
+  status: 'OPEN' | 'IN_PROGRESS' | 'PENDING' | 'RESOLVED' | 'CLOSED';
   createdAt: string;
+  updatedAt: string;
   assignedTo: string;
-  category: string;
+  category: 'TECHNIQUE' | 'FONCTIONNEL' | 'FACTURATION' | 'AUTRE';
 }
 
 export default function ClientManagementPage() {
@@ -791,8 +792,9 @@ export default function ClientManagementPage() {
         priority: 'HIGH',
         status: 'IN_PROGRESS',
         createdAt: '2024-01-14T09:00:00Z',
+        updatedAt: '2024-01-14T15:30:00Z',
         assignedTo: 'Support Technique',
-        category: 'MATERIEL'
+        category: 'TECHNIQUE'
       },
       {
         id: 'TICK-002',
@@ -801,8 +803,9 @@ export default function ClientManagementPage() {
         priority: 'MEDIUM',
         status: 'OPEN',
         createdAt: '2024-01-15T11:30:00Z',
+        updatedAt: '2024-01-15T11:30:00Z',
         assignedTo: 'Équipe Formation',
-        category: 'FORMATION'
+        category: 'FONCTIONNEL'
       }
     ];
 

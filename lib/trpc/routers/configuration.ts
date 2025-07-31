@@ -219,7 +219,7 @@ export const configurationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Vérifier que l'utilisateur est super admin
-        if (ctx.user.role !== 'SUPER_ADMIN') {
+        if (ctx.session.user.role !== 'SUPER_ADMIN') {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
             message: 'Accès refusé. Rôle super admin requis.'
@@ -273,7 +273,7 @@ export const configurationRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       try {
         // Vérifier que l'utilisateur est super admin
-        if (ctx.user.role !== 'SUPER_ADMIN') {
+        if (ctx.session.user.role !== 'SUPER_ADMIN') {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
             message: 'Accès refusé. Rôle super admin requis.'
@@ -283,7 +283,7 @@ export const configurationRouter = createTRPCRouter({
         // TODO: Sauvegarder le backup en base de données
         console.log('Backup créé:', {
           date: input.backupDate,
-          user: ctx.user.email,
+          user: ctx.session.user.email,
           config: input.configuration
         });
 
@@ -308,7 +308,7 @@ export const configurationRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       try {
         // Vérifier que l'utilisateur est super admin
-        if (ctx.user.role !== 'SUPER_ADMIN') {
+        if (ctx.session.user.role !== 'SUPER_ADMIN') {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
             message: 'Accès refusé. Rôle super admin requis.'

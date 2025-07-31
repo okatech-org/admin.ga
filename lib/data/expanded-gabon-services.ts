@@ -288,7 +288,8 @@ export function generateAllServices(): ServiceDetaille[] {
 
   // Générer les services sectoriels
   SERVICES_SECTORIELS.forEach((serviceName, index) => {
-    const orgCode = index % 2 === 0 ? "MIN_COMMERCE" : "MIN_INDUSTRIE";
+    const orgCodes = ["MIN_COMMERCE", "MIN_INDUSTRIE", "MIN_ENVIR", "AGENCE_ECO"];
+    const orgCode = orgCodes[index % orgCodes.length];
     expandedServices.push({
       nom: serviceName,
       code: `SECT_${index.toString().padStart(3, '0')}`,

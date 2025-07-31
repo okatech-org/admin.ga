@@ -34,7 +34,7 @@ import {
   getOrganismesByNiveau,
   getOrganismesByParent,
   getStatistiquesOrganismes
-} from '@/lib/config/organismes-officiels-gabon';
+} from '@/lib/config/organismes-complets';
 
 // === INTERFACES ===
 interface HierarchyNode {
