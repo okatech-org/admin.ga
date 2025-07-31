@@ -1,0 +1,48 @@
+# Configuration markdownlint pour Administration.GA
+
+# Règles de base
+default: true
+
+# Désactiver certaines règles trop strictes
+MD013: false  # Longueur de ligne (trop strict pour les URLs et le code)
+MD033: false  # HTML inline autorisé (pour les emojis et badges)
+MD041: false  # Premier élément doit être un h1 (on a des métadonnées)
+
+# Configuration des liens
+MD051:
+  # Fragments de liens - permet les caractères spéciaux dans les ancres
+  front_matter_title: "title"
+  html_h1: true
+  html_h2: true
+  html_h3: true
+  html_h4: true
+  html_h5: true
+  html_h6: true
+
+# Configuration des listes
+MD007:
+  # Indentation des listes
+  indent: 2
+  start_indented: false
+  start_indent: 2
+
+# Configuration des titres
+MD003:
+  # Style des titres ATX
+  style: "atx"
+
+MD022:
+  # Lignes autour des titres
+  lines_above: 1
+  lines_below: 1
+
+MD025:
+  # Un seul H1 par document
+  level: 1
+  front_matter_title: "title"
+
+# Configuration du code
+MD040: false  # Pas besoin de langue pour tous les blocs de code
+MD046:
+  # Style des blocs de code
+  style: "fenced"
