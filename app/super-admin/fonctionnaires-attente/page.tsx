@@ -179,22 +179,6 @@ export default function FonctionnairesAttentePage() {
     observations: ''
   });
 
-  // Charger les données
-  useEffect(() => {
-    loadData();
-  }, [selectedStatut, selectedPriorite, selectedOrganisme, page]);
-
-  // Effet pour la recherche avec debouncing
-  useEffect(() => {
-    if (searchTerm) {
-      const timeoutId = setTimeout(() => {
-        loadData();
-      }, 500); // Attendre 500ms après la dernière frappe
-
-      return () => clearTimeout(timeoutId);
-    }
-  }, [searchTerm, loadData]);
-
   const loadData = useCallback(async () => {
     try {
       setLoadingStates(prev => ({ ...prev, loading: true }));
@@ -249,6 +233,22 @@ export default function FonctionnairesAttentePage() {
       setLoadingStates(prev => ({ ...prev, loading: false }));
     }
   }, [selectedStatut, selectedPriorite, selectedOrganisme, page, searchTerm, limit]);
+
+  // Charger les données
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Effet pour la recherche avec debouncing
+  useEffect(() => {
+    if (searchTerm) {
+      const timeoutId = setTimeout(() => {
+        loadData();
+      }, 500); // Attendre 500ms après la dernière frappe
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, loadData]);
 
   // Gestionnaires d'événements
   const handleRefreshData = useCallback(async () => {

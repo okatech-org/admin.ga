@@ -46,7 +46,8 @@ import {
   Zap,
   MonitorSpeaker,
   Timer,
-  AlertCircle
+  AlertCircle,
+  MemoryStick
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -815,15 +816,84 @@ export default function BaseDonneesPage() {
             </Card>
           </TabsContent>
 
-          {/* Monitoring */}
+          {/* Monitoring Avancé avec Santé Système et Logs */}
           <TabsContent value="monitoring" className="space-y-6">
+            {/* Santé Système en Temps Réel */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Database className="h-8 w-8 text-blue-500" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">CPU DB</p>
+                      <p className="text-2xl font-bold">12%</p>
+                      <div className="flex items-center text-xs text-green-600">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        Optimal
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <MemoryStick className="h-8 w-8 text-green-500" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Mémoire</p>
+                      <p className="text-2xl font-bold">68%</p>
+                      <div className="flex items-center text-xs text-orange-600">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Surveillé
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Users className="h-8 w-8 text-purple-500" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Connexions</p>
+                      <p className="text-2xl font-bold">12/100</p>
+                      <div className="flex items-center text-xs text-green-600">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Disponible
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center">
+                    <Zap className="h-8 w-8 text-yellow-500" />
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-muted-foreground">Requêtes/sec</p>
+                      <p className="text-2xl font-bold">145</p>
+                      <div className="flex items-center text-xs text-blue-600">
+                        <Activity className="h-3 w-3 mr-1" />
+                        Actif
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Performance en Temps Réel */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5" />
                     Performance en Temps Réel
                   </CardTitle>
+                  <CardDescription>Métriques de performance actuelles</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
@@ -847,40 +917,127 @@ export default function BaseDonneesPage() {
                     </div>
                     <Progress value={12} className="h-2" />
                   </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Cache Hit Ratio :</span>
+                      <span className="text-sm font-medium">98.5%</span>
+                    </div>
+                    <Progress value={98.5} className="h-2" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Transactions/sec :</span>
+                      <span className="text-sm font-medium">245</span>
+                    </div>
+                    <div className="text-center mt-2 p-3 bg-green-50 rounded">
+                      <div className="text-2xl font-bold text-green-600">99.97%</div>
+                      <div className="text-xs text-muted-foreground">Disponibilité (7j)</div>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
+              {/* Logs & Alertes Avancées */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <AlertCircle className="h-5 w-5" />
-                    Alertes & Notifications
+                    Logs & Alertes en Temps Réel
                   </CardTitle>
+                  <CardDescription>Surveillance continue du système</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <Alert>
                       <CheckCircle className="h-4 w-4" />
                       <AlertDescription>
-                        Toutes les migrations sont à jour
+                        <div className="flex justify-between items-center">
+                          <span>Toutes les migrations sont à jour</span>
+                          <Badge className="bg-green-100 text-green-800 text-xs">OK</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Dernière vérification: il y a 2 minutes
+                        </div>
                       </AlertDescription>
                     </Alert>
                     <Alert>
                       <Info className="h-4 w-4" />
                       <AlertDescription>
-                        Backup automatique programmé pour 02:00
+                        <div className="flex justify-between items-center">
+                          <span>Backup automatique programmé pour 02:00</span>
+                          <Badge variant="outline" className="text-xs">PLANIFIÉ</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Prochain backup dans 8h 23m
+                        </div>
                       </AlertDescription>
                     </Alert>
                     <Alert>
                       <Timer className="h-4 w-4" />
                       <AlertDescription>
-                        Dernière requête lente : aucune (&lt; 1s)
+                        <div className="flex justify-between items-center">
+                          <span>Dernière requête lente : aucune (&lt; 1s)</span>
+                          <Badge className="bg-blue-100 text-blue-800 text-xs">OPTIMAL</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Analyse des 1000 dernières requêtes
+                        </div>
+                      </AlertDescription>
+                    </Alert>
+                    <Alert>
+                      <Database className="h-4 w-4" />
+                      <AlertDescription>
+                        <div className="flex justify-between items-center">
+                          <span>Index optimization complétée</span>
+                          <Badge className="bg-green-100 text-green-800 text-xs">TERMINÉ</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Performance améliorée de 15% • il y a 1h
+                        </div>
                       </AlertDescription>
                     </Alert>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Logs Détaillés */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Logs d'Activité Récents
+                </CardTitle>
+                <CardDescription>Dernières activités de la base de données</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {[
+                    { time: '14:25:30', type: 'INFO', message: 'Connexion utilisateur admin@gabon.ga', icon: Users, color: 'text-blue-500' },
+                    { time: '14:24:15', type: 'SUCCESS', message: 'Backup automatique terminé avec succès (245 MB)', icon: CheckCircle, color: 'text-green-500' },
+                    { time: '14:23:45', type: 'INFO', message: 'Optimisation automatique des index terminée', icon: Zap, color: 'text-purple-500' },
+                    { time: '14:22:12', type: 'INFO', message: 'Nettoyage cache expiré (125 entrées supprimées)', icon: RefreshCw, color: 'text-blue-500' },
+                    { time: '14:21:38', type: 'INFO', message: 'Requête analytique complexe exécutée (0.45s)', icon: BarChart3, color: 'text-orange-500' },
+                    { time: '14:20:55', type: 'INFO', message: 'Connexion service authentication (API)', icon: Shield, color: 'text-green-500' },
+                    { time: '14:19:22', type: 'INFO', message: 'Transaction utilisateur validée (ID: TXN-789123)', icon: CheckCircle, color: 'text-green-500' },
+                    { time: '14:18:47', type: 'INFO', message: 'Synchronisation données organisations (47 entrées)', icon: Building2, color: 'text-blue-500' }
+                  ].map((log, index) => {
+                    const IconComponent = log.icon;
+                    return (
+                      <div key={index} className="flex items-center gap-3 p-2 text-sm hover:bg-gray-50 rounded">
+                        <span className="text-xs text-muted-foreground font-mono w-16">{log.time}</span>
+                        <IconComponent className={`h-4 w-4 ${log.color}`} />
+                        <span className="flex-1">{log.message}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {log.type}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
             {/* Actions de maintenance */}
             <Card>

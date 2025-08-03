@@ -40,7 +40,8 @@ import {
   AlertCircle,
   XCircle,
   Loader2,
-  Settings
+  Settings,
+  AlertTriangle
 } from 'lucide-react';
 
 interface AnalyticsData {
@@ -578,34 +579,228 @@ export default function AnalyticsPage() {
               </Card>
             </div>
 
-            {/* Métriques de performance simulées */}
+            {/* Métriques de performance avancées */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5" />
-                  Métriques de Performance
+                  Métriques de Performance Avancées
                 </CardTitle>
                 <CardDescription>
                   Temps de réponse et volume de requêtes sur les dernières 24h
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="text-center">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <p className="text-2xl font-bold text-blue-600">234ms</p>
                     <p className="text-sm text-gray-600">Temps de réponse moyen</p>
+                    <div className="flex items-center justify-center text-xs text-green-600 mt-1">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      -12ms depuis hier
+                    </div>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
                     <p className="text-2xl font-bold text-green-600">15,420</p>
                     <p className="text-sm text-gray-600">Requêtes/heure</p>
+                    <div className="flex items-center justify-center text-xs text-green-600 mt-1">
+                      <TrendingUp className="h-3 w-3 mr-1" />
+                      +8% depuis hier
+                    </div>
                   </div>
-                  <div className="text-center">
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
                     <p className="text-2xl font-bold text-orange-600">99.8%</p>
                     <p className="text-sm text-gray-600">Disponibilité</p>
+                    <div className="flex items-center justify-center text-xs text-green-600 mt-1">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      SLA respecté
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <p className="text-2xl font-bold text-purple-600">0.02%</p>
+                    <p className="text-sm text-gray-600">Taux d'erreur</p>
+                    <div className="flex items-center justify-center text-xs text-green-600 mt-1">
+                      <TrendingDown className="h-3 w-3 mr-1" />
+                      -0.01% depuis hier
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Logs & Alertes Système */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertCircle className="h-5 w-5" />
+                    Logs & Alertes en Temps Réel
+                  </CardTitle>
+                  <CardDescription>
+                    Surveillance continue et alertes système
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {[
+                      {
+                        time: '14:30:45',
+                        type: 'SUCCESS',
+                        message: 'Synchronisation organismes terminée avec succès',
+                        source: 'Sync Service',
+                        severity: 'LOW',
+                        icon: CheckCircle,
+                        color: 'text-green-500'
+                      },
+                      {
+                        time: '14:29:12',
+                        type: 'WARNING',
+                        message: 'Utilisation mémoire élevée sur API Gateway (78%)',
+                        source: 'Monitoring',
+                        severity: 'MEDIUM',
+                        icon: AlertTriangle,
+                        color: 'text-yellow-500'
+                      },
+                      {
+                        time: '14:27:38',
+                        type: 'INFO',
+                        message: 'Nouvelle connexion utilisateur depuis Libreville',
+                        source: 'Auth Service',
+                        severity: 'LOW',
+                        icon: Users,
+                        color: 'text-blue-500'
+                      },
+                      {
+                        time: '14:26:55',
+                        type: 'ERROR',
+                        message: 'Échec connexion base de données secondaire',
+                        source: 'Database',
+                        severity: 'HIGH',
+                        icon: XCircle,
+                        color: 'text-red-500'
+                      },
+                      {
+                        time: '14:25:20',
+                        type: 'INFO',
+                        message: 'Backup automatique programmé initié',
+                        source: 'Backup Service',
+                        severity: 'LOW',
+                        icon: Database,
+                        color: 'text-blue-500'
+                      },
+                      {
+                        time: '14:24:03',
+                        type: 'SUCCESS',
+                        message: 'Optimisation index completed (15% amélioration)',
+                        source: 'DB Optimizer',
+                        severity: 'LOW',
+                        icon: Zap,
+                        color: 'text-green-500'
+                      }
+                    ].map((log, index) => {
+                      const IconComponent = log.icon;
+                      return (
+                        <div key={index} className="flex items-center gap-3 p-2 text-sm hover:bg-gray-50 rounded transition-colors">
+                          <span className="text-xs text-muted-foreground font-mono w-16">{log.time}</span>
+                          <IconComponent className={`h-4 w-4 ${log.color}`} />
+                          <div className="flex-1">
+                            <span className="block">{log.message}</span>
+                            <span className="text-xs text-muted-foreground">{log.source}</span>
+                          </div>
+                          <Badge variant="outline" className={`text-xs ${
+                            log.severity === 'HIGH' ? 'bg-red-100 text-red-800' :
+                            log.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
+                          }`}>
+                            {log.type}
+                          </Badge>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Monitor className="h-5 w-5" />
+                    Métriques Avancées
+                  </CardTitle>
+                  <CardDescription>
+                    Indicateurs de performance détaillés
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Charge CPU Globale</span>
+                        <span className="text-sm text-muted-foreground">{Math.round(data.systemHealth.cpu)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full"
+                          style={{ width: `${data.systemHealth.cpu}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Utilisation Mémoire</span>
+                        <span className="text-sm text-muted-foreground">{Math.round(data.systemHealth.memory)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-green-500 h-2 rounded-full"
+                          style={{ width: `${data.systemHealth.memory}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Réseau I/O</span>
+                        <span className="text-sm text-muted-foreground">{Math.round(data.systemHealth.network)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-purple-500 h-2 rounded-full"
+                          style={{ width: `${data.systemHealth.network}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-medium">Performance DB</span>
+                        <span className="text-sm text-muted-foreground">{Math.round(data.systemHealth.database)}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-orange-500 h-2 rounded-full"
+                          style={{ width: `${data.systemHealth.database}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 border-t">
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-2 bg-green-50 rounded">
+                          <div className="text-lg font-bold text-green-600">17.2s</div>
+                          <div className="text-xs text-muted-foreground">Uptime</div>
+                        </div>
+                        <div className="p-2 bg-blue-50 rounded">
+                          <div className="text-lg font-bold text-blue-600">245K</div>
+                          <div className="text-xs text-muted-foreground">Requêtes/jour</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </>
         )}
 

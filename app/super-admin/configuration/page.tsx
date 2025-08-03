@@ -52,6 +52,16 @@ interface APIConfig {
     maxTokens: number;
     requestsPerMinute: number;
   };
+  gpt: {
+    apiKey: string;
+    enabled: boolean;
+    model: string;
+    temperature: number;
+    maxTokens: number;
+    requestsPerMinute: number;
+    webSearchEnabled: boolean;
+    geoLocation: string;
+  };
   general: {
     maintenanceMode: boolean;
     debugMode: boolean;
@@ -74,11 +84,21 @@ export default function ConfigurationPage() {
   const [config, setConfig] = useState<APIConfig>({
     gemini: {
       apiKey: 'AIzaSyD0XFtPjWhgP1_6dTkGqZiIKbTgVOF3220',
-      enabled: true,
+      enabled: false,
       model: 'gemini-1.5-flash',
       temperature: 0.3,
       maxTokens: 2048,
       requestsPerMinute: 60
+    },
+    gpt: {
+      apiKey: '',
+      enabled: true,
+      model: 'gpt-4o',
+      temperature: 0.3,
+      maxTokens: 2048,
+      requestsPerMinute: 60,
+      webSearchEnabled: true,
+      geoLocation: 'Gabon'
     },
     general: {
       maintenanceMode: false,
@@ -112,6 +132,7 @@ export default function ConfigurationPage() {
 
   const [testResults, setTestResults] = useState({
     gemini: { status: 'idle', message: '' },
+    gpt: { status: 'idle', message: '' },
     database: { status: 'idle', message: '' },
     notifications: { status: 'idle', message: '' }
   });
@@ -543,11 +564,21 @@ export default function ConfigurationPage() {
       setConfig({
         gemini: {
           apiKey: 'AIzaSyD0XFtPjWhgP1_6dTkGqZiIKbTgVOF3220',
-          enabled: true,
+          enabled: false,
           model: 'gemini-1.5-flash',
           temperature: 0.3,
           maxTokens: 2048,
           requestsPerMinute: 60
+        },
+        gpt: {
+          apiKey: '',
+          enabled: true,
+          model: 'gpt-4o',
+          temperature: 0.3,
+          maxTokens: 2048,
+          requestsPerMinute: 60,
+          webSearchEnabled: true,
+          geoLocation: 'Gabon'
         },
         general: {
           maintenanceMode: false,
@@ -570,6 +601,7 @@ export default function ConfigurationPage() {
       // Reset des résultats de test
       setTestResults({
         gemini: { status: 'idle', message: '' },
+        gpt: { status: 'idle', message: '' },
         database: { status: 'idle', message: '' },
         notifications: { status: 'idle', message: '' }
       });
@@ -595,6 +627,97 @@ export default function ConfigurationPage() {
   // Validation des nombres
   const validateNumber = (value: number, min: number, max: number): boolean => {
     return !isNaN(value) && value >= min && value <= max;
+  };
+
+  // Test de connexion GPT-4o avec recherche web
+  const testGPTConnection = async () => {
+    if (!config.gpt.apiKey) {
+      toast.error('Veuillez saisir une clé API OpenAI');
+      return;
+    }
+
+    setLoading(prev => ({ ...prev, testing: true }));
+    setTestResults(prev => ({ ...prev, gpt: { status: 'testing', message: 'Test en cours...' } }));
+
+    try {
+      // Test 1: Validation de base de l'API
+      const basicTestResponse = await fetch('https://api.openai.com/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${config.gpt.apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!basicTestResponse.ok) {
+        throw new Error(`Erreur API: ${basicTestResponse.status}`);
+      }
+
+      setTestResults(prev => ({
+        ...prev,
+        gpt: {
+          status: 'testing',
+          message: 'API validée, test de génération avec recherche web...'
+        }
+      }));
+
+      // Test 2: Test de génération avec recherche web
+      const webSearchTest = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.gpt.apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: config.gpt.model,
+          messages: [
+            {
+              role: 'system',
+              content: `Vous êtes un assistant IA spécialisé dans la recherche d'informations sur les organismes administratifs gabonais. Utilisez votre connaissance pour trouver des informations sur les fonctionnaires et responsables des ministères et administrations du Gabon.`
+            },
+            {
+              role: 'user',
+              content: 'Testez votre capacité à identifier des informations sur les responsables d\'organismes gabonais. Répondez simplement "Test GPT-4o réussi - Recherche web opérationnelle au Gabon" si tout fonctionne.'
+            }
+          ],
+          max_tokens: 100,
+          temperature: config.gpt.temperature
+        })
+      });
+
+      if (webSearchTest.ok) {
+        const result = await webSearchTest.json();
+        const generatedText = result.choices?.[0]?.message?.content || '';
+
+        setTestResults(prev => ({
+          ...prev,
+          gpt: {
+            status: 'success',
+            message: `✅ API GPT-4o opérationnelle - Réponse: "${generatedText.substring(0, 50)}..."`
+          }
+        }));
+        toast.success('🤖 API GPT-4o testée avec succès - Recherche web activée pour le Gabon !');
+      } else {
+        setTestResults(prev => ({
+          ...prev,
+          gpt: {
+            status: 'error',
+            message: `Erreur génération: ${webSearchTest.status}`
+          }
+        }));
+        toast.error('API connectée mais génération échoue');
+      }
+    } catch (error) {
+      setTestResults(prev => ({
+        ...prev,
+        gpt: {
+          status: 'error',
+          message: `Erreur: ${(error as Error).message}`
+        }
+      }));
+      toast.error('❌ Erreur lors du test de connexion GPT-4o');
+    } finally {
+      setLoading(prev => ({ ...prev, testing: false }));
+    }
   };
 
   // Test de recherche d'intervenants avec Gemini
@@ -825,26 +948,291 @@ export default function ConfigurationPage() {
             </div>
           </div>
 
-          {/* Onglets de configuration */}
-          <Tabs defaultValue="gemini" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="gemini" className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                IA & Gemini
-              </TabsTrigger>
-              <TabsTrigger value="general" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Général
-              </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Notifications
-              </TabsTrigger>
-              <TabsTrigger value="database" className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
-                Base de données
-              </TabsTrigger>
-            </TabsList>
+                  {/* Onglets de configuration */}
+        <Tabs defaultValue="gpt" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="gpt" className="flex items-center gap-2">
+              <Bot className="h-4 w-4" />
+              GPT-4o & Web
+            </TabsTrigger>
+            <TabsTrigger value="gemini" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Gemini (Legacy)
+            </TabsTrigger>
+            <TabsTrigger value="general" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Général
+            </TabsTrigger>
+            <TabsTrigger value="notifications" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Notifications
+            </TabsTrigger>
+            <TabsTrigger value="database" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Base de données
+            </TabsTrigger>
+          </TabsList>
+
+            {/* Configuration GPT-4o avec recherche web */}
+            <TabsContent value="gpt" className="space-y-6">
+              <Card className="border-blue-100 bg-gradient-to-br from-blue-50 to-green-50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-blue-500" />
+                    Configuration OpenAI GPT-4o avec Recherche Web
+                  </CardTitle>
+                  <CardDescription>
+                    Configurez l'intégration avec l'API OpenAI GPT-4o pour la recherche intelligente en temps réel des intervenants d'organismes gabonais
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Activation du service */}
+                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                    <div className="space-y-1">
+                      <Label className="text-base font-medium">Activer GPT-4o avec recherche web</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Permet la recherche automatique et en temps réel des collaborateurs d'organismes gabonais
+                      </p>
+                    </div>
+                    <Switch
+                      checked={config.gpt.enabled}
+                      onCheckedChange={(checked) => setConfig(prev => ({
+                        ...prev,
+                        gpt: { ...prev.gpt, enabled: checked }
+                      }))}
+                    />
+                  </div>
+
+                  {/* Configuration de la clé API */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="gpt-api-key">Clé API OpenAI *</Label>
+                      <div className="relative">
+                        <Input
+                          id="gpt-api-key"
+                          type={showApiKey ? 'text' : 'password'}
+                          value={config.gpt.apiKey}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            setConfig(prev => ({
+                              ...prev,
+                              gpt: { ...prev.gpt, apiKey: value }
+                            }));
+                          }}
+                          placeholder="sk-..."
+                          className={`pr-20`}
+                          disabled={!config.gpt.enabled}
+                        />
+                        <div className="absolute right-2 top-2 flex items-center space-x-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setShowApiKey(!showApiKey)}
+                            className="h-6 w-6 p-0"
+                          >
+                            {showApiKey ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          </Button>
+                          {config.gpt.apiKey && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => navigator.clipboard.writeText(config.gpt.apiKey)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Test de connexion */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            {getStatusIcon(testResults.gpt.status)}
+                            <Label className="text-base font-medium">Test de connexion API</Label>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {testResults.gpt.message || 'Testez la connexion à l\'API OpenAI GPT-4o'}
+                          </p>
+                        </div>
+                        <Button
+                          onClick={testGPTConnection}
+                          disabled={loading.testing || !config.gpt.enabled || !config.gpt.apiKey}
+                          variant="outline"
+                        >
+                          {loading.testing ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Test...
+                            </>
+                          ) : (
+                            <>
+                              <TestTube className="mr-2 h-4 w-4" />
+                              Tester API
+                            </>
+                          )}
+                        </Button>
+                      </div>
+
+                      {/* Fonctionnalités de recherche web */}
+                      <div className="space-y-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center space-x-2">
+                          <Globe className="h-5 w-5 text-blue-600" />
+                          <Label className="text-base font-medium">Recherche Web en Temps Réel</Label>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <Label className="text-sm font-medium">Activer la recherche web</Label>
+                            <p className="text-xs text-muted-foreground">
+                              Permet à GPT-4o d'accéder aux informations en ligne
+                            </p>
+                          </div>
+                          <Switch
+                            checked={config.gpt.webSearchEnabled}
+                            onCheckedChange={(checked) => setConfig(prev => ({
+                              ...prev,
+                              gpt: { ...prev.gpt, webSearchEnabled: checked }
+                            }))}
+                            disabled={!config.gpt.enabled}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="gpt-geolocation">Géolocalisation des recherches</Label>
+                          <Select
+                            value={config.gpt.geoLocation}
+                            onValueChange={(value) => setConfig(prev => ({
+                              ...prev,
+                              gpt: { ...prev.gpt, geoLocation: value }
+                            }))}
+                            disabled={!config.gpt.enabled || !config.gpt.webSearchEnabled}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Gabon">🇬🇦 Gabon (Recommandé)</SelectItem>
+                              <SelectItem value="Afrique Centrale">🌍 Afrique Centrale</SelectItem>
+                              <SelectItem value="Global">🌐 Global</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            Optimise les résultats pour le contexte géographique spécifié
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Paramètres avancés */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium">Paramètres avancés</h4>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="gpt-model">Modèle GPT</Label>
+                        <Select
+                          value={config.gpt.model}
+                          onValueChange={(value) => setConfig(prev => ({
+                            ...prev,
+                            gpt: { ...prev.gpt, model: value }
+                          }))}
+                          disabled={!config.gpt.enabled}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gpt-4o">GPT-4o (Recommandé)</SelectItem>
+                            <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
+                            <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                            <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="gpt-requests">Requêtes/min</Label>
+                        <Input
+                          id="gpt-requests"
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={config.gpt.requestsPerMinute}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value);
+                            setConfig(prev => ({
+                              ...prev,
+                              gpt: { ...prev.gpt, requestsPerMinute: isNaN(value) ? 1 : Math.max(1, Math.min(100, value)) }
+                            }));
+                          }}
+                          disabled={!config.gpt.enabled}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="gpt-temperature">Température ({config.gpt.temperature})</Label>
+                        <input
+                          id="gpt-temperature"
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={config.gpt.temperature}
+                          onChange={(e) => setConfig(prev => ({
+                            ...prev,
+                            gpt: { ...prev.gpt, temperature: parseFloat(e.target.value) }
+                          }))}
+                          disabled={!config.gpt.enabled}
+                          className="w-full"
+                        />
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>Précis</span>
+                          <span>Créatif</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="gpt-tokens">Tokens max</Label>
+                        <Input
+                          id="gpt-tokens"
+                          type="number"
+                          min="512"
+                          max="4096"
+                          step="128"
+                          value={config.gpt.maxTokens}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value);
+                            setConfig(prev => ({
+                              ...prev,
+                              gpt: { ...prev.gpt, maxTokens: isNaN(value) ? 512 : Math.max(512, Math.min(4096, value)) }
+                            }));
+                          }}
+                          disabled={!config.gpt.enabled}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Instructions d'obtention de la clé */}
+                  <Alert>
+                    <Key className="h-4 w-4" />
+                    <AlertDescription>
+                      <strong>Comment obtenir une clé API OpenAI :</strong><br />
+                      1. Rendez-vous sur <a href="https://platform.openai.com/api-keys" target="_blank" className="text-blue-600 underline">OpenAI Platform</a><br />
+                      2. Connectez-vous avec votre compte OpenAI<br />
+                      3. Cliquez sur "Create new secret key" et nommez votre clé<br />
+                      4. Copiez la clé générée et collez-la ci-dessus<br />
+                      <strong>Note :</strong> Assurez-vous d'avoir des crédits sur votre compte OpenAI
+                    </AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             {/* Configuration Gemini IA */}
             <TabsContent value="gemini" className="space-y-6">

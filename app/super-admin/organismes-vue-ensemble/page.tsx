@@ -48,14 +48,43 @@ import { OrganismeCommercial, TypeContrat } from '@/lib/types/organisme';
 const organismeApiService = {
   async getAllOrganismes(): Promise<OrganismeCommercial[]> {
     try {
-      const response = await fetch('/api/organismes-commerciaux');
-      if (!response.ok) throw new Error('Erreur réseau');
+      const response = await fetch('/api/organismes-commerciaux', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store' // Éviter le cache pour avoir des données fraîches
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
+      }
+
       const result = await response.json();
-      return result.success ? result.data : [];
+      if (!result.success) {
+        throw new Error(result.error || 'Réponse API non valide');
+      }
+
+      return Array.isArray(result.data) ? result.data : [];
     } catch (error) {
       console.error('Erreur chargement organismes:', error);
+
+      // Notification utilisateur plus informative
+      if (error instanceof Error && error.message.includes('fetch')) {
+        console.warn('Problème de connexion réseau, utilisation des données locales');
+      } else if (error instanceof Error && error.message.includes('403')) {
+        console.error('Accès non autorisé - vérifier l\'authentification');
+        throw new Error('Accès non autorisé. Veuillez vous reconnecter.');
+      }
+
       // Fallback vers service local
-      return organismeCommercialService.getAllOrganismes();
+      try {
+        return organismeCommercialService.getAllOrganismes();
+      } catch (fallbackError) {
+        console.error('Erreur fallback:', fallbackError);
+        return [];
+      }
     }
   },
 
@@ -87,12 +116,29 @@ const organismeApiService = {
 
   async getStatistiques(): Promise<OrganismesStats> {
     try {
-      const response = await fetch('/api/organismes-commerciaux/stats');
-      if (!response.ok) throw new Error('Erreur réseau');
+      const response = await fetch('/api/organismes-commerciaux/stats', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
+      }
+
       const result = await response.json();
-      return result.success ? result.data : getDefaultStats();
+      if (!result.success) {
+        throw new Error(result.error || 'Réponse API non valide');
+      }
+
+      return result.data || getDefaultStats();
     } catch (error) {
       console.error('Erreur chargement stats:', error);
+
+      // Retourner des stats par défaut en cas d'erreur
       return getDefaultStats();
     }
   }
@@ -185,31 +231,76 @@ function OrganismesVueEnsembleContent() {
     try {
       setLoadingStates(prev => ({ ...prev, loading: true, error: null }));
 
-      // Chargement avec API service
-      const [allOrganismes, statistiques] = await Promise.all([
+      // Chargement avec API service et gestion d'erreur améliorée
+      const results = await Promise.allSettled([
         organismeApiService.getAllOrganismes(),
         organismeApiService.getStatistiques()
       ]);
 
+      // Gestion des résultats individuels
+      let allOrganismes: OrganismeCommercial[] = [];
+      let statistiques: OrganismesStats = getDefaultStats();
+      let hasPartialError = false;
+
+      // Traitement des organismes
+      if (results[0].status === 'fulfilled') {
+        allOrganismes = results[0].value;
+      } else {
+        console.error('Erreur chargement organismes:', results[0].reason);
+        hasPartialError = true;
+        // Fallback pour les organismes
+        try {
+          allOrganismes = organismeCommercialService.getAllOrganismes();
+        } catch (fallbackError) {
+          console.error('Erreur fallback organismes:', fallbackError);
+          allOrganismes = [];
+        }
+      }
+
+      // Traitement des statistiques
+      if (results[1].status === 'fulfilled') {
+        statistiques = results[1].value;
+      } else {
+        console.error('Erreur chargement stats:', results[1].reason);
+        hasPartialError = true;
+        statistiques = getDefaultStats();
+      }
+
       setOrganismes(allOrganismes);
       setStats(statistiques);
-      toast.success(`✅ ${allOrganismes.length} organismes chargés avec succès`);
-    } catch (error) {
-      console.error('❌ Erreur lors du chargement:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-      setLoadingStates(prev => ({ ...prev, error: errorMessage }));
-      toast.error(`❌ Erreur: ${errorMessage}`);
 
-      // Fallback vers données par défaut
+      // Messages de succès/avertissement appropriés
+      if (hasPartialError) {
+        toast.warning(`⚠️ Données partiellement chargées (${allOrganismes.length} organismes)`);
+      } else {
+        toast.success(`✅ ${allOrganismes.length} organismes chargés avec succès`);
+      }
+    } catch (error) {
+      console.error('❌ Erreur critique lors du chargement:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erreur système critique';
+      setLoadingStates(prev => ({ ...prev, error: errorMessage }));
+
+      // Message d'erreur spécifique selon le type d'erreur
+      if (errorMessage.includes('Accès non autorisé')) {
+        toast.error('🔒 Session expirée. Veuillez vous reconnecter.');
+      } else if (errorMessage.includes('réseau') || errorMessage.includes('fetch')) {
+        toast.error('🌐 Problème de connexion. Vérifiez votre réseau.');
+      } else {
+        toast.error(`❌ Erreur: ${errorMessage}`);
+      }
+
+      // Fallback vers données par défaut en dernier recours
       try {
         const fallbackOrganismes = organismeCommercialService.getAllOrganismes();
         const fallbackStats = getDefaultStats();
         setOrganismes(fallbackOrganismes);
         setStats(fallbackStats);
-        toast.info('📋 Données de démonstration chargées');
+        toast.info('📋 Données de démonstration chargées en mode dégradé');
       } catch (fallbackError) {
-        console.error('Erreur fallback:', fallbackError);
-        toast.error('❌ Impossible de charger les données');
+        console.error('Erreur fallback critique:', fallbackError);
+        setOrganismes([]);
+        setStats(getDefaultStats());
+        toast.error('❌ Impossible de charger les données. Contactez l\'administrateur.');
       }
     } finally {
       setLoadingStates(prev => ({ ...prev, loading: false }));

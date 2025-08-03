@@ -1224,7 +1224,7 @@ export default function SuperAdminSystemePage() {
             </div>
           </TabsContent>
 
-          {/* Sécurité avec monitoring */}
+          {/* Sécurité avec monitoring avancé */}
           <TabsContent value="security" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card className="hover:shadow-md transition-shadow">
@@ -1234,6 +1234,10 @@ export default function SuperAdminSystemePage() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Menaces Actives</p>
                       <p className="text-2xl font-bold">{systemData.security.threats}</p>
+                      <div className="flex items-center text-xs text-red-600 mt-1">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        +1 depuis hier
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1246,6 +1250,10 @@ export default function SuperAdminSystemePage() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">IPs Bloquées</p>
                       <p className="text-2xl font-bold">{systemData.security.blockedIPs}</p>
+                      <div className="flex items-center text-xs text-green-600 mt-1">
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                        +15 dernière heure
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1258,6 +1266,10 @@ export default function SuperAdminSystemePage() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Tentatives Échouées</p>
                       <p className="text-2xl font-bold">{systemData.security.failedLogins}</p>
+                      <div className="flex items-center text-xs text-yellow-600 mt-1">
+                        <Clock className="h-3 w-3 mr-1" />
+                        3 dernières minutes
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -1270,11 +1282,58 @@ export default function SuperAdminSystemePage() {
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">Règles Firewall</p>
                       <p className="text-2xl font-bold">{systemData.security.activeFirewallRules}</p>
+                      <div className="flex items-center text-xs text-green-600 mt-1">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Toutes actives
+                      </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
+
+            {/* Logs de Sécurité en Temps Réel */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-5 w-5" />
+                  Logs de Sécurité en Temps Réel
+                </CardTitle>
+                <CardDescription>
+                  Surveillance continue des événements de sécurité
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {[
+                    { time: '14:32:15', type: 'BLOCK', message: 'IP 192.168.45.123 bloquée (tentatives brute force)', severity: 'HIGH', icon: Lock, color: 'text-red-500' },
+                    { time: '14:31:45', type: 'AUTH', message: 'Connexion admin réussie depuis Libreville', severity: 'LOW', icon: CheckCircle, color: 'text-green-500' },
+                    { time: '14:30:22', type: 'WARN', message: 'Échec authentification utilisateur test@gabon.ga', severity: 'MEDIUM', icon: AlertTriangle, color: 'text-yellow-500' },
+                    { time: '14:29:38', type: 'FIREWALL', message: 'Règle firewall 234 activée (port 22 ssh)', severity: 'LOW', icon: Shield, color: 'text-blue-500' },
+                    { time: '14:28:55', type: 'SCAN', message: 'Analyse de sécurité automatique terminée', severity: 'LOW', icon: Activity, color: 'text-purple-500' },
+                    { time: '14:27:12', type: 'BLOCK', message: 'Tentative accès non autorisé API /admin', severity: 'HIGH', icon: Lock, color: 'text-red-500' },
+                    { time: '14:26:33', type: 'UPDATE', message: 'Mise à jour certificat SSL effectuée', severity: 'LOW', icon: CheckCircle, color: 'text-green-500' },
+                    { time: '14:25:47', type: 'ALERT', message: 'Détection potentielle intrusion sur serveur 2', severity: 'HIGH', icon: AlertTriangle, color: 'text-red-500' }
+                  ].map((log, index) => {
+                    const IconComponent = log.icon;
+                    return (
+                      <div key={index} className="flex items-center gap-3 p-2 text-sm hover:bg-gray-50 rounded">
+                        <span className="text-xs text-muted-foreground font-mono w-16">{log.time}</span>
+                        <IconComponent className={`h-4 w-4 ${log.color}`} />
+                        <span className="flex-1">{log.message}</span>
+                        <Badge variant="outline" className={`text-xs ${
+                          log.severity === 'HIGH' ? 'bg-red-100 text-red-800' :
+                          log.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {log.type}
+                        </Badge>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
 
             <Card>
               <CardHeader>

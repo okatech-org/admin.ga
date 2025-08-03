@@ -1,7 +1,7 @@
 /* @ts-nocheck */
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -70,7 +70,6 @@ interface NavigationSection {
   icon: any;
   badge?: number;
   children: NavigationItem[];
-  isOpen?: boolean;
 }
 
 interface NavigationItem {
@@ -97,8 +96,50 @@ export function SidebarUltraModerne() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
-  // États des sections
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(['Dashboard', 'Organismes']));
+  // Fonction pour déterminer quelle section devrait être ouverte selon l'URL
+  const getSectionForPath = useCallback((path: string): string | null => {
+    if (path.includes('/dashboard') || path.includes('/analytics') || path.includes('/communications')) {
+      return 'Dashboard';
+    }
+    if (path.includes('/organismes') || path.includes('/relations') || path.includes('/structure-administrative')) {
+      return 'Organismes';
+    }
+    if (path.includes('/utilisateurs') || path.includes('/fonctionnaires') || path.includes('/postes-administratifs') ||
+        path.includes('/gestion-comptes') || path.includes('/services') || path.includes('/restructuration')) {
+      return 'Administration';
+    }
+    if (path.includes('/base-donnees') || path.includes('/systeme') || path.includes('/logs') || path.includes('/metrics')) {
+      return 'Monitoring';
+    }
+    if (path.includes('/configuration') || path.includes('/test-data') || path.includes('/connexion-demo') || path.includes('/debug')) {
+      return 'Outils';
+    }
+    return null;
+  }, []);
+
+  // États des sections avec initialisation intelligente et persistance
+  const [openSections, setOpenSections] = useState<Set<string>>(() => {
+    // Essayer de récupérer l'état depuis sessionStorage
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem('super-admin-sidebar-state');
+        if (saved) {
+          const parsedState = JSON.parse(saved);
+          return new Set(parsedState);
+        }
+      } catch (error) {
+        console.warn('Erreur lors du chargement de l\'état de la sidebar:', error);
+      }
+    }
+
+    // État par défaut avec section active
+    const activeSection = getSectionForPath(pathname);
+    const defaultOpen = new Set(['Dashboard']);
+    if (activeSection) {
+      defaultOpen.add(activeSection);
+    }
+    return defaultOpen;
+  });
 
   // Statistiques système en temps réel
   const [systemStats, setSystemStats] = useState<SystemStats>({
@@ -106,14 +147,14 @@ export function SidebarUltraModerne() {
     utilisateurs: 979,
     services: 558,
     fonctionnaires: 478,
-    uptime: 99.8,
-    cpuUsage: 24,
-    memoryUsage: 67,
+    uptime: 99.8307093030187,
+    cpuUsage: 14.140845053521275,
+    memoryUsage: 64.15456432054086,
     storageUsage: 45
   });
 
-  // Sections de navigation avec codes couleur
-  const navigationSections: NavigationSection[] = [
+  // Sections de navigation avec codes couleur (optimisées avec useMemo)
+  const navigationSections: NavigationSection[] = useMemo(() => [
     {
       title: 'Dashboard',
       color: 'text-slate-700',
@@ -121,7 +162,6 @@ export function SidebarUltraModerne() {
       borderColor: 'border-slate-200',
       icon: Home,
       badge: 5, // Notifications
-      isOpen: openSections.has('Dashboard'),
       children: [
         {
           title: 'Vue d\'Ensemble',
@@ -159,7 +199,6 @@ export function SidebarUltraModerne() {
       borderColor: 'border-emerald-200',
       icon: Building,
       badge: systemStats.organismes,
-      isOpen: openSections.has('Organismes'),
       children: [
         {
           title: 'Vue d\'Ensemble',
@@ -209,7 +248,6 @@ export function SidebarUltraModerne() {
       borderColor: 'border-purple-200',
       icon: Shield,
       badge: systemStats.utilisateurs,
-      isOpen: openSections.has('Administration'),
       children: [
         {
           title: 'Utilisateurs',
@@ -261,7 +299,6 @@ export function SidebarUltraModerne() {
       borderColor: 'border-orange-200',
       icon: Monitor,
       badge: Math.round(systemStats.uptime * 10) / 10,
-      isOpen: openSections.has('Monitoring'),
       children: [
         {
           title: 'Base de Données',
@@ -296,7 +333,6 @@ export function SidebarUltraModerne() {
       bgColor: 'bg-gray-50',
       borderColor: 'border-gray-200',
       icon: Wrench,
-      isOpen: openSections.has('Outils'),
       children: [
         {
           title: 'Configuration',
@@ -325,9 +361,31 @@ export function SidebarUltraModerne() {
         }
       ]
     }
-  ];
+  ], [systemStats]);
 
-  // Toggle section
+  // Effet pour synchroniser l'état avec les changements d'URL
+  useEffect(() => {
+    const activeSection = getSectionForPath(pathname);
+    if (activeSection) {
+      setOpenSections(prev => {
+        const newSet = new Set(prev);
+        newSet.add(activeSection);
+
+        // Sauvegarder dans sessionStorage
+        if (typeof window !== 'undefined') {
+          try {
+            sessionStorage.setItem('super-admin-sidebar-state', JSON.stringify([...newSet]));
+          } catch (error) {
+            console.warn('Erreur lors de la sauvegarde de l\'état de la sidebar:', error);
+          }
+        }
+
+        return newSet;
+      });
+    }
+  }, [pathname, getSectionForPath]);
+
+  // Toggle section avec sauvegarde automatique
   const toggleSection = (sectionTitle: string) => {
     setOpenSections(prev => {
       const newSet = new Set(prev);
@@ -336,6 +394,16 @@ export function SidebarUltraModerne() {
       } else {
         newSet.add(sectionTitle);
       }
+
+      // Sauvegarder dans sessionStorage
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('super-admin-sidebar-state', JSON.stringify([...newSet]));
+        } catch (error) {
+          console.warn('Erreur lors de la sauvegarde de l\'état de la sidebar:', error);
+        }
+      }
+
       return newSet;
     });
   };
@@ -345,11 +413,12 @@ export function SidebarUltraModerne() {
     const interval = setInterval(() => {
       setSystemStats(prev => ({
         ...prev,
-        cpuUsage: Math.max(10, Math.min(80, prev.cpuUsage + (Math.random() - 0.5) * 10)),
-        memoryUsage: Math.max(40, Math.min(90, prev.memoryUsage + (Math.random() - 0.5) * 5)),
-        uptime: Math.min(99.9, prev.uptime + Math.random() * 0.01)
+        cpuUsage: Math.max(5, Math.min(95, prev.cpuUsage + (Math.random() - 0.5) * 8)),
+        memoryUsage: Math.max(30, Math.min(85, prev.memoryUsage + (Math.random() - 0.5) * 6)),
+        storageUsage: Math.max(20, Math.min(80, prev.storageUsage + (Math.random() - 0.5) * 2)),
+        uptime: Math.max(98.5, Math.min(99.99, prev.uptime + (Math.random() - 0.7) * 0.02))
       }));
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, []);
@@ -382,6 +451,7 @@ export function SidebarUltraModerne() {
           {navigationSections.map((section) => {
             const SectionIcon = section.icon;
             const hasActiveChild = section.children.some(child => pathname === child.href);
+            const isOpen = openSections.has(section.title);
 
             return (
               <div key={section.title}>
@@ -392,7 +462,7 @@ export function SidebarUltraModerne() {
                     'w-full flex items-center justify-between p-3 rounded-xl transition-all duration-200 group',
                     section.bgColor,
                     section.borderColor,
-                    hasActiveChild || section.isOpen
+                    hasActiveChild || isOpen
                       ? `border ${section.color} ${section.bgColor}`
                       : 'border border-transparent hover:border-gray-200 hover:bg-gray-50'
                   )}
@@ -406,7 +476,7 @@ export function SidebarUltraModerne() {
                       </Badge>
                     )}
                   </div>
-                  {section.isOpen ? (
+                  {isOpen ? (
                     <ChevronDown className={cn('w-4 h-4', section.color)} />
                   ) : (
                     <ChevronRight className={cn('w-4 h-4', section.color)} />
@@ -414,7 +484,7 @@ export function SidebarUltraModerne() {
                 </button>
 
                 {/* Section Children */}
-                {section.isOpen && (
+                {isOpen && (
                   <div className="mt-2 ml-4 space-y-1">
                     {section.children.map((item) => {
                       const isActive = pathname === item.href;
@@ -479,34 +549,42 @@ export function SidebarUltraModerne() {
 
         <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
           <CardContent className="p-3">
-            <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="space-y-3 text-xs">
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">CPU</span>
-                  <span className="font-medium">{systemStats.cpuUsage}%</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-600 text-[10px] font-medium">CPU</span>
+                  <span className="font-bold text-[10px] text-blue-600">
+                    {Math.round(systemStats.cpuUsage * 100) / 100}%
+                  </span>
                 </div>
-                <Progress value={systemStats.cpuUsage} className="h-1 mt-1" />
+                <Progress value={systemStats.cpuUsage} className="h-1.5" />
               </div>
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">RAM</span>
-                  <span className="font-medium">{systemStats.memoryUsage}%</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-600 text-[10px] font-medium">RAM</span>
+                  <span className="font-bold text-[10px] text-purple-600">
+                    {Math.round(systemStats.memoryUsage * 100) / 100}%
+                  </span>
                 </div>
-                <Progress value={systemStats.memoryUsage} className="h-1 mt-1" />
+                <Progress value={systemStats.memoryUsage} className="h-1.5" />
               </div>
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Stockage</span>
-                  <span className="font-medium">{systemStats.storageUsage}%</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-600 text-[10px] font-medium">Stockage</span>
+                  <span className="font-bold text-[10px] text-orange-600">
+                    {Math.round(systemStats.storageUsage * 100) / 100}%
+                  </span>
                 </div>
-                <Progress value={systemStats.storageUsage} className="h-1 mt-1" />
+                <Progress value={systemStats.storageUsage} className="h-1.5" />
               </div>
               <div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Uptime</span>
-                  <span className="font-medium text-green-600">{systemStats.uptime}%</span>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-gray-600 text-[10px] font-medium">Uptime</span>
+                  <span className="font-bold text-[10px] text-green-600">
+                    {Math.round(systemStats.uptime * 100) / 100}%
+                  </span>
                 </div>
-                <Progress value={systemStats.uptime} className="h-1 mt-1" />
+                <Progress value={systemStats.uptime} className="h-1.5" />
               </div>
             </div>
           </CardContent>
