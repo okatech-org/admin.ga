@@ -33,10 +33,9 @@ const navigationItems = [
   '/super-admin/base-donnees',
 
   // Outils
-  '/super-admin/test-auth',
-  '/super-admin/test-claude',
+
   '/super-admin/test-data',
-  '/super-admin/connexion-demo'
+
 ];
 
 function checkNavigationLinks() {

@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import {
   Crown, Building2, Scale, Shield, Users, GraduationCap, Heart, Briefcase,
   Factory, Globe, Zap, Car, Home, Trees, Leaf, Mountain, Calculator,
-  Radio, Stethoscope, Award, Flag, MapPin, Gavel, Target, Database,
+  Radio, Stethoscope, Award, Flag, MapPin, Gavel, Target, Database as DatabaseIcon,
   Settings, Eye, Network, Cpu, Phone, Mail, Receipt, Banknote, TrendingUp,
   Search, Filter, ChevronRight, ExternalLink, Info, FileText, BarChart3,
   Activity, Clock, CheckCircle, AlertTriangle, ArrowRight, Layers, Trophy,
@@ -479,7 +479,7 @@ export const StructureAdministrativeComplete: React.FC = () => {
                 <span>1,117 Relations</span>
               </div>
               <div className="flex items-center gap-2">
-                <Database className="h-4 w-4" />
+                <DatabaseIcon className="h-4 w-4" />
                 <span>Données consolidées</span>
               </div>
               {errorStates.general && (
@@ -506,7 +506,7 @@ export const StructureAdministrativeComplete: React.FC = () => {
               Flux & Relations
             </TabsTrigger>
             <TabsTrigger value="systemes" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
+              <DatabaseIcon className="h-4 w-4" />
               Systèmes SIG
             </TabsTrigger>
             <TabsTrigger value="organismes" className="flex items-center gap-2">
@@ -715,7 +715,7 @@ export const StructureAdministrativeComplete: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Database className="h-5 w-5" />
+                      <DatabaseIcon className="h-5 w-5" />
                       Systèmes d'Information Gouvernementaux
                     </CardTitle>
                     <CardDescription>

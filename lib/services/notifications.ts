@@ -16,16 +16,16 @@ export interface NotificationData {
 }
 
 export class NotificationService {
-  
+
   // Service centralisé pour envoyer des notifications
   static async send(notificationData: NotificationData) {
     const { receiverId, channels = ['IN_APP', 'EMAIL'] } = notificationData;
-    
+
     // Récupérer les préférences utilisateur
     const user = await prisma.user.findUnique({
       where: { id: receiverId },
-      include: { 
-        notificationPreferences: true 
+      include: {
+        notificationPreferences: true
       }
     });
 
@@ -81,7 +81,7 @@ export class NotificationService {
   // Email avec Resend
   private static async sendEmail(data: NotificationData, user: any) {
     const template = this.getEmailTemplate(data.type, data);
-    
+
     const result = await resend.emails.send({
       from: 'Admin.ga <noreply@admin.ga>',
       to: [user.email],
@@ -108,15 +108,15 @@ export class NotificationService {
     return result;
   }
 
-  // SMS (mockée en développement)
+      // SMS
   private static async sendSMS(data: NotificationData, user: any) {
     const smsText = this.getSMSTemplate(data.type, data);
-    
+
     // En développement, on log juste
     if (process.env.NODE_ENV === 'development') {
-      console.log(`📱 SMS MOCKÉE vers ${user.phone}:`);
+      console.log(`📱 SMS DE DÉVELOPPEMENT vers ${user.phone}:`);
       console.log(`Message: ${smsText}`);
-      
+
       // Simuler un délai
       await new Promise(resolve => setTimeout(resolve, 100));
     } else {
@@ -139,7 +139,7 @@ export class NotificationService {
         data: data.data,
         senderId: data.senderId,
         receiverId: data.receiverId,
-        deliveredAt: new Date(), // Mockée comme envoyée
+        deliveredAt: new Date(), // Développement
       }
     });
   }
@@ -177,7 +177,7 @@ export class NotificationService {
   // Templates email
   private static getEmailTemplate(type: NotificationType, data: NotificationData) {
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-    
+
     switch (type) {
       case 'DEMANDE_RECUE':
         return {
@@ -194,7 +194,7 @@ export class NotificationService {
             </div>
           `
         };
-      
+
       case 'DEMANDE_VALIDEE':
         return {
           subject: '🎉 Demande validée - Admin.ga',
@@ -242,19 +242,19 @@ export class NotificationService {
     switch (type) {
       case 'DEMANDE_RECUE':
         return `Admin.ga: Demande reçue (${data.data?.trackingNumber}). Suivi sur admin.ga`;
-      
+
       case 'DEMANDE_VALIDEE':
         return `Admin.ga: Demande validée (${data.data?.trackingNumber}). Document bientôt prêt.`;
-      
+
       case 'RDV_CONFIRME':
         return `Admin.ga: RDV confirmé le ${data.data?.appointmentDate} à ${data.data?.appointmentTime}`;
-      
+
       case 'RAPPEL_RDV':
         return `Admin.ga: Rappel RDV demain ${data.data?.appointmentTime} - ${data.data?.location}`;
-      
+
       case 'DOCUMENT_PRET':
         return `Admin.ga: Document prêt (${data.data?.trackingNumber}). Récupération possible.`;
-      
+
       default:
         return data.message;
     }

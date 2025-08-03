@@ -17,7 +17,7 @@ import {
   Briefcase,
   Award,
   Bug,
-  Database,
+  Database as DatabaseIcon,
   TrendingUp,
   UserCheck,
   Network,
@@ -172,7 +172,7 @@ const navigationItems = [
       {
         title: 'Base de Données',
         href: '/super-admin/base-donnees',
-        icon: Database,
+        icon: DatabaseIcon,
         description: 'Gestion et maintenance'
       }
     ]
@@ -194,12 +194,7 @@ const navigationItems = [
         description: 'Outils de debug système',
         isNew: true
       },
-      {
-        title: 'Connexion Demo',
-        href: '/super-admin/connexion-demo',
-        icon: Award,
-        description: 'Interface demo'
-      }
+
     ]
   }
 ];

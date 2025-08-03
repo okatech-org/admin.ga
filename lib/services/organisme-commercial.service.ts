@@ -1,7 +1,7 @@
 /* @ts-nocheck */
 import { getAllAdministrations } from '@/lib/data/gabon-administrations';
 import { getAllServices } from '@/lib/data/gabon-services-detailles';
-import { systemUsers } from '@/lib/data/unified-system-data';
+
 import {
   OrganismeCommercial,
   OrganismeStatus,
@@ -78,11 +78,32 @@ export class OrganismeCommercialService {
   }
 
   /**
+   * Génère des utilisateurs de base pour les organismes
+   */
+  private generateBasicUsers(organismes: any[]): any[] {
+    const users: any[] = [];
+    organismes.forEach(org => {
+      // Ajouter quelques utilisateurs de base par organisme
+      for (let i = 1; i <= 3; i++) {
+        users.push({
+          id: `${org.code}_user_${i}`,
+          nom: `Utilisateur ${i}`,
+          email: `user${i}@${org.code.toLowerCase()}.ga`,
+          organizationId: org.code,
+          role: i === 1 ? 'ADMIN' : 'USER',
+          statut: 'actif'
+        });
+      }
+    });
+    return users;
+  }
+
+  /**
    * Initialise les organismes avec le statut PROSPECT par défaut
    */
   private initializeOrganismes(): void {
     const administrations = getAllAdministrations();
-    const users = systemUsers;
+    const users = this.generateBasicUsers(administrations);
 
     console.log('🏢 Initialisation des organismes commerciaux...');
 
@@ -102,14 +123,14 @@ export class OrganismeCommercialService {
 
         // Statut commercial - TOUS PROSPECTS au début
         status: 'PROSPECT' as OrganismeStatus,
-        dateAjout: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+        dateAjout: new Date().toISOString(),
 
         // Informations prospect
         prospectInfo: {
           source: this.getSourceAleatoire(),
           priorite,
           notes: `Organisme ${admin.type.toLowerCase()} à fort potentiel. Nécessite une approche adaptée au secteur public.`,
-          dernierContact: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          dernierContact: new Date().toISOString(),
           responsableProspection: this.getResponsableProspection()
         },
 
@@ -120,8 +141,8 @@ export class OrganismeCommercialService {
         stats: {
           totalUsers: orgUsers.length,
           totalServices: services.length,
-          totalPostes: Math.floor(Math.random() * 15) + 5,
-          activeUsers: Math.floor(orgUsers.length * (0.7 + Math.random() * 0.3))
+          totalPostes: 10,
+          activeUsers: Math.floor(orgUsers.length * 0.8)
         },
 
         // Relations
@@ -129,7 +150,7 @@ export class OrganismeCommercialService {
         users: orgUsers,
         postes: [],
         contact: {
-          telephone: `+241 ${Math.floor(Math.random() * 90) + 10} ${Math.floor(Math.random() * 90) + 10} ${Math.floor(Math.random() * 90) + 10} ${Math.floor(Math.random() * 90) + 10}`,
+          telephone: '+241 XX XX XX XX',
           email: `contact@${admin.code.toLowerCase()}.ga`,
           adresse: admin.localisation,
           responsable: `Responsable ${admin.nom}`
@@ -161,7 +182,7 @@ export class OrganismeCommercialService {
           dureeContrat: 24,
           servicesSelectionnes: SERVICES_PAR_CONTRAT[typeContrat],
           responsableCommercial: 'Jean-Pierre MBOUMBA',
-          dateSignature: new Date(Date.now() - Math.random() * 180 * 24 * 60 * 60 * 1000).toISOString(),
+          dateSignature: new Date().toISOString(),
           conditions: 'Contrat standard avec clauses gouvernementales'
         });
       }
@@ -178,25 +199,17 @@ export class OrganismeCommercialService {
   }
 
   /**
-   * Retourne une source aléatoire
+   * Retourne une source par défaut
    */
   private getSourceAleatoire(): 'REFERENCEMENT' | 'DEMANDE_DIRECTE' | 'RECOMMANDATION' {
-    const sources = ['REFERENCEMENT', 'DEMANDE_DIRECTE', 'RECOMMANDATION'];
-    return sources[Math.floor(Math.random() * sources.length)] as any;
+    return 'REFERENCEMENT';
   }
 
   /**
-   * Retourne un responsable de prospection aléatoire
+   * Retourne un responsable de prospection par défaut
    */
   private getResponsableProspection(): string {
-    const responsables = [
-      'Marie-Claire ASSEKO',
-      'Jean-Pierre MBOUMBA',
-      'Sylvie OGANDAGA',
-      'Paul NDONG MEZUI',
-      'Christine MOUSSA'
-    ];
-    return responsables[Math.floor(Math.random() * responsables.length)];
+    return 'Équipe Commerciale';
   }
 
   /**
@@ -333,10 +346,10 @@ export class OrganismeCommercialService {
         chiffreAffairesTotal: clients.reduce((sum, c) => sum + (c.clientInfo?.montantAnnuel || 0), 0),
         chiffreAffairesMoyen: clients.length > 0 ?
           clients.reduce((sum, c) => sum + (c.clientInfo?.montantAnnuel || 0), 0) / clients.length : 0,
-        tauxRenouvellement: 85 // Mock - à calculer selon les renouvellements réels
+        tauxRenouvellement: 85 // À calculer selon les renouvellements réels
       },
       conversions: {
-        totalMois: Math.floor(Math.random() * 3) + 1, // Mock
+        totalMois: 1, // À calculer selon les conversions réelles
         objectifMois: 5,
         pipeline: prospects.filter(p => p.prospectInfo?.priorite === 'HAUTE').length
       }

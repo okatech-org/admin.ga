@@ -28,7 +28,7 @@ export class AirtelMoneyService {
   private config: AirtelMoneyConfig;
   private accessToken?: string;
   private tokenExpiry?: Date;
-  
+
   constructor(config: AirtelMoneyConfig) {
     this.config = config;
   }
@@ -148,8 +148,8 @@ export class AirtelMoneyService {
     try {
       // TODO: Implémenter l'authentification OAuth2
       console.log('Refreshing Airtel Money access token');
-      
-      this.accessToken = 'mock-token';
+
+      this.accessToken = 'access-token-placeholder';
       this.tokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 heure
     } catch (error) {
       console.error('Failed to refresh Airtel Money token:', error);
@@ -160,7 +160,7 @@ export class AirtelMoneyService {
   private formatPhoneNumber(phone: string): string {
     // Retirer tous les espaces et tirets
     let cleaned = phone.replace(/[\s-]/g, '');
-    
+
     // Retirer le préfixe international si présent
     if (cleaned.startsWith('+241')) {
       cleaned = cleaned.substring(4);
@@ -169,7 +169,7 @@ export class AirtelMoneyService {
     } else if (cleaned.startsWith('0')) {
       cleaned = cleaned.substring(1);
     }
-    
+
     return cleaned;
   }
 
@@ -177,10 +177,10 @@ export class AirtelMoneyService {
    * Créer un lien de paiement
    */
   createPaymentLink(amount: number, reference: string): string {
-    const baseUrl = this.config.environment === 'production' 
-      ? 'https://pay.airtel.ga' 
+    const baseUrl = this.config.environment === 'production'
+      ? 'https://pay.airtel.ga'
       : 'https://sandbox.pay.airtel.ga';
-    
+
     return `${baseUrl}/checkout?amount=${amount}&reference=${reference}&merchant=${this.config.merchantCode}`;
   }
-} 
+}

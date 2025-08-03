@@ -36,7 +36,7 @@ export default withAuth(
     const superAdminRedirects: Record<string, string> = {
       '/super-admin/administrations': '/super-admin/organismes',
       '/super-admin/dashboard': '/super-admin/dashboard-unified',
-      '/super-admin/dashboard-v2': '/super-admin/dashboard-unified'
+
     };
 
     if (superAdminRedirects[pathname]) {

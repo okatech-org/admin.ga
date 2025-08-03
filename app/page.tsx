@@ -19,7 +19,7 @@ import {
   Star,
   Clock,
   Smartphone,
-  Database,
+  Database as DatabaseIcon,
   Settings,
   TrendingUp,
   Award,
@@ -58,7 +58,7 @@ export default function HomePage() {
       description: "Vos services disponibles en permanence, depuis n'importe quel appareil"
     },
     {
-      icon: Database,
+      icon: DatabaseIcon,
       titre: "Gestion Centralisée",
       description: "Base de données unifiée avec sauvegarde automatique et récupération de données"
     }

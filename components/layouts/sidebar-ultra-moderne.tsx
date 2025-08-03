@@ -35,7 +35,7 @@ import {
   Award,
 
   // Monitoring - Orange
-  Database,
+  Database as DatabaseIcon,
   Monitor,
   AlertCircle,
   Cpu,
@@ -111,7 +111,7 @@ export function SidebarUltraModerne() {
     if (path.includes('/base-donnees') || path.includes('/systeme') || path.includes('/logs') || path.includes('/metrics')) {
       return 'Monitoring';
     }
-    if (path.includes('/configuration') || path.includes('/test-data') || path.includes('/connexion-demo') || path.includes('/debug')) {
+    if (path.includes('/configuration') || path.includes('/test-data') || path.includes('/debug')) {
       return 'Outils';
     }
     return null;
@@ -183,13 +183,7 @@ export function SidebarUltraModerne() {
           description: 'Communications inter-administration',
           badge: 5
         },
-        {
-          title: 'Dashboard V2',
-          href: '/super-admin/dashboard-v2',
-          icon: Activity,
-          description: 'Interface moderne expérimentale',
-          isNew: true
-        }
+
       ]
     },
     {
@@ -303,7 +297,7 @@ export function SidebarUltraModerne() {
         {
           title: 'Base de Données',
           href: '/super-admin/base-donnees',
-          icon: Database,
+          icon: DatabaseIcon,
           description: 'Gestion et visualisation DB',
           isNew: true
         },
@@ -346,13 +340,7 @@ export function SidebarUltraModerne() {
           icon: TestTube,
           description: 'Données de test'
         },
-        {
-          title: 'Connexion Demo',
-          href: '/super-admin/connexion-demo',
-          icon: Terminal,
-          description: 'Interface de test organismes',
-          isNew: true
-        },
+
         {
           title: 'Debug',
           href: '/super-admin/debug',

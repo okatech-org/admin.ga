@@ -43,6 +43,9 @@ interface SystemHealthCheck {
   message: string;
   details?: string;
   lastCheck?: string;
+  metrics?: Record<string, any>;
+  category?: string;
+  icon?: string;
 }
 
 interface DebugToolResult {
@@ -65,32 +68,83 @@ export default function SuperAdminDebugPage() {
     setIsRunningHealthCheck(true);
     toast.info('🔍 Démarrage de la vérification système...');
 
-    // Simulation des checks avec délais
+    // Simulation des checks avec délais et métriques réalistes
     const checks = [
-      { component: 'Base de données', delay: 1000 },
-      { component: 'API Gateway', delay: 800 },
-      { component: 'Service d\'authentification', delay: 600 },
-      { component: 'Stockage fichiers', delay: 700 },
-      { component: 'Cache Redis', delay: 500 },
-      { component: 'Service de sauvegarde', delay: 900 }
+      {
+        component: 'Base de données',
+        delay: 1000,
+        icon: 'database',
+        category: 'Infrastructure'
+      },
+      {
+        component: 'API Gateway',
+        delay: 800,
+        icon: 'network',
+        category: 'API'
+      },
+      {
+        component: 'Service d\'authentification',
+        delay: 600,
+        icon: 'shield',
+        category: 'Sécurité'
+      },
+      {
+        component: 'Stockage fichiers',
+        delay: 700,
+        icon: 'harddrive',
+        category: 'Stockage'
+      },
+      {
+        component: 'Cache Redis',
+        delay: 500,
+        icon: 'zap',
+        category: 'Performance'
+      },
+      {
+        component: 'Service de sauvegarde',
+        delay: 900,
+        icon: 'archive',
+        category: 'Backup'
+      }
     ];
 
     const results: SystemHealthCheck[] = [];
 
     for (const check of checks) {
       await new Promise(resolve => setTimeout(resolve, check.delay));
-      
-      const statusOptions = ['healthy', 'warning', 'error'] as const;
-      const randomStatus = statusOptions[Math.floor(Math.random() * statusOptions.length)];
-      
+
+      // Logique plus réaliste pour les statuts avec pondération
+      const statusWeights = [
+        { status: 'healthy', weight: 0.6 },
+        { status: 'warning', weight: 0.3 },
+        { status: 'error', weight: 0.1 }
+      ];
+
+      const rand = Math.random();
+      let cumulativeWeight = 0;
+      let selectedStatus = 'healthy';
+
+      for (const { status, weight } of statusWeights) {
+        cumulativeWeight += weight;
+        if (rand <= cumulativeWeight) {
+          selectedStatus = status;
+          break;
+        }
+      }
+
+      const metrics = generateMetricsForComponent(check.component, selectedStatus);
+
       results.push({
         component: check.component,
-        status: randomStatus,
-        message: getStatusMessage(randomStatus),
-        details: getStatusDetails(check.component, randomStatus),
-        lastCheck: new Date().toLocaleTimeString()
+        status: selectedStatus,
+        message: getStatusMessage(selectedStatus),
+        details: getStatusDetails(check.component, selectedStatus),
+        lastCheck: new Date().toLocaleTimeString(),
+        metrics,
+        category: check.category,
+        icon: check.icon
       });
-      
+
       setHealthChecks([...results]);
     }
 
@@ -107,7 +161,82 @@ export default function SuperAdminDebugPage() {
     }
   };
 
+  // Fonction pour générer des métriques réalistes par composant
+  const generateMetricsForComponent = (component: string, status: string) => {
+    const baseMetrics = {
+      'Base de données': {
+        healthy: { responseTime: '45ms', connections: 23, queryRate: '1.2k/min' },
+        warning: { responseTime: '180ms', connections: 47, queryRate: '890/min' },
+        error: { responseTime: '2.1s', connections: 3, queryRate: '45/min' }
+      },
+      'API Gateway': {
+        healthy: { responseTime: '120ms', throughput: '2.4k req/s', uptime: '99.9%' },
+        warning: { responseTime: '450ms', throughput: '1.8k req/s', uptime: '98.2%' },
+        error: { responseTime: '3.2s', throughput: '234 req/s', uptime: '89.1%' }
+      },
+      'Service d\'authentification': {
+        healthy: { responseTime: '89ms', sessionsActive: 1247, tokenRate: '95.2%' },
+        warning: { responseTime: '234ms', sessionsActive: 2156, tokenRate: '87.8%' },
+        error: { responseTime: '1.8s', sessionsActive: 45, tokenRate: '23.4%' }
+      },
+      'Stockage fichiers': {
+        healthy: { diskUsage: '34%', iops: '2.1k', transferRate: '145 MB/s' },
+        warning: { diskUsage: '78%', iops: '890', transferRate: '67 MB/s' },
+        error: { diskUsage: '94%', iops: '123', transferRate: '12 MB/s' }
+      },
+      'Cache Redis': {
+        healthy: { hitRate: '94.2%', memoryUsage: '456 MB', evictions: '12/h' },
+        warning: { hitRate: '76.8%', memoryUsage: '1.2 GB', evictions: '189/h' },
+        error: { hitRate: '23.1%', memoryUsage: '2.8 GB', evictions: '2.1k/h' }
+      },
+      'Service de sauvegarde': {
+        healthy: { lastBackup: '2h ago', success: '100%', dataSize: '2.4 GB' },
+        warning: { lastBackup: '8h ago', success: '87%', dataSize: '2.4 GB' },
+        error: { lastBackup: '2d ago', success: '12%', dataSize: 'N/A' }
+      }
+    };
+
+    return baseMetrics[component]?.[status] || {};
+  };
+
   const getStatusDetails = (component: string, status: string) => {
+    const detailsMap = {
+      'Base de données': {
+        healthy: 'Connexions stables, requêtes optimisées',
+        warning: 'Latence élevée détectée, optimisation recommandée',
+        error: 'Connexions échouées, vérification requise'
+      },
+      'API Gateway': {
+        healthy: 'Trafic nominal, réponses rapides',
+        warning: 'Charge élevée, temps de réponse dégradé',
+        error: 'Service indisponible, redémarrage nécessaire'
+      },
+      'Service d\'authentification': {
+        healthy: 'Authentifications fluides, tokens valides',
+        warning: 'Pic de connexions, délais possibles',
+        error: 'Erreurs d\'authentification, service instable'
+      },
+      'Stockage fichiers': {
+        healthy: 'Espace disponible, accès rapide',
+        warning: 'Espace limité, nettoyage recommandé',
+        error: 'Espace critique, intervention urgente'
+      },
+      'Cache Redis': {
+        healthy: 'Cache optimal, taux de succès élevé',
+        warning: 'Performance dégradée, évictions fréquentes',
+        error: 'Cache défaillant, données non disponibles'
+      },
+      'Service de sauvegarde': {
+        healthy: 'Sauvegardes régulières et complètes',
+        warning: 'Retard dans les sauvegardes',
+        error: 'Échec des sauvegardes, données à risque'
+      }
+    };
+
+    return detailsMap[component]?.[status] || getDefaultStatusDetails(status);
+  };
+
+  const getDefaultStatusDetails = (status: string) => {
     if (status === 'healthy') return 'Tous les systèmes fonctionnent normalement';
     if (status === 'warning') return 'Performance légèrement dégradée';
     return 'Service temporairement indisponible';
@@ -131,12 +260,36 @@ export default function SuperAdminDebugPage() {
     }
   };
 
+  const getComponentIcon = (iconName: string) => {
+    const iconMap = {
+      database: <DatabaseIcon className="h-5 w-5 text-blue-500" />,
+      network: <Network className="h-5 w-5 text-purple-500" />,
+      shield: <Shield className="h-5 w-5 text-green-500" />,
+      harddrive: <HardDrive className="h-5 w-5 text-orange-500" />,
+      zap: <Zap className="h-5 w-5 text-yellow-500" />,
+      archive: <FileText className="h-5 w-5 text-gray-500" />
+    };
+    return iconMap[iconName] || <Server className="h-5 w-5 text-gray-500" />;
+  };
+
+  const getCategoryColor = (category: string) => {
+    const categoryColors = {
+      'Infrastructure': 'bg-blue-50 text-blue-700 border-blue-200',
+      'API': 'bg-purple-50 text-purple-700 border-purple-200',
+      'Sécurité': 'bg-green-50 text-green-700 border-green-200',
+      'Stockage': 'bg-orange-50 text-orange-700 border-orange-200',
+      'Performance': 'bg-yellow-50 text-yellow-700 border-yellow-200',
+      'Backup': 'bg-gray-50 text-gray-700 border-gray-200'
+    };
+    return categoryColors[category] || 'bg-gray-50 text-gray-700 border-gray-200';
+  };
+
   // Simulation d'informations système
   const loadSystemInfo = async () => {
     toast.info('📊 Collecte des informations système...');
-    
+
     await new Promise(resolve => setTimeout(resolve, 1500));
-    
+
     setSystemInfo({
       environment: 'Production',
       version: '2.1.4',
@@ -149,21 +302,21 @@ export default function SuperAdminDebugPage() {
       totalRequests: '1,247,893',
       lastBackup: '02/01/2025 03:00:00'
     });
-    
+
     toast.success('✅ Informations système collectées !');
   };
 
   // Outils de debug spécialisés
   const runDebugTool = async (toolName: string) => {
     toast.info(`🔧 Exécution de l'outil: ${toolName}...`);
-    
+
     const startTime = Date.now();
     await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
     const duration = Date.now() - startTime;
-    
+
     const statuses = ['success', 'warning', 'error'] as const;
     const randomStatus = statuses[Math.floor(Math.random() * statuses.length)];
-    
+
     const result: DebugToolResult = {
       tool: toolName,
       status: randomStatus,
@@ -171,7 +324,7 @@ export default function SuperAdminDebugPage() {
       duration,
       data: getToolData(toolName)
     };
-    
+
     setDebugResults(prev => [result, ...prev.slice(0, 9)]);
     toast.success(`✅ ${toolName} terminé en ${duration}ms`);
   };
@@ -211,8 +364,8 @@ export default function SuperAdminDebugPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button 
-              onClick={runSystemHealthCheck} 
+            <Button
+              onClick={runSystemHealthCheck}
               disabled={isRunningHealthCheck}
               variant="outline"
             >
@@ -295,9 +448,28 @@ export default function SuperAdminDebugPage() {
             {/* Vérifications de santé */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  Vérifications de Santé Système
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                    Vérifications de Santé Système
+                  </div>
+                  {healthChecks.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="bg-green-50 text-green-700">
+                        {healthChecks.filter(c => c.status === 'healthy').length} OK
+                      </Badge>
+                      {healthChecks.filter(c => c.status === 'warning').length > 0 && (
+                        <Badge variant="outline" className="bg-yellow-50 text-yellow-700">
+                          {healthChecks.filter(c => c.status === 'warning').length} Attention
+                        </Badge>
+                      )}
+                      {healthChecks.filter(c => c.status === 'error').length > 0 && (
+                        <Badge variant="outline" className="bg-red-50 text-red-700">
+                          {healthChecks.filter(c => c.status === 'error').length} Erreur
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -306,8 +478,35 @@ export default function SuperAdminDebugPage() {
                     <div className="flex items-center gap-2 mb-2">
                       <RefreshCw className="h-4 w-4 animate-spin" />
                       <span className="text-sm">Vérification en cours...</span>
+                      <span className="text-xs text-muted-foreground">
+                        ({healthChecks.length}/6 terminées)
+                      </span>
                     </div>
                     <Progress value={(healthChecks.length / 6) * 100} className="w-full" />
+                  </div>
+                )}
+
+                {/* Résumé global de santé */}
+                {healthChecks.length > 0 && !isRunningHealthCheck && (
+                  <div className="mb-6 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">État Général du Système</p>
+                        <p className="text-sm text-gray-600">
+                          {healthChecks.filter(c => c.status === 'error').length === 0 ?
+                            healthChecks.filter(c => c.status === 'warning').length === 0 ?
+                              '🟢 Tous les services fonctionnent optimalement' :
+                              '🟡 Système stable avec quelques optimisations possibles' :
+                            '🔴 Attention requise - Des services nécessitent une intervention'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-gray-900">
+                          {Math.round((healthChecks.filter(c => c.status === 'healthy').length / healthChecks.length) * 100)}%
+                        </p>
+                        <p className="text-xs text-gray-600">Santé globale</p>
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -322,24 +521,79 @@ export default function SuperAdminDebugPage() {
                   )}
 
                   {healthChecks.map((check, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(check.status)}
-                        <div>
-                          <p className="font-medium">{check.component}</p>
-                          <p className="text-sm text-muted-foreground">{check.details}</p>
+                    <div key={index} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                      {/* En-tête du composant */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          {check.icon && getComponentIcon(check.icon)}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{check.component}</p>
+                              {check.category && (
+                                <Badge variant="outline" className={`text-xs ${getCategoryColor(check.category)}`}>
+                                  {check.category}
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground">{check.details}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(check.status)}
+                          <Badge className={getStatusColor(check.status)}>
+                            {check.message}
+                          </Badge>
+                          {check.lastCheck && (
+                            <span className="text-xs text-muted-foreground">
+                              {check.lastCheck}
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(check.status)}>
-                          {check.message}
-                        </Badge>
-                        {check.lastCheck && (
-                          <span className="text-xs text-muted-foreground">
-                            {check.lastCheck}
-                          </span>
-                        )}
-                      </div>
+
+                      {/* Métriques détaillées */}
+                      {check.metrics && Object.keys(check.metrics).length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-gray-100">
+                          <div className="grid grid-cols-3 gap-4">
+                            {Object.entries(check.metrics).map(([key, value], metricIndex) => (
+                              <div key={metricIndex} className="text-center">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                                </p>
+                                <p className={`text-sm font-medium ${
+                                  check.status === 'error' ? 'text-red-600' :
+                                  check.status === 'warning' ? 'text-yellow-600' :
+                                  'text-green-600'
+                                }`}>
+                                  {value}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions rapides */}
+                      {check.status !== 'healthy' && (
+                        <div className="mt-3 pt-3 border-t border-gray-100 flex gap-2">
+                          <Button variant="outline" size="sm" className="text-xs">
+                            <Eye className="h-3 w-3 mr-1" />
+                            Détails
+                          </Button>
+                          {check.status === 'error' && (
+                            <Button variant="outline" size="sm" className="text-xs text-red-600">
+                              <RefreshCw className="h-3 w-3 mr-1" />
+                              Redémarrer
+                            </Button>
+                          )}
+                          {check.status === 'warning' && (
+                            <Button variant="outline" size="sm" className="text-xs text-yellow-600">
+                              <Settings className="h-3 w-3 mr-1" />
+                              Optimiser
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -365,13 +619,13 @@ export default function SuperAdminDebugPage() {
                       <h3 className="font-medium">{tool.name}</h3>
                     </div>
                     <p className="text-sm text-muted-foreground mb-4">{tool.description}</p>
-                    <Button 
-                      onClick={() => tool.name === 'Debug Organismes' ? 
-                        window.open('/debug-orgs', '_blank') : 
+                    <Button
+                      onClick={() => tool.name === 'Debug Organismes' ?
+                        window.open('/debug-orgs', '_blank') :
                         runDebugTool(tool.name)
-                      } 
-                      variant="outline" 
-                      size="sm" 
+                      }
+                      variant="outline"
+                      size="sm"
                       className="w-full"
                     >
                       <Play className="mr-2 h-4 w-4" />
@@ -505,7 +759,7 @@ export default function SuperAdminDebugPage() {
                       </div>
                       <Progress value={76} className="w-full" />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Utilisation mémoire</span>
@@ -513,7 +767,7 @@ export default function SuperAdminDebugPage() {
                       </div>
                       <Progress value={68} className="w-full" />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Charge CPU</span>
@@ -521,7 +775,7 @@ export default function SuperAdminDebugPage() {
                       </div>
                       <Progress value={23} className="w-full" />
                     </div>
-                    
+
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm">Débit réseau</span>
@@ -530,7 +784,7 @@ export default function SuperAdminDebugPage() {
                       <Progress value={85} className="w-full" />
                     </div>
                   </div>
-                  
+
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
@@ -571,7 +825,7 @@ export default function SuperAdminDebugPage() {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="space-y-3">
                       <h3 className="font-medium">Statistiques</h3>
                       <div className="space-y-2 text-sm">
@@ -591,7 +845,7 @@ export default function SuperAdminDebugPage() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="font-medium mb-3">Actions Avancées</h3>
                   <div className="flex gap-2 flex-wrap">

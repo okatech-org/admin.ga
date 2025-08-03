@@ -152,7 +152,7 @@ export default function TestDataPage() {
         <PageHeader
           title="Test & Validation des Données"
           description="Visualisez, testez et validez les données des organismes gabonais"
-                      icon={<DatabaseIcon className="h-8 w-8 text-blue-600" />}
+                      icon={DatabaseIcon}
           badge={{ text: `${stats.totalOrganismes} organismes`, variant: 'secondary' }}
           actions={
             <div className="flex gap-2">
@@ -198,27 +198,27 @@ export default function TestDataPage() {
             title="Organismes Total"
             value={stats.totalOrganismes}
             description="Organismes chargés depuis JSON"
-            icon={<Building2 className="h-5 w-5" />}
+            icon={Building2}
             badge={{ text: 'Actif', variant: 'default' }}
           />
           <StatCard
             title="Services Total"
             value={stats.totalServices}
             description="Services extraits et catalogués"
-            icon={<Settings className="h-5 w-5" />}
+            icon={Settings}
             badge={{ text: 'Extraction', variant: 'secondary' }}
           />
           <StatCard
             title="Types d'Organismes"
             value={stats.types}
             description="Catégories différentes"
-            icon={<BarChart3 className="h-5 w-5" />}
+            icon={BarChart3}
           />
           <StatCard
             title="Localisations"
             value={stats.localisations}
             description="Zones géographiques"
-            icon={<Filter className="h-5 w-5" />}
+            icon={Filter}
           />
         </div>
 
@@ -300,7 +300,7 @@ export default function TestDataPage() {
           <TabsContent value="organismes" className="space-y-6">
             {filteredOrganisations.length === 0 ? (
               <EmptyState
-                icon={<Search className="h-12 w-12" />}
+                icon={Search}
                 title="Aucun organisme trouvé"
                 description="Essayez de modifier vos critères de recherche"
                 action={{

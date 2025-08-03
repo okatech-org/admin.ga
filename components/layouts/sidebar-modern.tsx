@@ -26,7 +26,7 @@ import {
   Bell,
   AlertCircle,
   TrendingUp,
-  Database,
+  Database as DatabaseIcon,
   UserCheck,
   Briefcase,
   TestTube,
@@ -128,7 +128,7 @@ const navigationStructure = [
       {
         title: 'Diagnostic Système',
         href: '/super-admin/diagnostic-administrations',
-        icon: Database,
+        icon: DatabaseIcon,
         description: 'Santé du système'
       },
       {
@@ -158,21 +158,7 @@ const navigationStructure = [
       }
     ]
   },
-  {
-    id: 'outils',
-    title: 'Outils',
-    icon: Zap,
-    separator: true,
-    subItems: [
-      {
-        title: 'Mode Démo',
-        href: '/super-admin/connexion-demo',
-        icon: TestTube,
-        badge: { type: 'beta', text: 'BETA' },
-        description: 'Tester les interfaces'
-      }
-    ]
-  }
+
 ];
 
 // Composant pour les indicateurs de statut

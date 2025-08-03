@@ -41,10 +41,9 @@ const navigationLinks = [
   { title: 'Base de Données', href: '/super-admin/base-donnees' },
 
   // Outils
-  { title: 'Test Auth', href: '/super-admin/test-auth' },
-  { title: 'Test Claude', href: '/super-admin/test-claude' },
+
   { title: 'Test Data', href: '/super-admin/test-data' },
-  { title: 'Connexion Demo', href: '/super-admin/connexion-demo' }
+
 ];
 
 console.log('🔍 VÉRIFICATION DES LIENS DE NAVIGATION\n');

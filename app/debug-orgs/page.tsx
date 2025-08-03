@@ -242,7 +242,7 @@ export default function DebugOrgsPage() {
       <PageHeader
         title="Debug - Organismes Gabonais"
         description="Outils de débogage et d'analyse des données des organismes"
-        icon={<Bug className="h-8 w-8 text-orange-600" />}
+                  icon={Bug}
         badge={{ text: `${analysis.total} organismes`, variant: 'outline' }}
         actions={
           <div className="flex gap-2">
@@ -275,14 +275,14 @@ export default function DebugOrgsPage() {
           title="Organismes Total"
           value={analysis.total}
           description="Organismes dans la base"
-          icon={<Building2 className="h-5 w-5" />}
+                      icon={Building2}
           trend={{ value: 100, label: "Base complète" }}
         />
         <StatCard
           title="Taux de Completion"
           value={`${analysis.completionRate}%`}
           description="Organismes avec codes"
-          icon={<CheckCircle className="h-5 w-5" />}
+          icon={CheckCircle}
           trend={{
             value: analysis.completionRate > 80 ? 15 : -10,
             label: analysis.completionRate > 80 ? "Bon" : "À améliorer"
@@ -292,7 +292,7 @@ export default function DebugOrgsPage() {
           title="Avec Services"
           value={`${analysis.serviceRate}%`}
           description="Organismes avec services"
-          icon={<Settings className="h-5 w-5" />}
+          icon={Settings}
           trend={{
             value: analysis.serviceRate > 70 ? 12 : -8,
             label: analysis.serviceRate > 70 ? "Bon" : "Incomplet"
@@ -302,7 +302,7 @@ export default function DebugOrgsPage() {
           title="Problèmes Détectés"
           value={analysis.issues.missingCodes + analysis.issues.missingServices + analysis.issues.duplicates}
           description="Issues à résoudre"
-          icon={<XCircle className="h-5 w-5" />}
+          icon={XCircle}
           badge={{ text: 'Debug', variant: 'destructive' }}
         />
       </div>
@@ -390,7 +390,7 @@ export default function DebugOrgsPage() {
         <TabsContent value="organismes" className="space-y-6">
           {filteredOrganisations.length === 0 ? (
             <EmptyState
-              icon={<Search className="h-12 w-12" />}
+              icon={Search}
               title="Aucun organisme trouvé"
               description="Modifiez vos critères de recherche ou filtres"
               action={{

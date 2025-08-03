@@ -55,7 +55,7 @@ import {
   Award,
   Crown,
   Zap,
-  Database,
+  Database as DatabaseIcon,
   Headphones,
   BookOpen,
   ChevronRight,
@@ -5787,7 +5787,7 @@ export default function ClientManagementPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+                  <DatabaseIcon className="h-5 w-5" />
                   Sauvegarde et Maintenance
                 </CardTitle>
               </CardHeader>
@@ -6228,7 +6228,7 @@ export default function ClientManagementPage() {
                     onClick={() => handleExportAnalytics('JSON')}
                     disabled={loadingStates.exportingAnalytics}
                   >
-                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseIcon className="mr-2 h-4 w-4" />}
                     Export données brutes
                   </Button>
                 </div>
@@ -6303,7 +6303,7 @@ export default function ClientManagementPage() {
                     }}
                     disabled={loadingStates.exportingAnalytics}
                   >
-                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseIcon className="mr-2 h-4 w-4" />}
                     Export JSON (Données brutes)
                   </Button>
                 </div>

@@ -42,7 +42,7 @@ interface SignatureRequest {
 export class IntegrationService {
   private prisma: PrismaClient;
   private integrations: Map<string, Integration>;
-  
+
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.integrations = new Map();
@@ -197,7 +197,7 @@ export class IntegrationService {
       console.log('Verifying identity:', documentType, documentNumber);
 
       // Simuler une vérification
-      const isValid = Math.random() > 0.1; // 90% de succès
+      const isValid = true; // À implémenter avec vraie validation
 
       await this.recordUsage(integration.id, 'IDENTITY_VERIFICATION', isValid);
 
@@ -303,7 +303,7 @@ export class IntegrationService {
     for (const integration of integrations) {
       try {
         const isHealthy = await this.checkIntegrationHealth(integration);
-        
+
         await this.prisma.integration.update({
           where: { id: integration.id },
           data: {
@@ -481,4 +481,4 @@ export class IntegrationService {
       },
     });
   }
-} 
+}

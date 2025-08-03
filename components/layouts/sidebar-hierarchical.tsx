@@ -16,7 +16,8 @@ import {
   UserPlus,
   Briefcase,
   Award,
-  Database,
+  Bug,
+  Database as DatabaseIcon,
   TrendingUp,
   UserCheck,
   Network,
@@ -211,7 +212,7 @@ const navigationItems = [
       {
         title: 'Base de Données',
         href: '/super-admin/base-donnees',
-        icon: Database,
+        icon: DatabaseIcon,
         description: 'Gestion et maintenance'
       }
     ]
@@ -226,17 +227,13 @@ const navigationItems = [
     sectionColor: 'gray',
     isSection: true,
     children: [
+
       {
-        title: 'Test Auth',
-        href: '/super-admin/test-auth',
-        icon: Shield,
-        description: 'Test authentification'
-      },
-      {
-        title: 'Test Claude',
-        href: '/super-admin/test-claude',
-        icon: Cpu,
-        description: 'Interface IA Claude'
+        title: 'Debug & Diagnostic',
+        href: '/super-admin/debug',
+        icon: Bug,
+        description: 'Outils de debug système',
+        isNew: true
       },
       {
         title: 'Test Data',
@@ -244,12 +241,7 @@ const navigationItems = [
         icon: FileX,
         description: 'Données de test'
       },
-      {
-        title: 'Connexion Demo',
-        href: '/super-admin/connexion-demo',
-        icon: Award,
-        description: 'Interface demo'
-      }
+
     ]
   }
 ];

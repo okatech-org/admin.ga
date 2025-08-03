@@ -67,7 +67,36 @@ import {
 
 import { getAllAdministrations } from '@/lib/data/gabon-administrations';
 import { getAllPostes, GRADES_FONCTION_PUBLIQUE } from '@/lib/data/postes-administratifs';
-import { systemUsers, getUsersByOrganisme, getUsersByRole, searchUsers } from '@/lib/data/unified-system-data';
+// Fonctions utilitaires pour gérer les utilisateurs (remplace unified-system-data.ts)
+const generateBasicSystemUsers = () => {
+  const users: any[] = [];
+  // Générer quelques utilisateurs de base pour le système
+  for (let i = 1; i <= 50; i++) {
+    users.push({
+      id: i,
+      nom: `Utilisateur ${i}`,
+      firstName: `Prénom${i}`,
+      lastName: `Nom${i}`,
+      email: `user${i}@admin.ga`,
+      role: i <= 10 ? 'ADMIN' : i <= 25 ? 'MANAGER' : 'USER',
+      statut: 'actif',
+      isActive: true,
+      organizationId: `ORG_${Math.floor(i / 5) + 1}`,
+      organizationName: `Organisation ${Math.floor(i / 5) + 1}`,
+      derniere_connexion: new Date().toISOString()
+    });
+  }
+  return users;
+};
+
+const systemUsers = generateBasicSystemUsers();
+
+const getUsersByOrganisme = (orgId: string) => systemUsers.filter(u => u.organizationId === orgId);
+const getUsersByRole = (role: string) => systemUsers.filter(u => u.role === role);
+const searchUsers = (query: string) => systemUsers.filter(u => 
+  u.nom.toLowerCase().includes(query.toLowerCase()) || 
+  u.email.toLowerCase().includes(query.toLowerCase())
+);
 import { toast } from 'sonner';
 import { geminiAIService, type OrganismeIntervenant, type SearchResult } from '@/lib/services/gemini-ai.service';
 import { knowledgeBaseService } from '@/lib/services/knowledge-base.service';
