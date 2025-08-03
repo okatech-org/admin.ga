@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import {
-  Database,
+  Database as DatabaseIcon,
   Save,
   Download,
   Upload,
@@ -394,7 +394,7 @@ export default function BaseDonneesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Database className="h-8 w-8 text-blue-600" />
+              <DatabaseIcon className="h-8 w-8 text-blue-600" />
               Gestion Base de Données
             </h1>
             <p className="text-muted-foreground mt-2">
@@ -823,7 +823,7 @@ export default function BaseDonneesPage() {
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center">
-                    <Database className="h-8 w-8 text-blue-500" />
+                    <DatabaseIcon className="h-8 w-8 text-blue-500" />
                     <div className="ml-4">
                       <p className="text-sm font-medium text-muted-foreground">CPU DB</p>
                       <p className="text-2xl font-bold">12%</p>
@@ -985,7 +985,7 @@ export default function BaseDonneesPage() {
                       </AlertDescription>
                     </Alert>
                     <Alert>
-                      <Database className="h-4 w-4" />
+                      <DatabaseIcon className="h-4 w-4" />
                       <AlertDescription>
                         <div className="flex justify-between items-center">
                           <span>Index optimization complétée</span>
@@ -1037,8 +1037,6 @@ export default function BaseDonneesPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-
             {/* Actions de maintenance */}
             <Card>
               <CardHeader>

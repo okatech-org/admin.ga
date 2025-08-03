@@ -16,7 +16,7 @@ import {
   Activity,
   Globe,
   Shield,
-  Database,
+  Database as DatabaseIcon,
   MessageSquare,
   CheckCircle,
   AlertCircle,
@@ -405,7 +405,7 @@ export default function DashboardUnifiedPage() {
                       <p className="text-sm text-gray-600">Stockage</p>
                       <p className="text-2xl font-bold text-orange-600">{stats.systeme.stockage}%</p>
                     </div>
-                    <Database className="h-6 w-6 text-orange-500" />
+                    <DatabaseIcon className="h-6 w-6 text-orange-500" />
                   </div>
                 </CardContent>
               </Card>

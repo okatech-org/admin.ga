@@ -13,7 +13,7 @@ import { StatCard } from '@/components/ui/stat-card';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
-  Database,
+  Database as DatabaseIcon,
   Search,
   Download,
   RefreshCw,
@@ -152,7 +152,7 @@ export default function TestDataPage() {
         <PageHeader
           title="Test & Validation des Données"
           description="Visualisez, testez et validez les données des organismes gabonais"
-          icon={<Database className="h-8 w-8 text-blue-600" />}
+                      icon={<DatabaseIcon className="h-8 w-8 text-blue-600" />}
           badge={{ text: `${stats.totalOrganismes} organismes`, variant: 'secondary' }}
           actions={
             <div className="flex gap-2">

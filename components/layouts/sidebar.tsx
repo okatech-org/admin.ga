@@ -16,6 +16,7 @@ import {
   UserPlus,
   Briefcase,
   Award,
+  Bug,
   Database,
   TrendingUp,
   UserCheck,
@@ -186,6 +187,13 @@ const navigationItems = [
     sectionColor: 'gray',
     isSection: true,
     children: [
+      {
+        title: 'Debug & Diagnostic',
+        href: '/super-admin/debug',
+        icon: Bug,
+        description: 'Outils de debug système',
+        isNew: true
+      },
       {
         title: 'Connexion Demo',
         href: '/super-admin/connexion-demo',

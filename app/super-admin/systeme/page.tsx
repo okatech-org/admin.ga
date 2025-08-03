@@ -15,7 +15,7 @@ import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { toast } from 'sonner';
 import {
   Server,
-  Database,
+  Database as DatabaseIcon,
   Cpu,
   HardDrive,
   MemoryStick,
@@ -731,7 +731,7 @@ export default function SuperAdminSystemePage() {
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center">
-                <Database className="h-8 w-8 text-green-500" />
+                <DatabaseIcon className="h-8 w-8 text-green-500" />
                 <div className="ml-4">
                   <p className="text-sm font-medium text-muted-foreground">Bases de Données</p>
                   <p className="text-2xl font-bold">{systemStats.onlineDatabases}/{systemStats.totalDatabases}</p>
@@ -1122,7 +1122,7 @@ export default function SuperAdminSystemePage() {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2">
-                        <Database className="h-5 w-5" />
+                        <DatabaseIcon className="h-5 w-5" />
                         {db.name}
                       </CardTitle>
                       <div className="flex items-center gap-2">
@@ -1591,7 +1591,7 @@ export default function SuperAdminSystemePage() {
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
+                <DatabaseIcon className="h-5 w-5" />
                 Détails de la Base: {selectedDatabase?.name}
               </DialogTitle>
             </DialogHeader>

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Activity,
-  Database,
+  Database as DatabaseIcon,
   Server,
   Users,
   Zap,
@@ -155,8 +155,8 @@ export function RealTimeMetrics({ updateInterval = 5000, className }: RealTimeMe
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     {key === 'cpu' && <Server className="h-5 w-5 text-blue-500" />}
-                    {key === 'memory' && <Database className="h-5 w-5 text-green-500" />}
-                    {key === 'database' && <Database className="h-5 w-5 text-purple-500" />}
+                    {key === 'memory' && <DatabaseIcon className="h-5 w-5 text-green-500" />}
+                    {key === 'database' && <DatabaseIcon className="h-5 w-5 text-purple-500" />}
                     {key === 'network' && <Activity className="h-5 w-5 text-orange-500" />}
                     <span className="text-sm font-medium text-muted-foreground">{metric.label}</span>
                   </div>

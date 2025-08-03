@@ -30,7 +30,7 @@ import {
   Eye,
   Target,
   Globe,
-  Database,
+  Database as DatabaseIcon,
   Server,
   Monitor,
   Cpu,
@@ -397,7 +397,7 @@ export default function AnalyticsPage() {
               <StatCard
                 title="Base de données"
                 value={`${Math.round(data.systemHealth.database)}%`}
-                icon={Database}
+                icon={DatabaseIcon}
                 iconColor="text-red-500"
                 trend={{ value: -0.5, label: 'depuis hier' }}
               />
@@ -685,7 +685,7 @@ export default function AnalyticsPage() {
                         message: 'Backup automatique programmé initié',
                         source: 'Backup Service',
                         severity: 'LOW',
-                        icon: Database,
+                        icon: DatabaseIcon,
                         color: 'text-blue-500'
                       },
                       {

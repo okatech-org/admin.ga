@@ -16,7 +16,7 @@ import {
   Info,
   X,
   Clock,
-  Database,
+  Database as DatabaseIcon,
   Users,
   Shield,
   Activity,
@@ -211,7 +211,7 @@ export function AdvancedLogsViewer({
     switch (category) {
       case 'system': return <Server className="h-4 w-4" />;
       case 'security': return <Shield className="h-4 w-4" />;
-      case 'database': return <Database className="h-4 w-4" />;
+      case 'database': return <DatabaseIcon className="h-4 w-4" />;
       case 'api': return <Zap className="h-4 w-4" />;
       case 'user': return <Users className="h-4 w-4" />;
       default: return <Activity className="h-4 w-4" />;

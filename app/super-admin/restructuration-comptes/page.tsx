@@ -18,7 +18,7 @@ import {
   XCircle,
   Clock,
   Target,
-  Database,
+  Database as DatabaseIcon,
   Shield,
   Activity,
   TrendingUp,
@@ -168,7 +168,7 @@ export default function RestructurationComptesPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Database className="h-5 w-5" />
+                <DatabaseIcon className="h-5 w-5" />
                 Nettoyage et Optimisation
               </CardTitle>
               <CardDescription>

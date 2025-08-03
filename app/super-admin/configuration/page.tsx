@@ -32,7 +32,7 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Database,
+  Database as DatabaseIcon,
   Mail,
   Smartphone,
   Cloud,
@@ -968,7 +968,7 @@ export default function ConfigurationPage() {
               Notifications
             </TabsTrigger>
             <TabsTrigger value="database" className="flex items-center gap-2">
-              <Database className="h-4 w-4" />
+                                <DatabaseIcon className="h-4 w-4" />
               Base de données
             </TabsTrigger>
           </TabsList>
@@ -1708,7 +1708,7 @@ export default function ConfigurationPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Database className="h-5 w-5" />
+                    <DatabaseIcon className="h-5 w-5" />
                     Base de données
                   </CardTitle>
                   <CardDescription>
@@ -1836,7 +1836,7 @@ export default function ConfigurationPage() {
                           </>
                         ) : (
                           <>
-                            <Database className="mr-2 h-4 w-4" />
+                            <DatabaseIcon className="mr-2 h-4 w-4" />
                             Sauvegarder
                           </>
                         )}
