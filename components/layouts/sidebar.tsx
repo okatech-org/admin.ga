@@ -1,6 +1,7 @@
 /* @ts-nocheck */
 "use client";
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -20,7 +21,11 @@ import {
   UserCheck,
   Network,
   Crown,
-  Home
+  Home,
+  Target,
+  Building2,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 const navigationItems = [
@@ -31,23 +36,49 @@ const navigationItems = [
     description: 'Vue d\'ensemble complète du système'
   },
   {
+    title: 'Organismes',
+    icon: Building,
+    description: 'Gestion commerciale des organismes publics',
+    isSection: true,
+    children: [
+      {
+        title: 'Vue d\'Ensemble',
+        href: '/super-admin/organismes-vue-ensemble',
+        icon: BarChart3,
+        description: 'Tableau de bord commercial complet'
+      },
+      {
+        title: 'Prospects',
+        href: '/super-admin/organismes-prospects',
+        icon: Target,
+        description: 'Gestion et conversion des prospects'
+      },
+      {
+        title: 'Clients',
+        href: '/super-admin/organismes-clients',
+        icon: UserCheck,
+        description: 'Suivi des clients et contrats'
+      }
+    ]
+  },
+  {
     title: 'Gestion Organismes',
     href: '/super-admin/organismes',
-    icon: Building,
-    description: 'Administrations et organismes'
+    icon: Shield,
+    description: 'Administration générale des organismes'
   },
-          {
-          title: 'Clients',
-          href: '/super-admin/clients',
-          icon: UserCheck,
-          description: 'Organismes clients ADMIN.GA'
-        },
-        {
-          title: 'Relations Inter-Organismes',
-          href: '/super-admin/relations',
-          icon: Network,
-          description: 'Gestion des relations et partage de données'
-        },
+  {
+    title: 'Clients (Legacy)',
+    href: '/super-admin/clients',
+    icon: Building2,
+    description: 'Interface clients historique'
+  },
+  {
+    title: 'Relations Inter-Organismes',
+    href: '/super-admin/relations',
+    icon: Network,
+    description: 'Gestion des relations et partage de données'
+  },
   {
     title: 'Structure Administrative',
     href: '/super-admin/structure-administrative',
@@ -125,6 +156,21 @@ export function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  // État pour gérer l'ouverture des sections
+  const [openSections, setOpenSections] = React.useState<Set<string>>(new Set(['Organismes']));
+
+  const toggleSection = (sectionTitle: string) => {
+    setOpenSections(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionTitle)) {
+        newSet.delete(sectionTitle);
+      } else {
+        newSet.add(sectionTitle);
+      }
+      return newSet;
+    });
+  };
+
   // Vérifier si l'utilisateur est super admin
   if (session?.user?.role !== 'SUPER_ADMIN') {
     return null;
@@ -145,6 +191,85 @@ export function Sidebar() {
 
         <nav className="space-y-2">
           {navigationItems.map((item) => {
+            // Si c'est une section avec des enfants
+            if (item.isSection && item.children) {
+              const isOpen = openSections.has(item.title);
+              const Icon = item.icon;
+              const hasActiveChild = item.children.some(child => pathname === child.href);
+
+              return (
+                <div key={item.title}>
+                  {/* Header de la section */}
+                  <button
+                    onClick={() => toggleSection(item.title)}
+                    className={cn(
+                      'w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors group',
+                      hasActiveChild || isOpen
+                        ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                    )}
+                  >
+                    <Icon className={cn(
+                      'w-5 h-5',
+                      hasActiveChild || isOpen ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
+                    )} />
+                    <div className="flex-1 text-left">
+                      <span>{item.title}</span>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.description}</p>
+                    </div>
+                    {isOpen ? (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+
+                  {/* Sous-éléments */}
+                  {isOpen && (
+                    <div className="ml-6 mt-1 space-y-1">
+                      {item.children.map((child) => {
+                        const isActive = pathname === child.href;
+                        const ChildIcon = child.icon;
+
+                        return (
+                          <Link
+                            key={child.href}
+                            href={child.href}
+                            className={cn(
+                              'flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium transition-colors group relative',
+                              isActive
+                                ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
+                            )}
+                          >
+                            <ChildIcon className={cn(
+                              'w-4 h-4',
+                              isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-600'
+                            )} />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span>{child.title}</span>
+                                {child.isNew && (
+                                  <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">
+                                    Nouveau
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-0.5">{child.description}</p>
+                            </div>
+                            {isActive && (
+                              <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-l"></div>
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            // Élément normal (sans enfants)
             const isActive = pathname === item.href;
             const Icon = item.icon;
 

@@ -88,8 +88,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <SidebarModern />
+        {/* Sidebar - Avec sections hiérarchiques pour Super Admin */}
+        {session?.user?.role === 'SUPER_ADMIN' ? (
+          <Sidebar />
+        ) : (
+          <SidebarModern />
+        )}
 
         {/* Main Content */}
         <main className="flex-1 p-6">
