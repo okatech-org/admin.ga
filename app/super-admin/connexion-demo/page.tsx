@@ -67,6 +67,8 @@ export default function SuperAdminConnexionDemoPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [selectedMode, setSelectedMode] = useState<'organismes' | 'direct' | 'citoyen'>('organismes');
+  const [organismeSearch, setOrganismeSearch] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
 
   const form = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -469,10 +471,26 @@ export default function SuperAdminConnexionDemoPage() {
   const fillDemoAccount = (email: string, password: string) => {
     form.setValue('email', email);
     form.setValue('password', password);
+    toast.success('Informations de connexion pré-remplies !');
   };
 
   const goToOrganisme = (organismeUrl: string) => {
-    router.push(organismeUrl);
+    toast.loading('Redirection vers l\'organisme...');
+    // Simulation d'une redirection avec délai
+    setTimeout(() => {
+      toast.success('Accès à l\'organisme configuré !');
+      router.push(organismeUrl);
+    }, 1000);
+  };
+
+  const handleQuickLogin = async (email: string, password: string) => {
+    setIsLoading(true);
+    fillDemoAccount(email, password);
+
+    // Auto-submit après un court délai
+    setTimeout(async () => {
+      await onSubmit({ email, password });
+    }, 500);
   };
 
   return (
@@ -557,8 +575,75 @@ export default function SuperAdminConnexionDemoPage() {
                 <p className="text-gray-600 mb-8">Chaque organisme a sa propre interface de connexion</p>
               </div>
 
+              {/* Interface de recherche et filtrage */}
+              <Card className="max-w-4xl mx-auto">
+                <CardContent className="p-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="Rechercher un organisme par nom, code ou service..."
+                          value={organismeSearch}
+                          onChange={(e) => setOrganismeSearch(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Toutes catégories</option>
+                        <option value="ministère">Ministères</option>
+                        <option value="caisse">Services Sociaux</option>
+                        <option value="éducation">Éducation</option>
+                        <option value="économie">Économie</option>
+                        <option value="transport">Transport</option>
+                        <option value="mairie">Administrations Locales</option>
+                      </select>
+                      {(organismeSearch || selectedCategory) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setOrganismeSearch('');
+                            setSelectedCategory('');
+                          }}
+                        >
+                          Effacer
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {(organismeSearch || selectedCategory) && (
+                    <div className="mt-3 text-sm text-gray-600">
+                      {organismes.filter(org => {
+                        const matchesSearch = organismeSearch === '' ||
+                          org.nom.toLowerCase().includes(organismeSearch.toLowerCase()) ||
+                          org.code.toLowerCase().includes(organismeSearch.toLowerCase()) ||
+                          org.description.toLowerCase().includes(organismeSearch.toLowerCase());
+                        const matchesCategory = selectedCategory === '' ||
+                          org.description.toLowerCase().includes(selectedCategory.toLowerCase());
+                        return matchesSearch && matchesCategory;
+                      }).length} organisme(s) trouvé(s)
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {organismes.map((organisme) => (
+                {organismes.filter(org => {
+                  const matchesSearch = organismeSearch === '' ||
+                    org.nom.toLowerCase().includes(organismeSearch.toLowerCase()) ||
+                    org.code.toLowerCase().includes(organismeSearch.toLowerCase()) ||
+                    org.description.toLowerCase().includes(organismeSearch.toLowerCase());
+                  const matchesCategory = selectedCategory === '' ||
+                    org.description.toLowerCase().includes(selectedCategory.toLowerCase());
+                  return matchesSearch && matchesCategory;
+                }).map((organisme) => (
                   <Card
                     key={organisme.code}
                     className="hover:shadow-xl transition-all duration-300 cursor-pointer group border-2 hover:border-blue-300"
@@ -744,8 +829,7 @@ export default function SuperAdminConnexionDemoPage() {
                   {comptesSysteme.map((compte, index) => (
                     <Card
                       key={index}
-                      className="hover:shadow-lg transition-shadow cursor-pointer group"
-                      onClick={() => fillDemoAccount(compte.email, compte.password)}
+                      className="hover:shadow-lg transition-shadow cursor-pointer group border-2 hover:border-blue-300"
                     >
                       <CardContent className="p-4">
                         <div className="flex items-center space-x-4">
@@ -756,10 +840,27 @@ export default function SuperAdminConnexionDemoPage() {
                             <h3 className="font-semibold text-gray-900">{compte.title}</h3>
                             <p className="text-sm text-gray-600">{compte.description}</p>
                             <p className="text-xs text-blue-600 font-medium mt-1">→ {compte.destination}</p>
+                            <div className="text-right mt-2">
+                              <p className="text-xs text-gray-500 font-mono">{compte.email}</p>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-gray-500 font-mono">{compte.email}</p>
-                            <p className="text-xs text-gray-400">Cliquer pour remplir</p>
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => fillDemoAccount(compte.email, compte.password)}
+                              disabled={isLoading}
+                            >
+                              Remplir
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleQuickLogin(compte.email, compte.password)}
+                              disabled={isLoading}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              {isLoading ? 'Connexion...' : 'Connexion rapide'}
+                            </Button>
                           </div>
                         </div>
                       </CardContent>

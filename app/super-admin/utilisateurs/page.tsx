@@ -275,27 +275,64 @@ export default function SuperAdminUtilisateursPage() {
     }
   };
 
+  // État pour les données d'édition
+  const [editUserData, setEditUserData] = useState<Partial<User>>({});
+
   // Gestionnaire d'édition d'utilisateur
-  const handleEditUser = async (userData: Partial<User>) => {
+  const handleEditUser = async () => {
     if (!selectedUser) return;
 
     setLoadingStates(prev => ({ ...prev, updating: true }));
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Validation des données
+      const errors: Record<string, string> = {};
+      if (!editUserData.firstName?.trim()) errors.firstName = 'Le prénom est requis';
+      if (!editUserData.lastName?.trim()) errors.lastName = 'Le nom est requis';
+      if (!editUserData.email?.trim()) errors.email = 'L\'email est requis';
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editUserData.email)) {
+        errors.email = 'Format d\'email invalide';
+      }
+
+      // Vérifier si l'email existe déjà (sauf pour l'utilisateur actuel)
+      if (editUserData.email && users.some(user =>
+        user.email.toLowerCase() === editUserData.email!.toLowerCase() && user.id !== selectedUser.id
+      )) {
+        errors.email = 'Cet email est déjà utilisé par un autre utilisateur';
+      }
+
+      if (Object.keys(errors).length > 0) {
+        setErrors({ validation: errors });
+        setLoadingStates(prev => ({ ...prev, updating: false }));
+        return;
+      }
+
+      // Simulation d'un appel API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Mettre à jour l'utilisateur
+      const updatedUserData = {
+        ...editUserData,
+        organizationName: editUserData.organizationId ?
+          administrations.find(org => org.code === editUserData.organizationId)?.nom || selectedUser.organizationName
+          : selectedUser.organizationName
+      };
 
       setUsers(prev => prev.map(user =>
         user.id === selectedUser.id
-          ? { ...user, ...userData }
+          ? { ...user, ...updatedUserData }
           : user
       ));
 
       setIsEditModalOpen(false);
       setSelectedUser(null);
-      toast.success('Utilisateur modifié avec succès !');
+      setEditUserData({});
+      setErrors({});
+      toast.success(`Utilisateur ${editUserData.firstName || selectedUser.firstName} ${editUserData.lastName || selectedUser.lastName} modifié avec succès !`);
 
     } catch (error) {
-      toast.error('Erreur lors de la modification');
+      toast.error('Erreur lors de la modification de l\'utilisateur');
+      setErrors({ general: 'Erreur lors de la communication avec le serveur' });
     } finally {
       setLoadingStates(prev => ({ ...prev, updating: false }));
     }
@@ -1900,7 +1937,25 @@ export default function SuperAdminUtilisateursPage() {
         </Dialog>
 
         {/* Modal d'édition utilisateur */}
-        <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <Dialog open={isEditModalOpen} onOpenChange={(open) => {
+          setIsEditModalOpen(open);
+          if (!open) {
+            setEditUserData({});
+            setErrors({});
+          } else if (selectedUser) {
+            // Initialiser les données d'édition avec les valeurs actuelles
+            setEditUserData({
+              firstName: selectedUser.firstName,
+              lastName: selectedUser.lastName,
+              email: selectedUser.email,
+              phone: selectedUser.phone,
+              role: selectedUser.role,
+              organizationId: selectedUser.organizationId,
+              isActive: selectedUser.isActive,
+              isVerified: selectedUser.isVerified
+            });
+          }
+        }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Modifier {selectedUser?.firstName} {selectedUser?.lastName}</DialogTitle>
@@ -1908,45 +1963,71 @@ export default function SuperAdminUtilisateursPage() {
                 Modifiez les informations de l'utilisateur
               </DialogDescription>
             </DialogHeader>
+
+            {errors.general && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-600">{errors.general}</p>
+              </div>
+            )}
+
             {selectedUser && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="editFirstName">Prénom</Label>
+                    <Label htmlFor="editFirstName">Prénom *</Label>
                     <Input
                       id="editFirstName"
-                      defaultValue={selectedUser.firstName}
+                      value={editUserData.firstName || ''}
+                      onChange={(e) => setEditUserData(prev => ({ ...prev, firstName: e.target.value }))}
                       placeholder="Prénom"
+                      className={errors.validation?.firstName ? 'border-red-500' : ''}
                     />
+                    {errors.validation?.firstName && (
+                      <p className="text-sm text-red-500 mt-1">{errors.validation.firstName}</p>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="editLastName">Nom</Label>
+                    <Label htmlFor="editLastName">Nom *</Label>
                     <Input
                       id="editLastName"
-                      defaultValue={selectedUser.lastName}
+                      value={editUserData.lastName || ''}
+                      onChange={(e) => setEditUserData(prev => ({ ...prev, lastName: e.target.value }))}
                       placeholder="Nom de famille"
+                      className={errors.validation?.lastName ? 'border-red-500' : ''}
                     />
+                    {errors.validation?.lastName && (
+                      <p className="text-sm text-red-500 mt-1">{errors.validation.lastName}</p>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="editEmail">Email</Label>
+                    <Label htmlFor="editEmail">Email *</Label>
                     <Input
                       id="editEmail"
                       type="email"
-                      defaultValue={selectedUser.email}
+                      value={editUserData.email || ''}
+                      onChange={(e) => setEditUserData(prev => ({ ...prev, email: e.target.value }))}
                       placeholder="email@domain.ga"
+                      className={errors.validation?.email ? 'border-red-500' : ''}
                     />
+                    {errors.validation?.email && (
+                      <p className="text-sm text-red-500 mt-1">{errors.validation.email}</p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="editPhone">Téléphone</Label>
                     <Input
                       id="editPhone"
-                      defaultValue={selectedUser.phone || ''}
+                      value={editUserData.phone || ''}
+                      onChange={(e) => setEditUserData(prev => ({ ...prev, phone: e.target.value }))}
                       placeholder="+241 XX XX XX XX"
                     />
                   </div>
                   <div>
                     <Label htmlFor="editRole">Rôle</Label>
-                    <Select defaultValue={selectedUser.role}>
+                    <Select
+                      value={editUserData.role || selectedUser.role}
+                      onValueChange={(value) => setEditUserData(prev => ({ ...prev, role: value as User['role'] }))}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1960,7 +2041,10 @@ export default function SuperAdminUtilisateursPage() {
                   </div>
                   <div>
                     <Label htmlFor="editOrganization">Organisation</Label>
-                    <Select defaultValue={selectedUser.organizationId}>
+                    <Select
+                      value={editUserData.organizationId || selectedUser.organizationId}
+                      onValueChange={(value) => setEditUserData(prev => ({ ...prev, organizationId: value }))}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1973,11 +2057,17 @@ export default function SuperAdminUtilisateursPage() {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Switch defaultChecked={selectedUser.isActive} />
+                  <Switch
+                    checked={editUserData.isActive ?? selectedUser.isActive}
+                    onCheckedChange={(checked) => setEditUserData(prev => ({ ...prev, isActive: checked }))}
+                  />
                   <Label>Utilisateur actif</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Switch defaultChecked={selectedUser.isVerified} />
+                  <Switch
+                    checked={editUserData.isVerified ?? selectedUser.isVerified}
+                    onCheckedChange={(checked) => setEditUserData(prev => ({ ...prev, isVerified: checked }))}
+                  />
                   <Label>Compte vérifié</Label>
                 </div>
               </div>
@@ -1985,13 +2075,17 @@ export default function SuperAdminUtilisateursPage() {
             <div className="flex justify-end gap-2 pt-4">
               <Button
                 variant="outline"
-                onClick={() => setIsEditModalOpen(false)}
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditUserData({});
+                  setErrors({});
+                }}
                 disabled={loadingStates.updating}
               >
                 Annuler
               </Button>
               <Button
-                onClick={() => handleEditUser({})}
+                onClick={handleEditUser}
                 disabled={loadingStates.updating}
               >
                 {loadingStates.updating ? (

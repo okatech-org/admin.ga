@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Flag, Bell } from 'lucide-react';
 import { Sidebar } from './sidebar';
 import { SidebarModern } from './sidebar-modern';
+import { SidebarUltraModerne } from './sidebar-ultra-moderne';
 import { UserMenu } from '../layout/user-menu';
 import { DemarcheLayout } from './demarche-layout';
 import { OrganismeLayout } from './organisme-layout';
@@ -88,15 +89,15 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
       </header>
 
       <div className="flex">
-        {/* Sidebar - Avec sections hiérarchiques pour Super Admin */}
+        {/* Sidebar - Ultra-moderne pour Super Admin */}
         {session?.user?.role === 'SUPER_ADMIN' ? (
-          <Sidebar />
+          <SidebarUltraModerne />
         ) : (
           <SidebarModern />
         )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-6">
+        {/* Main Content - Ajusté pour le sidebar ultra-moderne */}
+        <main className="flex-1 p-6 transition-all duration-200">
           {children}
         </main>
       </div>

@@ -1,329 +1,679 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { PageHeader } from '@/components/ui/page-header';
+import { StatCard } from '@/components/ui/stat-card';
+import ErrorBoundary from '@/components/ui/error-boundary';
+import { toast } from 'sonner';
 import {
-  TrendingUp,
-  Users,
-  FileText,
-  Building2,
-  Clock,
-  CheckCircle,
-  Download,
-  Filter,
-  Calendar,
   BarChart3,
-  PieChart as PieChartIcon,
+  PieChart,
+  TrendingUp,
+  TrendingDown,
   Activity,
-  Globe,
-  Smartphone,
-  Monitor,
-  MapPin,
-  Shield,
-  AlertTriangle,
+  Building2,
+  Users,
+  Zap,
+  MessageSquare,
+  Clock,
+  Calendar,
+  Download,
+  RefreshCw,
+  Filter,
+  Eye,
   Target,
-  Zap
+  Globe,
+  Database,
+  Server,
+  Monitor,
+  Cpu,
+  HardDrive,
+  Wifi,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Loader2,
+  Settings
 } from 'lucide-react';
 
-export default function AnalyticsPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState('30-days');
-  const [selectedRegion, setSelectedRegion] = useState('all');
-  const [selectedMetric, setSelectedMetric] = useState('users');
+interface AnalyticsData {
+  utilisationOrganismes: Array<{
+    name: string;
+    type: string;
+    utilisateurs: number;
+    services: number;
+    activite: number;
+    dernierAcces: string;
+    statut: 'actif' | 'inactif' | 'maintenance';
+  }>;
+  metriquesPerformance: {
+    tempsReponse: Array<{
+      heure: string;
+      temps: number;
+    }>;
+    requetesParHeure: Array<{
+      heure: string;
+      requetes: number;
+    }>;
+    erreursParJour: Array<{
+      jour: string;
+      erreurs: number;
+    }>;
+  };
+  statistiquesUtilisateurs: {
+    connexionsParJour: Array<{
+      jour: string;
+      connexions: number;
+    }>;
+    repartitionRoles: Array<{
+      role: string;
+      count: number;
+      percentage: number;
+    }>;
+    activiteParOrganisme: Array<{
+      organisme: string;
+      actifs: number;
+      total: number;
+    }>;
+  };
+  systemHealth: {
+    cpu: number;
+    memory: number;
+    disk: number;
+    network: number;
+    database: number;
+    services: Array<{
+      name: string;
+      status: 'operational' | 'degraded' | 'outage';
+      responseTime: number;
+    }>;
+  };
+}
 
-  // Données simulées pour les statistiques
-  const stats = {
-    totalUsers: 8547,
-    activeUsers: 6234,
-    totalOrganizations: 160,
-    activeOrganizations: 144,
-    totalRequests: 12845,
-    completedRequests: 10567,
-    efficiency: 82.3,
-    satisfaction: 4.6
+export default function AnalyticsPage() {
+  const [data, setData] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [periodeSelectionnee, setPeriodeSelectionnee] = useState('7j');
+  const [typeMetrique, setTypeMetrique] = useState('all');
+  const [selectedOrganisme, setSelectedOrganisme] = useState<any>(null);
+  const [isOrganismeModalOpen, setIsOrganismeModalOpen] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    loadAnalyticsData();
+
+    // Mise à jour automatique toutes les 30 secondes
+    const interval = setInterval(() => {
+      loadAnalyticsData();
+    }, 30000);
+
+    setRefreshInterval(interval);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [periodeSelectionnee, typeMetrique]);
+
+  useEffect(() => {
+    return () => {
+      if (refreshInterval) clearInterval(refreshInterval);
+    };
+  }, [refreshInterval]);
+
+  const loadAnalyticsData = async () => {
+    setLoading(true);
+    try {
+      // Simuler des données d'analytics
+      const analyticsSimulees: AnalyticsData = {
+        utilisationOrganismes: [
+          {
+            name: 'Ministère de l\'Économie',
+            type: 'Ministère',
+            utilisateurs: 45,
+            services: 12,
+            activite: 95,
+            dernierAcces: '2025-01-15T14:30:00Z',
+            statut: 'actif'
+          },
+          {
+            name: 'Direction Générale des Impôts',
+            type: 'Direction',
+            utilisateurs: 38,
+            services: 8,
+            activite: 87,
+            dernierAcces: '2025-01-15T13:45:00Z',
+            statut: 'actif'
+          },
+          {
+            name: 'Présidence de la République',
+            type: 'Institution',
+            utilisateurs: 15,
+            services: 5,
+            activite: 92,
+            dernierAcces: '2025-01-15T12:20:00Z',
+            statut: 'actif'
+          },
+          {
+            name: 'Ministère de la Justice',
+            type: 'Ministère',
+            utilisateurs: 32,
+            services: 10,
+            activite: 78,
+            dernierAcces: '2025-01-15T11:15:00Z',
+            statut: 'actif'
+          },
+          {
+            name: 'Agence Spécialisée 15',
+            type: 'Agence',
+            utilisateurs: 8,
+            services: 3,
+            activite: 23,
+            dernierAcces: '2025-01-14T16:30:00Z',
+            statut: 'inactif'
+          }
+        ],
+        metriquesPerformance: {
+          tempsReponse: Array.from({ length: 24 }, (_, i) => ({
+            heure: `${i.toString().padStart(2, '0')}:00`,
+            temps: Math.floor(Math.random() * 500) + 100
+          })),
+          requetesParHeure: Array.from({ length: 24 }, (_, i) => ({
+            heure: `${i.toString().padStart(2, '0')}:00`,
+            requetes: Math.floor(Math.random() * 1000) + 200
+          })),
+          erreursParJour: Array.from({ length: 7 }, (_, i) => ({
+            jour: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][i],
+            erreurs: Math.floor(Math.random() * 50) + 5
+          }))
+        },
+        statistiquesUtilisateurs: {
+          connexionsParJour: Array.from({ length: 7 }, (_, i) => ({
+            jour: ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'][i],
+            connexions: Math.floor(Math.random() * 300) + 100
+          })),
+          repartitionRoles: [
+            { role: 'ADMIN', count: 333, percentage: 34 },
+            { role: 'AGENT', count: 331, percentage: 34 },
+            { role: 'COLLABORATEUR', count: 160, percentage: 16 },
+            { role: 'USER', count: 155, percentage: 16 }
+          ],
+          activiteParOrganisme: [
+            { organisme: 'MIN_ECONOMIE', actifs: 42, total: 45 },
+            { organisme: 'DGI', actifs: 35, total: 38 },
+            { organisme: 'PRESIDENCE', actifs: 14, total: 15 },
+            { organisme: 'MIN_JUSTICE', actifs: 28, total: 32 },
+            { organisme: 'MIN_INTERIEUR', actifs: 25, total: 30 }
+          ]
+        },
+        systemHealth: {
+          cpu: 68.5,
+          memory: 72.3,
+          disk: 45.8,
+          network: 89.2,
+          database: 91.7,
+          services: [
+            { name: 'API Gateway', status: 'operational', responseTime: 145 },
+            { name: 'Authentication', status: 'operational', responseTime: 98 },
+            { name: 'Database', status: 'operational', responseTime: 234 },
+            { name: 'File Storage', status: 'degraded', responseTime: 456 },
+            { name: 'Communication Hub', status: 'operational', responseTime: 178 }
+          ]
+        }
+      };
+
+      setData(analyticsSimulees);
+    } catch (error) {
+      console.error('Erreur lors du chargement des analytics:', error);
+      toast.error('Erreur lors du chargement des données');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const topOrganizations = [
-    { name: 'Ministère de l\'Intérieur', users: 234, requests: 1234, efficiency: 94 },
-    { name: 'Ministère de la Santé', users: 189, requests: 987, efficiency: 91 },
-    { name: 'Ministère de l\'Éducation', users: 156, requests: 765, efficiency: 88 },
-    { name: 'Préfecture du Haut-Ogooué', users: 123, requests: 543, efficiency: 85 },
-    { name: 'Mairie de Libreville', users: 98, requests: 432, efficiency: 83 }
-  ];
+  const getStatutColor = (statut: string) => {
+    const colors = {
+      actif: 'bg-green-100 text-green-800',
+      inactif: 'bg-gray-100 text-gray-800',
+      maintenance: 'bg-orange-100 text-orange-800'
+    };
+    return colors[statut] || colors.inactif;
+  };
+
+  const getServiceStatusIcon = (status: string) => {
+    const icons = {
+      operational: CheckCircle,
+      degraded: AlertCircle,
+      outage: XCircle
+    };
+    return icons[status] || CheckCircle;
+  };
+
+  const getServiceStatusColor = (status: string) => {
+    const colors = {
+      operational: 'text-green-600',
+      degraded: 'text-orange-600',
+      outage: 'text-red-600'
+    };
+    return colors[status] || colors.operational;
+  };
+
+  const formatPercentage = (value: number) => {
+    const percentage = Math.round(value);
+    let color = 'text-green-600';
+    if (percentage > 80) color = 'text-red-600';
+    else if (percentage > 60) color = 'text-orange-600';
+
+    return <span className={color}>{percentage}%</span>;
+  };
+
+  const exportData = () => {
+    const exportData = {
+      periode: periodeSelectionnee,
+      timestamp: new Date().toISOString(),
+      ...data
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `analytics-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    toast.success('📊 Données analytics exportées avec succès');
+  };
+
+  const handleViewOrganismeDetails = (organisme: any) => {
+    setSelectedOrganisme(organisme);
+    setIsOrganismeModalOpen(true);
+    toast.info(`📋 Affichage des détails de ${organisme.name}`);
+  };
+
+  const handleServiceAction = (serviceName: string, action: string) => {
+    toast.info(`⚙️ Action "${action}" sur le service ${serviceName}`);
+    // Ici on pourrait implémenter des actions réelles sur les services
+  };
+
+  if (loading) {
+    return (
+      <AuthenticatedLayout>
+        <LoadingSpinner
+          size="lg"
+          message="Chargement des analytics en temps réel..."
+          className="min-h-[400px]"
+        />
+      </AuthenticatedLayout>
+    );
+  }
 
   return (
     <AuthenticatedLayout>
-      <div className="p-6 space-y-6">
-        {/* En-tête */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
-            <p className="text-muted-foreground">
-              Tableau de bord analytique complet du système Administration.GA
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+      <ErrorBoundary>
+        <div className="space-y-6 p-6">
+          {/* Header */}
+          <PageHeader
+            title="Analytics & Métriques"
+            description="Analyses détaillées et métriques de performance du système"
+            icon={BarChart3}
+            badge={{
+              text: `Période: ${periodeSelectionnee}`,
+              variant: 'outline'
+            }}
+            actions={[
+              {
+                label: 'Actualiser',
+                onClick: loadAnalyticsData,
+                icon: RefreshCw,
+                variant: 'outline'
+              },
+              {
+                label: 'Exporter',
+                onClick: exportData,
+                icon: Download
+              }
+            ]}
+          />
+
+          {/* Sélecteur de période */}
+          <div className="flex justify-end">
+            <Select value={periodeSelectionnee} onValueChange={setPeriodeSelectionnee}>
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="7-days">7 jours</SelectItem>
-                <SelectItem value="30-days">30 jours</SelectItem>
-                <SelectItem value="90-days">90 jours</SelectItem>
-                <SelectItem value="1-year">1 an</SelectItem>
+                <SelectItem value="24h">24 heures</SelectItem>
+                <SelectItem value="7j">7 jours</SelectItem>
+                <SelectItem value="30j">30 jours</SelectItem>
+                <SelectItem value="3m">3 mois</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
           </div>
-        </div>
 
-        {/* Métriques principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Utilisateurs Total</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-              <p className="text-xs text-green-600">
-                +12% par rapport au mois dernier
-              </p>
-            </CardContent>
-          </Card>
+        {data && (
+          <>
+            {/* Santé du système */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+              <StatCard
+                title="CPU"
+                value={`${Math.round(data.systemHealth.cpu)}%`}
+                icon={Cpu}
+                iconColor="text-blue-500"
+                trend={{ value: -2.3, label: 'depuis hier' }}
+              />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Organismes Actifs</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.activeOrganizations}/{stats.totalOrganizations}</div>
-              <p className="text-xs text-green-600">
-                90% taux d'activation
-              </p>
-            </CardContent>
-          </Card>
+              <StatCard
+                title="Mémoire"
+                value={`${Math.round(data.systemHealth.memory)}%`}
+                icon={Server}
+                iconColor="text-green-500"
+                trend={{ value: 1.2, label: 'depuis hier' }}
+              />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Demandes Traitées</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.completedRequests.toLocaleString()}</div>
-              <p className="text-xs text-green-600">
-                {stats.efficiency}% taux de réussite
-              </p>
-            </CardContent>
-          </Card>
+              <StatCard
+                title="Stockage"
+                value={`${Math.round(data.systemHealth.disk)}%`}
+                icon={HardDrive}
+                iconColor="text-purple-500"
+                trend={{ value: 0.8, label: 'depuis hier' }}
+              />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Satisfaction</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.satisfaction}/5</div>
-              <p className="text-xs text-green-600">
-                +0.3 par rapport au mois dernier
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+              <StatCard
+                title="Réseau"
+                value={`${Math.round(data.systemHealth.network)}%`}
+                icon={Wifi}
+                iconColor="text-orange-500"
+                trend={{ value: 5.1, label: 'depuis hier' }}
+              />
 
-        {/* Graphiques et analyses */}
-        <Tabs defaultValue="overview" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
-            <TabsTrigger value="organizations">Organismes</TabsTrigger>
-            <TabsTrigger value="users">Utilisateurs</TabsTrigger>
-            <TabsTrigger value="performance">Performance</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Graphique d'activité */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Activité des Utilisateurs</CardTitle>
-                  <CardDescription>
-                    Connexions et activité au cours des 30 derniers jours
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
-                    <div className="text-center">
-                      <BarChart3 className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                      <p className="text-gray-600">Graphique d'activité</p>
-                      <p className="text-sm text-gray-500 mt-2">Données en cours de chargement</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Distribution des organismes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Distribution des Organismes</CardTitle>
-                  <CardDescription>
-                    Répartition par type d'organisme
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg">
-                    <div className="text-center">
-                      <PieChartIcon className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                      <p className="text-gray-600">Graphique de répartition</p>
-                      <p className="text-sm text-gray-500 mt-2">Analyse des types d'organismes</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <StatCard
+                title="Base de données"
+                value={`${Math.round(data.systemHealth.database)}%`}
+                icon={Database}
+                iconColor="text-red-500"
+                trend={{ value: -0.5, label: 'depuis hier' }}
+              />
             </div>
-          </TabsContent>
 
-          <TabsContent value="organizations" className="space-y-4">
+            {/* Services et leur statut */}
             <Card>
               <CardHeader>
-                <CardTitle>Top Organismes</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Monitor className="h-5 w-5" />
+                  Statut des Services
+                </CardTitle>
                 <CardDescription>
-                  Organismes les plus actifs par nombre d'utilisateurs et de demandes
+                  État de santé des services principaux
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {data.systemHealth.services.map((service, index) => {
+                    const StatusIcon = getServiceStatusIcon(service.status);
+                    return (
+                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <StatusIcon className={`h-5 w-5 ${getServiceStatusColor(service.status)}`} />
+                          <div>
+                            <p className="font-medium">{service.name}</p>
+                            <p className="text-sm text-gray-600">{service.responseTime}ms</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className={
+                            service.status === 'operational' ? 'bg-green-100 text-green-800' :
+                            service.status === 'degraded' ? 'bg-orange-100 text-orange-800' :
+                            'bg-red-100 text-red-800'
+                          }>
+                            {service.status}
+                          </Badge>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleServiceAction(service.name, 'restart')}
+                          >
+                            <RefreshCw className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleServiceAction(service.name, 'details')}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Utilisation des organismes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Utilisation par Organisme
+                </CardTitle>
+                <CardDescription>
+                  Activité et utilisation des organismes les plus actifs
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {topOrganizations.map((org, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-semibold text-blue-600">{index + 1}</span>
+                  {data.utilisationOrganismes.map((organisme, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="font-semibold">{organisme.name}</h3>
+                          <Badge variant="outline">{organisme.type}</Badge>
+                          <Badge variant="outline" className={getStatutColor(organisme.statut)}>
+                            {organisme.statut}
+                          </Badge>
                         </div>
-                        <div>
-                          <p className="font-medium">{org.name}</p>
-                          <p className="text-sm text-gray-500">{org.users} utilisateurs • {org.requests} demandes</p>
+                        <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            <span>{organisme.utilisateurs} utilisateurs</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Zap className="h-4 w-4" />
+                            <span>{organisme.services} services</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Activity className="h-4 w-4" />
+                            <span>{organisme.activite}% activité</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-4 w-4" />
+                            <span>Dernier accès: {new Date(organisme.dernierAcces).toLocaleDateString()}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant="secondary">{org.efficiency}%</Badge>
-                        <p className="text-sm text-gray-500 mt-1">Efficacité</p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewOrganismeDetails(organisme)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
 
-          <TabsContent value="users" className="space-y-4">
+            {/* Répartition des rôles */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="h-5 w-5" />
+                    Répartition des Rôles
+                  </CardTitle>
+                  <CardDescription>
+                    Distribution des utilisateurs par rôle
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {data.statistiquesUtilisateurs.repartitionRoles.map((role, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-4 h-4 rounded ${
+                            index === 0 ? 'bg-blue-500' :
+                            index === 1 ? 'bg-green-500' :
+                            index === 2 ? 'bg-orange-500' : 'bg-purple-500'
+                          }`}></div>
+                          <span className="font-medium">{role.role}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-semibold">{role.count}</span>
+                          <span className="text-sm text-gray-500 ml-2">({role.percentage}%)</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Activité par Organisme
+                  </CardTitle>
+                  <CardDescription>
+                    Utilisateurs actifs vs total par organisme
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {data.statistiquesUtilisateurs.activiteParOrganisme.map((org, index) => (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{org.organisme}</span>
+                          <span className="text-sm text-gray-600">{org.actifs}/{org.total}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div
+                            className="bg-blue-500 h-2 rounded-full"
+                            style={{ width: `${(org.actifs / org.total) * 100}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Métriques de performance simulées */}
             <Card>
               <CardHeader>
-                <CardTitle>Analyse des Utilisateurs</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Métriques de Performance
+                </CardTitle>
                 <CardDescription>
-                  Statistiques d'utilisation et d'engagement
+                  Temps de réponse et volume de requêtes sur les dernières 24h
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Activity className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium">Utilisateurs Actifs</span>
-                      </div>
-                      <div className="text-2xl font-bold">{stats.activeUsers.toLocaleString()}</div>
-                      <Progress value={75} className="mt-2" />
-                    </div>
-
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Clock className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium">Temps Moyen</span>
-                      </div>
-                      <div className="text-2xl font-bold">14min</div>
-                      <p className="text-sm text-gray-500 mt-1">Par session</p>
-                    </div>
-
-                    <div className="p-4 border rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Zap className="h-4 w-4 text-orange-600" />
-                        <span className="text-sm font-medium">Taux de Retour</span>
-                      </div>
-                      <div className="text-2xl font-bold">68%</div>
-                      <p className="text-sm text-gray-500 mt-1">Utilisateurs récurrents</p>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-blue-600">234ms</p>
+                    <p className="text-sm text-gray-600">Temps de réponse moyen</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-green-600">15,420</p>
+                    <p className="text-sm text-gray-600">Requêtes/heure</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-orange-600">99.8%</p>
+                    <p className="text-sm text-gray-600">Disponibilité</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </>
+        )}
 
-          <TabsContent value="performance" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance du Système</CardTitle>
-                <CardDescription>
-                  Métriques de performance et disponibilité
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Temps de Réponse</span>
-                      <Badge variant="outline">127ms</Badge>
-                    </div>
-                    <Progress value={85} />
+        {/* Modal détails organisme */}
+        <Dialog open={isOrganismeModalOpen} onOpenChange={setIsOrganismeModalOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5" />
+                Détails de l'Organisme: {selectedOrganisme?.name}
+              </DialogTitle>
+              <DialogDescription>
+                Informations détaillées et métriques d'utilisation
+              </DialogDescription>
+            </DialogHeader>
 
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Disponibilité</span>
-                      <Badge variant="outline">99.8%</Badge>
+            {selectedOrganisme && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Informations générales</h4>
+                    <div className="space-y-2 text-sm">
+                      <div><strong>Nom:</strong> {selectedOrganisme.name}</div>
+                      <div><strong>Type:</strong> {selectedOrganisme.type}</div>
+                      <div><strong>Statut:</strong>
+                        <Badge className={`ml-2 ${
+                          selectedOrganisme.statut === 'actif' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {selectedOrganisme.statut}
+                        </Badge>
+                      </div>
                     </div>
-                    <Progress value={99.8} />
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">Charge Serveur</span>
-                      <Badge variant="outline">23%</Badge>
-                    </div>
-                    <Progress value={23} />
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium text-green-800">Système Opérationnel</span>
-                      </div>
-                      <p className="text-sm text-green-700 mt-1">
-                        Tous les services fonctionnent normalement
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-blue-600" />
-                        <span className="text-sm font-medium text-blue-800">Sécurité Active</span>
-                      </div>
-                      <p className="text-sm text-blue-700 mt-1">
-                        Protection et monitoring actifs
-                      </p>
+                  <div>
+                    <h4 className="font-semibold mb-2">Métriques d'activité</h4>
+                    <div className="space-y-2 text-sm">
+                      <div><strong>Utilisateurs:</strong> {selectedOrganisme.utilisateurs}</div>
+                      <div><strong>Services:</strong> {selectedOrganisme.services}</div>
+                      <div><strong>Activité:</strong> {selectedOrganisme.activite}%</div>
+                      <div><strong>Dernier accès:</strong> {new Date(selectedOrganisme.dernierAcces).toLocaleString('fr-FR')}</div>
                     </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </div>
+
+                <div>
+                  <h4 className="font-semibold mb-2">Actions disponibles</h4>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => toast.info('🔧 Configuration de l\'organisme')}>
+                      <Settings className="h-4 w-4 mr-1" />
+                      Configurer
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => toast.info('📊 Export des données')}>
+                      <Download className="h-4 w-4 mr-1" />
+                      Exporter
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => toast.info('👥 Gestion des utilisateurs')}>
+                      <Users className="h-4 w-4 mr-1" />
+                      Utilisateurs
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+        </div>
+      </ErrorBoundary>
     </AuthenticatedLayout>
   );
 }
