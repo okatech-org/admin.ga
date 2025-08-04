@@ -74,7 +74,7 @@ import {
 
 import { organismeCommercialService } from '@/lib/services/organisme-commercial.service';
 import { OrganismeCommercial, TypeContrat } from '@/lib/types/organisme';
-import { getOrganismeDetails, hasOrganismeDetails } from '@/lib/data/organismes-detailles';
+import { getOrganismeDetails, hasOrganismeDetails } from '@/lib/data/gabon-services-detailles';
 import { ORGANISMES_BRANDING } from '@/lib/config/organismes-branding';
 import { useRouter } from 'next/navigation';
 

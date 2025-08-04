@@ -27,14 +27,15 @@ import {
   Radio, Stethoscope, Award, Factory, Cpu, Anchor, Landmark, Vote
 } from 'lucide-react';
 
-import {
-    ORGANISMES_GABON_COMPLETS,
-    OrganismeOfficielGabon,
-    getOrganismeOfficiel,
-    getStatistiquesOrganismesEnrichis,
-    TOTAL_ORGANISMES_ENRICHIS,
-    getOrganismesByGroupe
-  } from '@/lib/config/organismes-enrichis-gabon';
+// Import statique supprimé - utiliser les APIs TRPC à la place
+// import {
+//   ORGANISMES_GABON_COMPLETS,
+//   OrganismeOfficielGabon,
+//   getOrganismeOfficiel,
+//   getStatistiquesOrganismesEnrichis,
+//   TOTAL_ORGANISMES_ENRICHIS,
+//   getOrganismesByGroupe,
+// };
 
 import { StructureAdministrativeComplete } from '@/components/organizations/structure-administrative-complete';
 import { RelationsOrganismesComplet } from '@/components/organizations/relations-organismes-complet';

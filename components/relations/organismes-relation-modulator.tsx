@@ -30,15 +30,16 @@ import {
   XCircle, AlertTriangle, Info, ExternalLink, Copy, Save, X
 } from 'lucide-react';
 
-import {
-  ORGANISMES_OFFICIELS_GABON,
-  OrganismeOfficielGabon,
-  getOrganismeOfficiel,
-  getOrganismesByType,
-  getOrganismesByGroupe,
-  getOrganismesBySousGroupe,
-  getStatistiquesOfficielles
-} from '@/lib/config/organismes-officiels-gabon';
+// Import statique supprimé - utiliser les APIs TRPC à la place
+// import {
+//   ORGANISMES_OFFICIELS_GABON,
+//   OrganismeOfficielGabon,
+//   getOrganismeOfficiel,
+//   getOrganismesByType,
+//   getOrganismesByGroupe,
+//   getOrganismesBySousGroupe,
+//   getStatistiquesOfficielles,
+// };
 
 // === INTERFACES ===
 interface RelationModification {

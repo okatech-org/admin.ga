@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useSession, signOut } from 'next-auth/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { DynamicBadge, useDynamicBadges } from '@/components/layouts/sidebar-dynamic-badges';
 import { Card, CardContent } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -96,6 +97,9 @@ export function SidebarUltraModerne() {
   const pathname = usePathname();
   const { data: session } = useSession();
 
+  // ✅ Pré-charger les données des badges dynamiques
+  useDynamicBadges();
+
   // Fonction pour déterminer quelle section devrait être ouverte selon l'URL
   const getSectionForPath = useCallback((path: string): string | null => {
     if (path.includes('/dashboard') || path.includes('/analytics') || path.includes('/communications')) {
@@ -111,7 +115,7 @@ export function SidebarUltraModerne() {
     if (path.includes('/base-donnees') || path.includes('/systeme') || path.includes('/logs') || path.includes('/metrics')) {
       return 'Monitoring';
     }
-    if (path.includes('/configuration') || path.includes('/test-data') || path.includes('/debug')) {
+    if (path.includes('/configuration') || path.includes('/debug')) {
       return 'Outils';
     }
     return null;
@@ -204,15 +208,15 @@ export function SidebarUltraModerne() {
           title: 'Prospects',
           href: '/super-admin/organismes-prospects',
           icon: Target,
-          description: 'Gestion et conversion des prospects',
-          badge: 168
+          description: 'Gestion et conversion des prospects'
+          // ⚠️ Badge supprimé - données fictives remplacées par API temps réel
         },
         {
           title: 'Clients',
           href: '/super-admin/organismes-clients',
           icon: UserCheck,
-          description: 'Suivi des clients et contrats',
-          badge: 5
+          description: 'Suivi des clients et contrats'
+          // ⚠️ Badge supprimé - données fictives remplacées par API temps réel
         },
         {
           title: 'Gestion Générale',
@@ -224,8 +228,8 @@ export function SidebarUltraModerne() {
           title: 'Relations Inter-Org',
           href: '/super-admin/relations',
           icon: Network,
-          description: 'Gestion des relations',
-          badge: 522
+          description: 'Gestion des relations'
+          // ⚠️ Badge supprimé - données fictives remplacées par API temps réel
         },
         {
           title: 'Structure Administrative',
@@ -334,12 +338,7 @@ export function SidebarUltraModerne() {
           icon: Settings,
           description: 'Paramètres système'
         },
-        {
-          title: 'Test Data',
-          href: '/super-admin/test-data',
-          icon: TestTube,
-          description: 'Données de test'
-        },
+        // ⚠️ Test Data supprimé - contenait des données fictives polluantes
 
         {
           title: 'Debug',
@@ -507,6 +506,10 @@ export function SidebarUltraModerne() {
                                     {item.badge}
                                   </Badge>
                                 )}
+                                {/* ✅ BADGES DYNAMIQUES TEMPS RÉEL */}
+                                {item.title === 'Prospects' && <DynamicBadge type="prospects" fallback={57} />}
+                                {item.title === 'Clients' && <DynamicBadge type="clients" fallback={250} />}
+                                {item.title === 'Relations Inter-Org' && <DynamicBadge type="relations" fallback={614} />}
                               </div>
                               <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                                 {item.description}

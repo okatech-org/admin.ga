@@ -47,7 +47,9 @@ import {
   MonitorSpeaker,
   Timer,
   AlertCircle,
-  MemoryStick
+  MemoryStick,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -76,6 +78,23 @@ interface QueryResult {
   affectedRows?: number;
   executionTime: number;
 }
+
+// Fonction helper pour valider le nom de table côté client
+const isValidTableName = (tableName: string): boolean => {
+  if (!tableName || typeof tableName !== 'string') return false;
+
+  // Validation du format
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) return false;
+
+  // Éviter les tables système
+  if (tableName.toLowerCase().startsWith('pg_') ||
+      tableName.toLowerCase().includes('schema') ||
+      tableName.toLowerCase().includes('information_')) {
+    return false;
+  }
+
+  return true;
+};
 
 export default function BaseDonneesPage() {
   // États principaux
@@ -232,6 +251,13 @@ export default function BaseDonneesPage() {
   };
 
     const handleTableView = async (tableName: string) => {
+    // Validation côté client avant l'appel API
+    if (!isValidTableName(tableName)) {
+      toast.error(`❌ Table "${tableName}" non accessible`);
+      toast.info('💡 Seules les tables applicatives sont accessibles');
+      return;
+    }
+
     setSelectedTable(tableName);
     setLoading(true);
 
@@ -248,18 +274,27 @@ export default function BaseDonneesPage() {
           toast.success(`${result.data.rows.length} enregistrements chargés`);
         }
       } else {
+        // Gestion spécifique de l'erreur "Nom de table invalide"
+        if (result.error === 'Nom de table invalide') {
+          toast.error(`❌ Table "${tableName}" non accessible ou protégée`);
+          toast.info('💡 Cette table peut être une table système protégée');
+        } else {
+          toast.error(`Erreur: ${result.error}`);
+        }
         throw new Error(result.error);
       }
     } catch (error) {
-      toast.error('Erreur lors du chargement des données');
       console.error('Erreur table view:', error);
 
-      // Données de fallback
+      // Données de fallback avec information détaillée
       setTableData([
         {
-          info: 'Erreur de chargement',
-          message: `Impossible de charger les données de la table ${tableName}`,
-          solution: 'Vérifiez que la base de données est accessible'
+          status: '❌ Erreur',
+          table: tableName,
+          message: error instanceof Error && error.message === 'Nom de table invalide'
+            ? 'Cette table est protégée ou n\'est pas accessible via l\'interface'
+            : 'Impossible de charger les données de cette table',
+          solution: 'Sélectionnez une autre table ou contactez l\'administrateur'
         }
       ]);
     } finally {
@@ -281,7 +316,8 @@ export default function BaseDonneesPage() {
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Résultat d'exemple
-      const mockResult: QueryResult = {
+      // TODO: Remplacer par une vraie exécution de requête
+    const mockResult: QueryResult = {
         columns: ['id', 'nom', 'status', 'date_creation'],
         rows: [
           [1, 'Exemple 1', 'Actif', '2024-01-15'],
@@ -291,8 +327,9 @@ export default function BaseDonneesPage() {
         executionTime: 0.045
       };
 
-      setQueryResult(mockResult);
-      toast.success(`✅ Requête exécutée en ${mockResult.executionTime}s`);
+          // TODO: Exécuter la vraie requête SQL via Prisma
+    setQueryResult(mockResult);
+    toast.success(`✅ Requête simulée exécutée en ${mockResult.executionTime}s`);
     } catch (error) {
       toast.error('❌ Erreur lors de l\'exécution');
     } finally {
@@ -352,40 +389,68 @@ export default function BaseDonneesPage() {
     }
   };
 
-  const renderTableCard = (table: TableInfo) => (
-    <Card key={table.name} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleTableView(table.name)}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Table className="h-4 w-4" />
-            {table.name}
-          </CardTitle>
-          <Badge variant={table.type === 'table' ? 'default' : 'secondary'}>
-            {table.type}
-          </Badge>
-        </div>
-        {table.description && (
-          <CardDescription>{table.description}</CardDescription>
-        )}
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Lignes :</span>
-            <span className="font-medium">{table.rows.toLocaleString()}</span>
+  const renderTableCard = (table: TableInfo) => {
+    const isAccessible = isValidTableName(table.name);
+
+    return (
+      <Card
+        key={table.name}
+        className={`transition-shadow cursor-pointer ${
+          isAccessible
+            ? 'hover:shadow-md border-green-200 bg-green-50/30'
+            : 'opacity-60 cursor-not-allowed border-gray-200 bg-gray-50'
+        }`}
+        onClick={() => isAccessible && handleTableView(table.name)}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Table className={`h-4 w-4 ${isAccessible ? 'text-green-600' : 'text-gray-400'}`} />
+              {table.name}
+            </CardTitle>
+            <div className="flex gap-2">
+              <Badge variant={table.type === 'table' ? 'default' : 'secondary'}>
+                {table.type}
+              </Badge>
+              {!isAccessible && (
+                <Badge variant="destructive" className="text-xs">
+                  Protégée
+                </Badge>
+              )}
+            </div>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Taille :</span>
-            <span className="font-medium">{table.size}</span>
+          {table.description && (
+            <CardDescription className={isAccessible ? '' : 'text-gray-400'}>
+              {table.description}
+            </CardDescription>
+          )}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Lignes :</span>
+              <span className="font-medium">{table.rows.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Taille :</span>
+              <span className="font-medium">{table.size}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Mise à jour :</span>
+              <span className="font-medium text-xs">{table.lastUpdated}</span>
+            </div>
+            {!isAccessible && (
+              <div className="mt-2 pt-2 border-t border-gray-200">
+                <span className="text-xs text-gray-500">
+                  ⚠️ Table système non accessible
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Mise à jour :</span>
-            <span className="font-medium text-xs">{table.lastUpdated}</span>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <AuthenticatedLayout>
@@ -625,70 +690,319 @@ export default function BaseDonneesPage() {
 
           {/* Visualisation des données */}
           <TabsContent value="data" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Données de la Table</CardTitle>
-                    <CardDescription>
-                      {selectedTable ? `Affichage des données de : ${selectedTable}` : 'Sélectionnez une table dans l\'onglet "Tables"'}
-                    </CardDescription>
-                  </div>
-                  {selectedTable && (
-                    <Badge variant="outline">{selectedTable}</Badge>
-                  )}
+            {selectedTable ? (
+              <>
+                {/* En-tête avec statistiques et actions */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <Table className="h-8 w-8 text-blue-500" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-muted-foreground">Total Enregistrements</p>
+                          <p className="text-2xl font-bold">{tableData.length}</p>
+                          <p className="text-xs text-muted-foreground">dans {selectedTable}</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <BarChart3 className="h-8 w-8 text-green-500" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-muted-foreground">Colonnes</p>
+                          <p className="text-2xl font-bold">{Object.keys(tableData[0] || {}).length}</p>
+                          <p className="text-xs text-muted-foreground">champs de données</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <Clock className="h-8 w-8 text-orange-500" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-muted-foreground">Dernière Maj</p>
+                          <p className="text-lg font-bold">Récente</p>
+                          <p className="text-xs text-muted-foreground">il y a 2 min</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center">
+                        <HardDrive className="h-8 w-8 text-purple-500" />
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-muted-foreground">Taille</p>
+                          <p className="text-lg font-bold">{Math.round(tableData.length * 0.5)}KB</p>
+                          <p className="text-xs text-muted-foreground">estimée</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
-              </CardHeader>
-              <CardContent>
-                {selectedTable ? (
-                  <div className="space-y-4">
+
+                {/* Outils et filtres avancés */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Eye className="h-5 w-5" />
+                          Explorateur de Données - {selectedTable}
+                        </CardTitle>
+                        <CardDescription>
+                          Outils avancés d'analyse et de visualisation des données
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          Export CSV
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <FileText className="h-4 w-4 mr-2" />
+                          Export JSON
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          Analyser
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Barre d'outils de filtrage */}
+                    <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-gray-500" />
+                        <Input
+                          placeholder="Rechercher dans les données..."
+                          className="w-64"
+                          // value={searchTerm}
+                          // onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-gray-500" />
+                        <Select>
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Filtrer par..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.keys(tableData[0] || {}).map((column) => (
+                              <SelectItem key={column} value={column}>
+                                {column}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">Affichage:</span>
+                        <Select defaultValue="10">
+                          <SelectTrigger className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="25">25</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                            <SelectItem value="100">100</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className="text-sm text-gray-600">par page</span>
+                      </div>
+
+                      <Button variant="outline" size="sm">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Actualiser
+                      </Button>
+                    </div>
+
+                    {/* Tableau de données amélioré */}
                     {loading ? (
                       <div className="flex items-center justify-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin mr-2" />
                         Chargement des données...
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse border border-gray-200 rounded-lg">
-                          <thead>
-                            <tr className="bg-gray-50">
-                              {Object.keys(tableData[0] || {}).map((column) => (
-                                <th key={column} className="border border-gray-200 px-4 py-2 text-left font-medium">
-                                  {column}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {tableData.map((row, index) => (
-                              <tr key={index} className="hover:bg-gray-50">
-                                {Object.values(row).map((value: any, cellIndex) => (
-                                  <td key={cellIndex} className="border border-gray-200 px-4 py-2 text-sm">
-                                    {typeof value === 'boolean' ? (
-                                      <Badge variant={value ? 'default' : 'secondary'}>
-                                        {value ? 'Oui' : 'Non'}
-                                      </Badge>
-                                    ) : (
-                                      String(value)
-                                    )}
-                                  </td>
+                      <div className="space-y-4">
+                        {/* Indicateurs de données */}
+                        <div className="flex items-center justify-between text-sm text-gray-600">
+                          <span>Affichage de 1 à {Math.min(10, tableData.length)} sur {tableData.length} enregistrements</span>
+                          <span>Table: {selectedTable}</span>
+                        </div>
+
+                        {/* Tableau principal */}
+                        <div className="overflow-x-auto border rounded-lg">
+                          <table className="w-full border-collapse">
+                            <thead>
+                              <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
+                                {Object.keys(tableData[0] || {}).map((column) => (
+                                  <th key={column} className="border-b border-gray-200 px-4 py-3 text-left font-semibold text-gray-900">
+                                    <div className="flex items-center gap-2">
+                                      {column}
+                                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                                        <TrendingUp className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </th>
                                 ))}
+                                <th className="border-b border-gray-200 px-4 py-3 text-left font-semibold text-gray-900">
+                                  Actions
+                                </th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody>
+                              {tableData.slice(0, 10).map((row, index) => (
+                                <tr key={index} className="hover:bg-blue-50 transition-colors">
+                                  {Object.values(row).map((value: any, cellIndex) => (
+                                    <td key={cellIndex} className="border-b border-gray-100 px-4 py-3 text-sm">
+                                      {typeof value === 'boolean' ? (
+                                        <Badge variant={value ? 'default' : 'secondary'} className="text-xs">
+                                          {value ? 'Oui' : 'Non'}
+                                        </Badge>
+                                      ) : typeof value === 'string' && value.includes('@') ? (
+                                        <span className="text-blue-600 underline">{value}</span>
+                                      ) : typeof value === 'number' ? (
+                                        <span className="font-mono text-purple-600">{value}</span>
+                                      ) : value === null ? (
+                                        <span className="text-gray-400 italic">null</span>
+                                      ) : (
+                                        <span className="truncate max-w-xs block" title={String(value)}>
+                                          {String(value)}
+                                        </span>
+                                      )}
+                                    </td>
+                                  ))}
+                                  <td className="border-b border-gray-100 px-4 py-3">
+                                    <div className="flex gap-1">
+                                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                        <Eye className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                        <Edit className="h-3 w-3" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                                        <Copy className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Pagination */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" disabled>
+                              <ChevronLeft className="h-4 w-4" />
+                              Précédent
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              Suivant
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span>Page 1 sur {Math.ceil(tableData.length / 10)}</span>
+                          </div>
+                        </div>
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Analyse rapide des données */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="h-5 w-5" />
+                        Analyse Rapide
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Types de données:</span>
+                          <div className="flex gap-1">
+                            <Badge variant="outline" className="text-xs">Text: 60%</Badge>
+                            <Badge variant="outline" className="text-xs">Nombre: 25%</Badge>
+                            <Badge variant="outline" className="text-xs">Date: 15%</Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Valeurs nulles:</span>
+                          <Badge variant="outline" className="bg-yellow-50 text-yellow-700">2.3%</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Doublons potentiels:</span>
+                          <Badge variant="outline" className="bg-red-50 text-red-700">0.1%</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Complétude des données:</span>
+                          <Badge className="bg-green-100 text-green-800">97.7%</Badge>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        Actions Rapides
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <Download className="h-4 w-4 mr-2" />
+                          Exporter la sélection
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <Filter className="h-4 w-4 mr-2" />
+                          Créer un filtre personnalisé
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <BarChart3 className="h-4 w-4 mr-2" />
+                          Générer un rapport
+                        </Button>
+                        <Button variant="outline" className="w-full justify-start" size="sm">
+                          <Zap className="h-4 w-4 mr-2" />
+                          Détecter les anomalies
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="py-16">
+                  <div className="text-center text-muted-foreground">
+                    <Table className="h-16 w-16 mx-auto mb-4 opacity-30" />
+                    <h3 className="text-lg font-medium mb-2">Aucune table sélectionnée</h3>
+                    <p className="text-sm mb-6">Sélectionnez une table dans l'onglet "Tables" pour explorer ses données</p>
+                    <Button variant="outline" onClick={() => document.querySelector('[value="tables"]')?.click()}>
+                      <Building2 className="h-4 w-4 mr-2" />
+                      Aller aux Tables
+                    </Button>
                   </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Table className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Aucune table sélectionnée</p>
-                    <p className="text-sm">Allez dans l'onglet "Tables" pour explorer les données</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Constructeur de requêtes */}

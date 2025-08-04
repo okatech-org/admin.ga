@@ -2,7 +2,7 @@
 // Utilitaires pour la gestion des services et organismes dans le dashboard super admin
 import { getAllAdministrations } from '@/lib/data/gabon-administrations';
 import { getAllServices, getServicesByOrganisme, getOrganismeMapping } from '@/lib/data/gabon-services-detailles';
-import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
+// Import statique supprimé - utiliser les APIs TRPC à la place
 
 export interface ServiceWithDetails {
   code: string;

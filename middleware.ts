@@ -35,8 +35,8 @@ export default withAuth(
     // Redirections pour le menu optimisé du super admin
     const superAdminRedirects: Record<string, string> = {
       '/super-admin/administrations': '/super-admin/organismes',
-      '/super-admin/dashboard': '/super-admin/dashboard-unified',
-
+      '/super-admin/dashboard': '/super-admin',
+      '/super-admin/dashboard-unified': '/super-admin',
     };
 
     if (superAdminRedirects[pathname]) {
@@ -142,7 +142,7 @@ export default withAuth(
     if (!hasAccess) {
       // Redirection intelligente selon le rôle et l'organisme
       if (userRole === 'SUPER_ADMIN') {
-        return NextResponse.redirect(new URL('/super-admin/dashboard', req.url));
+        return NextResponse.redirect(new URL('/super-admin', req.url));
       }
 
       // Pour les autres rôles, rediriger vers leur organisme s'ils en ont un

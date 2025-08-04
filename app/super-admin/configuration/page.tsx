@@ -739,7 +739,7 @@ export default function ConfigurationPage() {
     try {
       geminiAIService.setApiKey(config.gemini.apiKey);
 
-      // Test de recherche d'intervenants pour un organisme fictif
+      // Test de recherche d'intervenants pour un organisme réel
       const testResult = await geminiAIService.rechercherIntervenantsOrganisme(
         'Direction Générale des Impôts',
         'DIRECTION_GENERALE',

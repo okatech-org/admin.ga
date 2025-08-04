@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
-    // Obtenir des informations sur les tables
+    // Obtenir des informations sur les tables (exclure les tables système)
     const tables = await prisma.$queryRaw`
       SELECT
         table_name as name,
@@ -20,12 +20,17 @@ export async function GET(request: NextRequest) {
       FROM information_schema.tables t
       WHERE table_schema = 'public'
       AND table_type = 'BASE TABLE'
+      AND table_name NOT LIKE 'pg_%'
+      AND table_name NOT LIKE '%schema%'
+      AND table_name NOT LIKE 'information_%'
       ORDER BY table_name;
     `;
 
-    // Obtenir le nombre de lignes pour chaque table
+    // Filtrer les tables valides et obtenir le nombre de lignes
+    const validTables = (tables as any[]).filter(table => isValidTableForUI(table.name));
+
     const tablesWithRows = await Promise.all(
-      (tables as any[]).map(async (table) => {
+      validTables.map(async (table) => {
         try {
           // Utiliser une requête sécurisée pour obtenir le count
           const countResult = await prisma.$queryRaw`
@@ -131,4 +136,35 @@ function getTableDescription(tableName: string): string {
 function getLastBackupDate(): string {
   // À implémenter selon votre système de backup
   return new Date(Date.now() - 24 * 60 * 60 * 1000).toLocaleString('fr-FR');
+}
+
+// Fonction pour valider si une table peut être affichée dans l'UI
+function isValidTableForUI(tableName: string): boolean {
+  // Validation du format : lettres, chiffres et underscore uniquement
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+    return false;
+  }
+
+  // Blacklist de tables système sensibles à ne jamais exposer
+  const blacklistedTables = [
+    'pg_authid', 'pg_shadow', 'pg_user', 'pg_roles', 'pg_database',
+    'pg_tablespace', 'pg_auth_members', 'information_schema',
+    'pg_proc', 'pg_class', 'pg_namespace', 'pg_attribute',
+    'pg_index', 'pg_type', 'pg_constraint', 'pg_settings',
+    'pg_stat_user_tables', 'pg_stat_activity'
+  ];
+
+  // Vérifier si la table n'est pas dans la blacklist
+  if (blacklistedTables.some(blacklisted => tableName.toLowerCase().includes(blacklisted.toLowerCase()))) {
+    return false;
+  }
+
+  // Tables système PostgreSQL à éviter (commencent par pg_ ou contiennent 'schema')
+  if (tableName.toLowerCase().startsWith('pg_') ||
+      tableName.toLowerCase().includes('schema') ||
+      tableName.toLowerCase().includes('information_')) {
+    return false;
+  }
+
+  return true;
 }

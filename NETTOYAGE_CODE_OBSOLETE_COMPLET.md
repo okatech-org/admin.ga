@@ -166,4 +166,6 @@ Le code est plus maintenable, la navigation plus claire, et les risques de confu
 
 ---
 
-**✨ Code base propre = Développement plus efficace ! ✨**
+## Conclusion
+
+✨ Code base propre = Développement plus efficace ! ✨

@@ -240,4 +240,6 @@ Le code est maintenant **prêt pour la production** avec des données cohérente
 
 ---
 
-**✨ Données propres = Application fiable ! ✨**
+## Conclusion
+
+✨ Données propres = Application fiable ! ✨

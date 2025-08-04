@@ -58,7 +58,7 @@ function LoginForm() {
     description: 'Accès complet système ADMIN.GA',
     icon: Settings,
     color: 'bg-gray-800',
-    destination: 'Dashboard Super Admin'
+    destination: 'Interface Super Admin Moderne'
   };
 
   // Fonction pour déterminer la redirection selon le rôle
@@ -66,7 +66,7 @@ function LoginForm() {
     const { role } = user;
 
     if (role === 'SUPER_ADMIN') {
-      return '/super-admin/dashboard';
+      return '/super-admin'; // Nouvelle interface moderne
     }
 
     // Par défaut, rediriger vers DEMARCHE.GA pour les autres

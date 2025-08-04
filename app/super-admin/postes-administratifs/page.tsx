@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { trpc } from '@/lib/trpc/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -61,7 +62,7 @@ import {
   type CompteUtilisateur
 } from '@/lib/data/postes-administratifs-gabon';
 
-import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
+// Import statique supprimé - utiliser les APIs TRPC à la place
 
 // Types pour la gestion d'état
 interface FormData {
@@ -91,13 +92,30 @@ interface LoadingStates {
 }
 
 export default function PostesAdministratifsPage() {
+  // Données des organismes via TRPC
+  const { data: organizationsData, isLoading: organismsLoading } = trpc.organizations.list.useQuery({
+    limit: 1000,
+    offset: 0
+  });
+
+  const organismes = useMemo(() => {
+    if (!organizationsData?.organizations) return [];
+    return organizationsData.organizations.map(org => ({
+      code: org.code,
+      nom: org.name,
+      type: org.type,
+      ville: org.city || 'Non spécifiée',
+      isActive: org.isActive
+    }));
+  }, [organizationsData]);
+
   // États pour les filtres
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const [selectedPoste, setSelectedPoste] = useState<PosteAdministratif | null>(null);
 
-  // États pour les comptes utilisateurs des 160 organismes
+  // États pour les comptes utilisateurs des 307 organismes
   const [comptesGeneres, setComptesGeneres] = useState<CompteUtilisateur[]>([]);
   const [organismeSelectionne, setOrganismeSelectionne] = useState<string>('');
   const [comptesParOrganisme, setComptesParOrganisme] = useState<Record<string, CompteUtilisateur[]>>({});
@@ -160,9 +178,6 @@ export default function PostesAdministratifsPage() {
     postesOperationnels: CATEGORIES_POSTES.find(c => c.id === 'operationnel')?.postes.length || 0
   };
 
-  // Données des 160 organismes
-  const organismes = Object.values(ORGANISMES_ENRICHIS_GABON);
-
   // Fonctions pour la génération de comptes
   const genererComptesTousOrganismes = async () => {
     setGenerationEnCours(true);
@@ -181,7 +196,7 @@ export default function PostesAdministratifsPage() {
       });
       setComptesParOrganisme(comptesParOrg);
 
-      toast.success(`✅ ${comptes.length} comptes générés pour 160 organismes`);
+      toast.success(`✅ ${comptes.length} comptes générés pour 307 organismes`);
     } catch (error) {
       toast.error('Erreur lors de la génération des comptes');
     } finally {
@@ -403,6 +418,20 @@ export default function PostesAdministratifsPage() {
       setLoadingStates(prev => ({ ...prev, loading: false }));
     }, 500);
   }, []);
+
+  // Indicateur de chargement pour les organismes
+  if (organismsLoading) {
+    return (
+      <AuthenticatedLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p>Chargement des organismes...</p>
+          </div>
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
 
   if (loadingStates.loading) {
     return (
@@ -807,7 +836,7 @@ export default function PostesAdministratifsPage() {
                     ) : (
                       <>
                         <Plus className="h-4 w-4 mr-2" />
-                        Générer 160 Organismes
+                        Générer 307 Organismes
                       </>
                     )}
                   </Button>

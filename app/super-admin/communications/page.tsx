@@ -172,10 +172,10 @@ export default function CommunicationsPage() {
   // Filtrer les communications
   const filteredCommunications = useMemo(() => {
     return communications.filter(comm => {
-      const matchSearch = comm.objet.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comm.expediteur.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comm.destinataire.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comm.expediteur.organisme.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearch = (comm.objet?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (comm.expediteur?.nom?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (comm.destinataire?.nom?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+                         (comm.expediteur?.organisme?.toLowerCase() || '').includes(searchTerm.toLowerCase());
 
       const matchConfidentialite = selectedConfidentialite === 'all' || comm.confidentialite === selectedConfidentialite;
 
@@ -666,7 +666,7 @@ export default function CommunicationsPage() {
                       <div className="flex items-center gap-3 mb-3">
                         <ConfidentialiteIcon className="h-5 w-5 text-gray-600" />
                         <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
-                          {communication.objet}
+                          {communication.objet || 'Aucun objet'}
                         </h3>
                         <div className="flex gap-2">
                           <Badge className={getPrioriteColor(communication.priorite)}>
@@ -684,13 +684,13 @@ export default function CommunicationsPage() {
                           <Send className="h-4 w-4 text-blue-600" />
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {communication.expediteur.nom}
+                              {communication.expediteur?.nom || 'N/A'}
                             </p>
                             <p className="text-xs text-gray-600">
-                              {communication.expediteur.poste}
+                              {communication.expediteur?.poste || 'N/A'}
                             </p>
                             <p className="text-xs text-blue-600">
-                              {communication.expediteur.organisme}
+                              {communication.expediteur?.organisme || 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -699,13 +699,13 @@ export default function CommunicationsPage() {
                           <Inbox className="h-4 w-4 text-purple-600" />
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              {communication.destinataire.nom}
+                              {communication.destinataire?.nom || 'N/A'}
                             </p>
                             <p className="text-xs text-gray-600">
-                              {communication.destinataire.poste}
+                              {communication.destinataire?.poste || 'N/A'}
                             </p>
                             <p className="text-xs text-purple-600">
-                              {communication.destinataire.organisme}
+                              {communication.destinataire?.organisme || 'N/A'}
                             </p>
                           </div>
                         </div>
@@ -713,7 +713,7 @@ export default function CommunicationsPage() {
 
                       {/* Contenu aperçu */}
                       <p className="text-gray-700 text-sm line-clamp-2 mb-4">
-                        {communication.contenu}
+                        {communication.contenu || 'Aucun contenu'}
                       </p>
 
                       {/* Informations complémentaires */}
@@ -1035,26 +1035,26 @@ export default function CommunicationsPage() {
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-lg mb-2">{selectedCommunication.objet}</h3>
-                  <p className="text-gray-700 whitespace-pre-wrap">{selectedCommunication.contenu}</p>
+                                  <h3 className="font-bold text-lg mb-2">{selectedCommunication.objet || 'Aucun objet'}</h3>
+                <p className="text-gray-700 whitespace-pre-wrap">{selectedCommunication.contenu || 'Aucun contenu'}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-medium mb-2">Expéditeur</h4>
                     <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="font-medium">{selectedCommunication.expediteur.nom}</p>
-                      <p className="text-sm text-gray-600">{selectedCommunication.expediteur.poste}</p>
-                      <p className="text-sm text-blue-600">{selectedCommunication.expediteur.organisme}</p>
+                      <p className="font-medium">{selectedCommunication.expediteur?.nom || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">{selectedCommunication.expediteur?.poste || 'N/A'}</p>
+                      <p className="text-sm text-blue-600">{selectedCommunication.expediteur?.organisme || 'N/A'}</p>
                     </div>
                   </div>
 
                   <div>
                     <h4 className="font-medium mb-2">Destinataire</h4>
                     <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="font-medium">{selectedCommunication.destinataire.nom}</p>
-                      <p className="text-sm text-gray-600">{selectedCommunication.destinataire.poste}</p>
-                      <p className="text-sm text-purple-600">{selectedCommunication.destinataire.organisme}</p>
+                      <p className="font-medium">{selectedCommunication.destinataire?.nom || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">{selectedCommunication.destinataire?.poste || 'N/A'}</p>
+                      <p className="text-sm text-purple-600">{selectedCommunication.destinataire?.organisme || 'N/A'}</p>
                     </div>
                   </div>
                 </div>

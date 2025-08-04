@@ -121,8 +121,8 @@ interface ServiceConfig {
   dependencies?: string[];
   sla?: string;
 }
-import { getOrganismeDetails, hasOrganismeDetails } from '@/lib/data/organismes-detailles';
-import { ORGANISMES_BRANDING } from '@/lib/config/organismes-branding';
+import { getOrganismeDetails, hasOrganismeDetails } from '@/lib/data/gabon-services-detailles';
+// Import supprimé - utiliser les APIs TRPC
 
 // Types pour la gestion complète du client
 interface ClientThemeConfig {

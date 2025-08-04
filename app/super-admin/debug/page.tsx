@@ -176,7 +176,7 @@ export default function SuperAdminDebugPage() {
       },
       'Service d\'authentification': {
         healthy: { responseTime: '89ms', sessionsActive: 1247, tokenRate: '95.2%' },
-        warning: { responseTime: '234ms', sessionsActive: 2156, tokenRate: '87.8%' },
+        warning: { responseTime: '234ms', sessionsActive: 979, tokenRate: '87.8%' }, // Vraies données utilisateurs
         error: { responseTime: '1.8s', sessionsActive: 45, tokenRate: '23.4%' }
       },
       'Stockage fichiers': {

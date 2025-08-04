@@ -34,7 +34,7 @@ import {
   Star
 } from 'lucide-react';
 import Link from 'next/link';
-import { getOrganismeDetails } from '@/lib/data/organismes-detailles';
+import { getOrganismeDetails } from '@/lib/data/gabon-services-detailles';
 
 const loginSchema = z.object({
   email: z.string().email('Adresse email invalide'),

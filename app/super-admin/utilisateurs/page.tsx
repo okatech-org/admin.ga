@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { trpc } from '@/lib/trpc/client';
 import {
   Users,
   UserPlus,
@@ -67,36 +68,7 @@ import {
 
 import { getAllAdministrations } from '@/lib/data/gabon-administrations';
 import { getAllPostes, GRADES_FONCTION_PUBLIQUE } from '@/lib/data/postes-administratifs';
-// Fonctions utilitaires pour gérer les utilisateurs (remplace unified-system-data.ts)
-const generateBasicSystemUsers = () => {
-  const users: any[] = [];
-  // Générer quelques utilisateurs de base pour le système
-  for (let i = 1; i <= 50; i++) {
-    users.push({
-      id: i,
-      nom: `Utilisateur ${i}`,
-      firstName: `Prénom${i}`,
-      lastName: `Nom${i}`,
-      email: `user${i}@admin.ga`,
-      role: i <= 10 ? 'ADMIN' : i <= 25 ? 'MANAGER' : 'USER',
-      statut: 'actif',
-      isActive: true,
-      organizationId: `ORG_${Math.floor(i / 5) + 1}`,
-      organizationName: `Organisation ${Math.floor(i / 5) + 1}`,
-      derniere_connexion: new Date().toISOString()
-    });
-  }
-  return users;
-};
-
-const systemUsers = generateBasicSystemUsers();
-
-const getUsersByOrganisme = (orgId: string) => systemUsers.filter(u => u.organizationId === orgId);
-const getUsersByRole = (role: string) => systemUsers.filter(u => u.role === role);
-const searchUsers = (query: string) => systemUsers.filter(u => 
-  u.nom.toLowerCase().includes(query.toLowerCase()) || 
-  u.email.toLowerCase().includes(query.toLowerCase())
-);
+// Suppression des données mockées - utilisation de TRPC pour les vraies données
 import { toast } from 'sonner';
 import { geminiAIService, type OrganismeIntervenant, type SearchResult } from '@/lib/services/gemini-ai.service';
 import { knowledgeBaseService } from '@/lib/services/knowledge-base.service';
@@ -149,25 +121,30 @@ interface Errors {
 export default function SuperAdminUtilisateursPage() {
   // États principaux
   // Transformation des données utilisateurs pour correspondre au type User
-  const transformSystemUsers = (users: any[]): User[] => {
-    return users.map(user => ({
-      id: user.id.toString(),
+  // Fonction supprimée - remplacée par TRPC
+
+  // Utiliser TRPC pour récupérer les vrais utilisateurs
+  const { data: usersData, isLoading: usersLoading, error: usersError, refetch: refetchUsers } = trpc.auth.getAllUsers.useQuery();
+
+  const users = useMemo(() => {
+    if (!usersData?.users) return [];
+
+    return usersData.users.map(user => ({
+      id: user.id,
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
-      phone: user.phone,
-      role: user.role as User['role'],
-      organizationId: user.organizationId,
-      organizationName: user.organizationName,
-      posteTitle: user.posteTitle,
+      phone: user.phone || undefined,
+      role: user.role as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'AGENT' | 'USER',
+      organizationId: user.primaryOrganizationId || 'sans-organisation',
+      organizationName: user.primaryOrganization?.name || 'Sans organisation',
+      posteTitle: user.jobTitle || undefined,
       isActive: user.isActive,
-      isVerified: true, // Par défaut vérifié
-      createdAt: user.derniere_connexion || new Date().toISOString(),
-      lastLoginAt: user.derniere_connexion
+      isVerified: user.isVerified,
+      createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+      lastLoginAt: user.lastLoginAt?.toISOString() || undefined
     }));
-  };
-
-  const [users, setUsers] = useState<User[]>(transformSystemUsers(systemUsers));
+  }, [usersData]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedOrganization, setSelectedOrganization] = useState('all');
@@ -1161,7 +1138,7 @@ export default function SuperAdminUtilisateursPage() {
               Gestion des Utilisateurs
             </h1>
             <p className="text-muted-foreground">
-              {globalStats.totalUsers} utilisateurs • {globalStats.totalOrganismes} organismes • Vue organisée par administration
+              {users.length} utilisateurs • {globalStats.totalOrganismes} organismes • Vue organisée par administration
             </p>
           </div>
           <div className="flex gap-2">
@@ -1388,7 +1365,7 @@ export default function SuperAdminUtilisateursPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Utilisateurs</p>
-                  <p className="text-2xl font-bold text-gray-900">{globalStats.totalUsers}</p>
+                  <p className="text-2xl font-bold text-gray-900">{users.length}</p>
                   <p className="text-xs text-green-600">{globalStats.actifs} actifs</p>
                 </div>
                 <Users className="h-8 w-8 text-blue-500" />

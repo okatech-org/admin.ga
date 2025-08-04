@@ -93,6 +93,7 @@ L'implémentation du **menu super-admin moderne** est **terminée** ! Le systèm
 ```
 
 ### **🎨 Système de Couleurs Intelligent**
+
 | Section | Couleur | Usage | Entités |
 |---------|---------|-------|---------|
 | **Dashboard** | 🔘 Slate | Consultation | - |

@@ -289,8 +289,8 @@ export default function NouvelOrganismePage() {
                   <SelectValue placeholder="Aucune organisation parent" />
                 </SelectTrigger>
                 <SelectContent>
-                                          <SelectItem value="none">Aucune organisation parent</SelectItem>
-                  {parentOrganizations?.map((org) => (
+                  <SelectItem value="none">Aucune organisation parent</SelectItem>
+                  {parentOrganizations && Array.isArray(parentOrganizations) && parentOrganizations.map((org) => (
                     <SelectItem key={org.id} value={org.id}>
                       {org.name} ({org.code})
                     </SelectItem>

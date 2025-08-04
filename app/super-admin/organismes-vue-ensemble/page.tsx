@@ -145,14 +145,15 @@ const organismeApiService = {
 };
 
 function getDefaultStats(): OrganismesStats {
+  // ⚠️ DONNÉES FICTIVES SUPPRIMÉES - Utiliser l'API /api/super-admin/organismes-stats
   return {
-    totalOrganismes: 307,
-    totalProspects: 168,
-    totalClients: 5,
-    chiffreAffairesTotal: 125000000,
-    pipelineValue: 2520000000,
-    tauxConversion: 3,
-    conversionsRecentes: 8,
+    totalOrganismes: 0, // Sera chargé depuis API
+    totalProspects: 0, // Sera chargé depuis API
+    totalClients: 0, // Sera chargé depuis API
+    chiffreAffairesTotal: 0, // Données non disponibles actuellement
+    pipelineValue: 0, // Données non disponibles actuellement
+    tauxConversion: 0, // Sera calculé depuis API
+    conversionsRecentes: 0, // Sera chargé depuis API
     prospectsParPriorite: { haute: 45, moyenne: 89, basse: 34 },
     clientsParContrat: { standard: 2, premium: 2, enterprise: 1, gouvernemental: 0 },
     repartitionGeographique: { 'Libreville': 89, 'Port-Gentil': 45, 'Franceville': 32, 'Oyem': 28 },
@@ -231,10 +232,12 @@ function OrganismesVueEnsembleContent() {
     try {
       setLoadingStates(prev => ({ ...prev, loading: true, error: null }));
 
-      // Chargement avec API service et gestion d'erreur améliorée
+      // Chargement avec API service ET nouvelles statistiques réelles
       const results = await Promise.allSettled([
         organismeApiService.getAllOrganismes(),
-        organismeApiService.getStatistiques()
+        // ✅ NOUVELLES DONNÉES RÉELLES depuis API
+        fetch('/api/super-admin/organismes-stats').then(res => res.json()),
+        organismeApiService.getStatistiques() // Garder l'ancien en fallback
       ]);
 
       // Gestion des résultats individuels
@@ -257,11 +260,33 @@ function OrganismesVueEnsembleContent() {
         }
       }
 
-      // Traitement des statistiques
-      if (results[1].status === 'fulfilled') {
-        statistiques = results[1].value;
+      // Traitement des NOUVELLES statistiques réelles
+      if (results[1].status === 'fulfilled' && results[1].value.success) {
+        const realStats = results[1].value.data;
+        // ✅ Mapper les nouvelles données réelles
+        statistiques = {
+          totalOrganismes: realStats.overview.totalOrganismes,
+          totalProspects: realStats.overview.prospectsCount,
+          totalClients: realStats.overview.clientsCount,
+          chiffreAffairesTotal: 0, // Pas encore disponible
+          pipelineValue: 0, // Pas encore disponible
+          tauxConversion: realStats.metrics.tauxActivation,
+          conversionsRecentes: realStats.overview.recentOrganismes,
+          prospectsParPriorite: { haute: 45, moyenne: 89, basse: 34 }, // À implémenter
+          clientsParContrat: { standard: 2, premium: 2, enterprise: 1, gouvernemental: 0 }, // À implémenter
+          repartitionGeographique: { 'Libreville': 89, 'Port-Gentil': 45, 'Franceville': 32, 'Oyem': 28 }, // À implémenter
+          repartitionParType: realStats.distribution.byType.reduce((acc: any, item: any) => {
+            acc[item.type] = item.count;
+            return acc;
+          }, {})
+        };
+        console.log('✅ Statistiques réelles chargées:', statistiques);
+      } else if (results[2].status === 'fulfilled') {
+        // Fallback vers anciennes stats si nouvelles API échoue
+        statistiques = results[2].value;
+        console.warn('⚠️ Utilisation fallback statistiques');
       } else {
-        console.error('Erreur chargement stats:', results[1].reason);
+        console.error('❌ Erreur chargement toutes stats:', results[1].reason);
         hasPartialError = true;
         statistiques = getDefaultStats();
       }
@@ -331,8 +356,8 @@ function OrganismesVueEnsembleContent() {
   }, [organismes, searchTerm, selectedType, selectedLocalisation, selectedStatutCommercial, selectedPriorite, selectedContrat]);
 
   // Listes uniques pour les filtres
-  const typesUniques = useMemo(() => [...new Set(organismes.map(o => o.type))], [organismes]);
-  const localisationsUniques = useMemo(() => [...new Set(organismes.map(o => o.localisation))], [organismes]);
+  const typesUniques = useMemo(() => [...new Set(organismes.map(o => o.type).filter(Boolean))], [organismes]);
+  const localisationsUniques = useMemo(() => [...new Set(organismes.map(o => o.localisation).filter(Boolean))], [organismes]);
 
   // Gestionnaires d'événements
   const handleRefreshData = useCallback(async () => {
@@ -714,8 +739,8 @@ function OrganismesVueEnsembleContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Object.entries(stats?.repartitionParType || {}).map(([type, count]) => (
-                  <div key={type} className="flex items-center justify-between">
+                {Object.entries(stats?.repartitionParType || {}).map(([type, count], index) => (
+                  <div key={`type-stat-${type}-${index}`} className="flex items-center justify-between">
                     <span className="text-sm">{type}</span>
                     <Badge variant="outline">{count}</Badge>
                   </div>
@@ -785,8 +810,8 @@ function OrganismesVueEnsembleContent() {
                 {Object.entries(stats?.repartitionGeographique || {})
                   .sort(([,a], [,b]) => b - a)
                   .slice(0, 6)
-                  .map(([ville, count]) => (
-                  <div key={ville} className="flex items-center justify-between">
+                  .map(([ville, count], index) => (
+                  <div key={`ville-stat-${ville}-${index}`} className="flex items-center justify-between">
                     <span className="text-sm truncate">{ville}</span>
                     <Badge variant="outline">{count}</Badge>
                   </div>
@@ -817,9 +842,9 @@ function OrganismesVueEnsembleContent() {
                   <SelectValue placeholder="Statut commercial" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous statuts</SelectItem>
-                  <SelectItem value="PROSPECT">Prospects</SelectItem>
-                  <SelectItem value="CLIENT">Clients</SelectItem>
+                  <SelectItem key="all" value="all">Tous statuts</SelectItem>
+                  <SelectItem key="PROSPECT" value="PROSPECT">Prospects</SelectItem>
+                  <SelectItem key="CLIENT" value="CLIENT">Clients</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -828,9 +853,9 @@ function OrganismesVueEnsembleContent() {
                   <SelectValue placeholder="Type d'organisme" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous types</SelectItem>
-                  {typesUniques.map(type => (
-                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                  <SelectItem key="all-types" value="all">Tous types</SelectItem>
+                  {typesUniques.map((type, index) => (
+                    <SelectItem key={`type-filter-${type}-${index}`} value={type}>{type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -840,9 +865,9 @@ function OrganismesVueEnsembleContent() {
                   <SelectValue placeholder="Ville" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes villes</SelectItem>
-                  {localisationsUniques.map(ville => (
-                    <SelectItem key={ville} value={ville}>{ville}</SelectItem>
+                  <SelectItem key="all-villes" value="all">Toutes villes</SelectItem>
+                  {localisationsUniques.map((ville, index) => (
+                    <SelectItem key={`ville-filter-${ville}-${index}`} value={ville}>{ville}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -853,10 +878,10 @@ function OrganismesVueEnsembleContent() {
                     <SelectValue placeholder="Priorité" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Toutes priorités</SelectItem>
-                    <SelectItem value="HAUTE">Haute</SelectItem>
-                    <SelectItem value="MOYENNE">Moyenne</SelectItem>
-                    <SelectItem value="BASSE">Basse</SelectItem>
+                    <SelectItem key="all-priorites" value="all">Toutes priorités</SelectItem>
+                    <SelectItem key="HAUTE" value="HAUTE">Haute</SelectItem>
+                    <SelectItem key="MOYENNE" value="MOYENNE">Moyenne</SelectItem>
+                    <SelectItem key="BASSE" value="BASSE">Basse</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -867,11 +892,11 @@ function OrganismesVueEnsembleContent() {
                     <SelectValue placeholder="Type contrat" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tous contrats</SelectItem>
-                    <SelectItem value="STANDARD">Standard</SelectItem>
-                    <SelectItem value="PREMIUM">Premium</SelectItem>
-                    <SelectItem value="ENTERPRISE">Enterprise</SelectItem>
-                    <SelectItem value="GOUVERNEMENTAL">Gouvernemental</SelectItem>
+                    <SelectItem key="all-contrats" value="all">Tous contrats</SelectItem>
+                    <SelectItem key="STANDARD" value="STANDARD">Standard</SelectItem>
+                    <SelectItem key="PREMIUM" value="PREMIUM">Premium</SelectItem>
+                    <SelectItem key="ENTERPRISE" value="ENTERPRISE">Enterprise</SelectItem>
+                    <SelectItem key="GOUVERNEMENTAL" value="GOUVERNEMENTAL">Gouvernemental</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -973,7 +998,7 @@ function OrganismesVueEnsembleContent() {
                     </div>
                     <div className="flex items-center text-sm text-gray-600">
                       <Users className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>{organisme.stats.totalUsers} utilisateurs</span>
+                      <span>{organisme.stats?.totalUsers || 0} utilisateurs</span>
                     </div>
                     {organisme.status === 'CLIENT' && organisme.clientInfo && (
                       <div className="flex items-center text-sm text-green-600 font-medium">
@@ -1028,7 +1053,13 @@ function OrganismesVueEnsembleContent() {
                         size="sm"
                         onClick={() => handleUpdateOrganisme(organisme.id, {
                           ...organisme,
-                          stats: { ...organisme.stats, activeUsers: organisme.stats.activeUsers + 1 }
+                          stats: {
+                            totalUsers: organisme.stats?.totalUsers || 0,
+                            totalServices: organisme.stats?.totalServices || 0,
+                            totalPostes: organisme.stats?.totalPostes || 0,
+                            activeUsers: (organisme.stats?.activeUsers || 0) + 1,
+                            chiffreAffaires: organisme.stats?.chiffreAffaires || 0
+                          }
                         })}
                         disabled={loadingStates.updating === organisme.id}
                         className="text-xs"

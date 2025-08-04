@@ -235,12 +235,7 @@ const navigationItems = [
         description: 'Outils de debug système',
         isNew: true
       },
-      {
-        title: 'Test Data',
-        href: '/super-admin/test-data',
-        icon: FileX,
-        description: 'Données de test'
-      },
+      // ⚠️ Test Data supprimé - contenait des données fictives polluantes
 
     ]
   }

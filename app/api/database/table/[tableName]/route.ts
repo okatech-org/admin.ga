@@ -219,15 +219,36 @@ export async function GET(
 
 // Fonction pour valider le nom de la table
 function isValidTableName(tableName: string): boolean {
-  const validTables = [
-    'users', 'organizations', 'service_requests', 'appointments', 'documents',
-    'profiles', 'user_documents', 'payments', 'notifications', 'audit_logs',
-    'system_configs', 'analytics', 'api_configurations', 'ai_search_logs',
-    'postes_administratifs', 'ai_intervenants', 'organisme_knowledge',
-    'knowledge_analyses', 'user_organizations', 'service_configs',
-    'request_comments', 'request_timeline', 'integrations', 'permissions',
-    'user_permissions', 'otp_tokens', 'user_notification_preferences'
+  // Validation du format : lettres, chiffres et underscore uniquement
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+    return false;
+  }
+
+  // Validation de la longueur (éviter les noms trop longs)
+  if (tableName.length > 63) {
+    return false;
+  }
+
+  // Blacklist de tables système sensibles à ne jamais exposer
+  const blacklistedTables = [
+    'pg_authid', 'pg_shadow', 'pg_user', 'pg_roles', 'pg_database',
+    'pg_tablespace', 'pg_auth_members', 'information_schema',
+    'pg_proc', 'pg_class', 'pg_namespace', 'pg_attribute',
+    'pg_index', 'pg_type', 'pg_constraint', 'pg_settings',
+    'pg_stat_user_tables', 'pg_stat_activity'
   ];
 
-  return validTables.includes(tableName) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName);
+  // Vérifier si la table n'est pas dans la blacklist
+  if (blacklistedTables.some(blacklisted => tableName.toLowerCase().includes(blacklisted.toLowerCase()))) {
+    return false;
+  }
+
+  // Tables système PostgreSQL à éviter (commencent par pg_ ou contiennent 'schema')
+  if (tableName.toLowerCase().startsWith('pg_') ||
+      tableName.toLowerCase().includes('schema') ||
+      tableName.toLowerCase().includes('information_')) {
+    return false;
+  }
+
+  return true;
 }

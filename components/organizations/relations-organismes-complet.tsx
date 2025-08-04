@@ -17,8 +17,8 @@ import {
   Heart, GraduationCap, Calculator, Factory, Briefcase, Mail, Phone
 } from 'lucide-react';
 
-import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
-import { relationsGenerator, RELATIONS_GENEREES, STATS_RELATIONS } from '@/lib/services/relations-generator';
+// Import statique supprimé - utiliser les APIs TRPC à la place
+// import { relationsGenerator, RELATIONS_GENEREES, STATS_RELATIONS } from '@/lib/services/relations-generator'; // Fichier supprimé
 import { HierarchieOfficielleGabon } from './hierarchie-officielle-gabon';
 
 // === INTERFACE POUR LES STATISTIQUES ===
@@ -44,7 +44,27 @@ export function RelationsOrganismesComplet() {
 
   // === DONNÉES CALCULÉES ===
   const statistiques = useMemo((): StatistiquesCompletes => {
-    const organismes = Object.values(ORGANISMES_ENRICHIS_GABON);
+    // Données mockées réalistes pour les organismes
+    const organismes = [
+      {
+        code: 'PRESIDENCE',
+        nom: 'Présidence de la République',
+        type: 'PRESIDENCE',
+        niveau: 1
+      },
+      {
+        code: 'PRIMATURE',
+        nom: 'Primature',
+        type: 'PRIMATURE',
+        niveau: 2
+      },
+      {
+        code: 'MIN_INTERIEUR',
+        nom: 'Ministère de l\'Intérieur',
+        type: 'MINISTERE',
+        niveau: 3
+      }
+    ]; // TODO: Remplacer par un appel TRPC réel
     const relations = RELATIONS_GENEREES;
     const statsService = STATS_RELATIONS;
 
@@ -107,7 +127,27 @@ export function RelationsOrganismesComplet() {
 
      // === ORGANISMES FILTRÉS ===
    const organismesFilters = useMemo(() => {
-     const organismes = Object.values(ORGANISMES_ENRICHIS_GABON);
+     // Données mockées réalistes pour les organismes
+    const organismes = [
+      {
+        code: 'PRESIDENCE',
+        nom: 'Présidence de la République',
+        type: 'PRESIDENCE',
+        niveau: 1
+      },
+      {
+        code: 'PRIMATURE',
+        nom: 'Primature',
+        type: 'PRIMATURE',
+        niveau: 2
+      },
+      {
+        code: 'MIN_INTERIEUR',
+        nom: 'Ministère de l\'Intérieur',
+        type: 'MINISTERE',
+        niveau: 3
+      }
+    ]; // TODO: Remplacer par un appel TRPC réel
 
      return organismes.filter(org => {
        const matchGroupe = !selectedGroupe || selectedGroupe === 'TOUS_GROUPES' || org.groupe === selectedGroupe;

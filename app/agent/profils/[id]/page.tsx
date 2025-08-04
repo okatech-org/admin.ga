@@ -13,12 +13,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { useAuth } from '@/hooks/use-auth';
-import { 
-  User, 
-  MapPin, 
-  Phone, 
-  Briefcase, 
-  Users, 
+import {
+  User,
+  MapPin,
+  Phone,
+  Briefcase,
+  Users,
   FileText,
   CheckCircle,
   XCircle,
@@ -33,11 +33,11 @@ export default function ProfileViewPage() {
   const id = params?.id as string;
   const router = useRouter();
   const { user, isLoading } = useAuth('AGENT');
-  
+
   const [validationNotes, setValidationNotes] = useState('');
   const [rejectionReason, setRejectionReason] = useState('');
 
-  // Mock data - À remplacer par une vraie API
+  // ⚠️ TODO: Implémenter API pour récupérer les données du profil utilisateur
   const profile = {
     id: '1',
     user: {
@@ -121,11 +121,11 @@ export default function ProfileViewPage() {
 
   const handleValidateProfile = async () => {
     const toastId = toast.loading('Validation en cours...');
-    
+
     try {
       // Simuler l'appel API
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       toast.success('Profil validé avec succès !', { id: toastId });
       router.push('/agent/profils');
     } catch (error) {
@@ -140,11 +140,11 @@ export default function ProfileViewPage() {
     }
 
     const toastId = toast.loading('Rejet en cours...');
-    
+
     try {
       // Simuler l'appel API
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
+
       toast.success('Profil rejeté', { id: toastId });
       router.push('/agent/profils');
     } catch (error) {
@@ -169,7 +169,7 @@ export default function ProfileViewPage() {
               Validation du profil citoyen
             </p>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {getStatusBadge(profile.profileStatus)}
             <Badge variant="secondary">
@@ -251,7 +251,7 @@ export default function ProfileViewPage() {
                     <Label className="text-sm font-medium text-muted-foreground">Téléphone alternatif</Label>
                     <p>{profile.alternatePhone || 'Non renseigné'}</p>
                   </div>
-                  
+
                   {profile.emergencyContact && (
                     <div className="border-t pt-4">
                       <Label className="text-sm font-medium text-muted-foreground">Contact d'urgence</Label>
@@ -316,7 +316,7 @@ export default function ProfileViewPage() {
                     <Label className="text-sm font-medium text-muted-foreground">Employeur</Label>
                     <p>{profile.employer}</p>
                   </div>
-                  
+
                   <div className="border-t pt-4 space-y-3">
                     <div>
                       <Label className="text-sm font-medium text-muted-foreground">Nom du père</Label>
@@ -349,11 +349,11 @@ export default function ProfileViewPage() {
                         <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
                           <FileText className="w-6 h-6 text-primary" />
                         </div>
-                        
+
                         <div>
                           <h3 className="font-medium">{document.name}</h3>
                           <p className="text-sm text-muted-foreground">
-                            {document.originalName} • 
+                            {document.originalName} •
                             Uploadé le {document.createdAt.toLocaleDateString('fr-FR')}
                           </p>
                         </div>
@@ -400,7 +400,7 @@ export default function ProfileViewPage() {
                       onChange={(e) => setValidationNotes(e.target.value)}
                     />
                   </div>
-                  <Button 
+                  <Button
                     onClick={handleValidateProfile}
                     className="w-full"
                   >
@@ -431,7 +431,7 @@ export default function ProfileViewPage() {
                       className="min-h-[100px]"
                     />
                   </div>
-                  
+
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button variant="destructive" className="w-full">

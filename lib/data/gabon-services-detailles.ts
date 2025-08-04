@@ -1575,4 +1575,13 @@ export const linkServiceToOrganisme = (serviceCode: ServiceCode, organismeCode: 
   return false;
 };
 
-// Export déjà défini plus haut dans le fichier
+// Fonctions utilitaires pour obtenir des détails sur les organismes
+export const getOrganismeDetails = (organismeCode: OrganismeCode) => {
+  const mapping = getOrganismeMapping();
+  return mapping[organismeCode] || null;
+};
+
+export const hasOrganismeDetails = (organismeCode: OrganismeCode): boolean => {
+  const mapping = getOrganismeMapping();
+  return organismeCode in mapping;
+};

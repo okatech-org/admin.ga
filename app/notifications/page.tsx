@@ -10,9 +10,9 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { useAuth } from '@/hooks/use-auth';
-import { 
-  Bell, 
-  Check, 
+import {
+  Bell,
+  Check,
   CheckCheck,
   Mail,
   MessageSquare,
@@ -28,7 +28,7 @@ export default function NotificationsPage() {
   const { user, isLoading } = useAuth();
   const [selectedTab, setSelectedTab] = useState('all');
 
-  // Mock data - À remplacer par de vraies données
+  // ⚠️ TODO: Implémenter API pour récupérer les vraies notifications
   const notifications = [
     {
       id: '1',
@@ -245,8 +245,8 @@ export default function NotificationsPage() {
               </Card>
             ) : (
               filteredNotifications.map((notification) => (
-                <Card 
-                  key={notification.id} 
+                <Card
+                  key={notification.id}
                   className={`transition-all hover:shadow-md ${
                     !notification.isRead ? 'border-l-4 border-l-primary bg-primary/5' : ''
                   }`}
@@ -299,8 +299,8 @@ export default function NotificationsPage() {
 
           <TabsContent value="unread" className="space-y-4">
             {filteredNotifications.map((notification) => (
-              <Card 
-                key={notification.id} 
+              <Card
+                key={notification.id}
                 className="border-l-4 border-l-primary bg-primary/5 transition-all hover:shadow-md"
               >
                 <CardContent className="p-4">

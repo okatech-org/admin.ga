@@ -27,8 +27,8 @@ import {
   Vote, Landmark, Cpu, Phone, Mail, Wrench
 } from 'lucide-react';
 
-import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
-import { relationsGenerator, RELATIONS_GENEREES } from '@/lib/services/relations-generator';
+// Import statique supprimé - utiliser les APIs TRPC à la place
+// import { relationsGenerator, RELATIONS_GENEREES } from '@/lib/services/relations-generator'; // Fichier supprimé
 
 // === INTERFACES MISES À JOUR ===
 interface NodeHierarchique {
@@ -65,8 +65,44 @@ export function HierarchieOfficielleGabon() {
   const [showStats, setShowStats] = useState(true);
 
   // === DONNÉES ENRICHIES ===
-  const organismes = useMemo(() => Object.values(ORGANISMES_ENRICHIS_GABON), []);
-  const relations = useMemo(() => RELATIONS_GENEREES, []);
+  // Données mockées réalistes en attendant l'intégration TRPC complète
+  const organismes = useMemo(() => [
+    {
+      code: 'PRESIDENCE',
+      nom: 'Présidence de la République',
+      groupe: 'A',
+      type: 'PRESIDENCE',
+      niveau: 1,
+      parentId: null
+    },
+    {
+      code: 'PRIMATURE',
+      nom: 'Primature',
+      groupe: 'A',
+      type: 'PRIMATURE',
+      niveau: 2,
+      parentId: 'PRESIDENCE'
+    },
+    {
+      code: 'MIN_INTERIEUR',
+      nom: 'Ministère de l\'Intérieur',
+      groupe: 'B',
+      type: 'MINISTERE',
+      niveau: 3,
+      parentId: 'PRIMATURE'
+    }
+  ], []);
+
+  const relations = useMemo(() => ({
+    'PRESIDENCE': {
+      enfants: ['PRIMATURE'],
+      type: 'hierarchique'
+    },
+    'PRIMATURE': {
+      enfants: ['MIN_INTERIEUR'],
+      type: 'hierarchique'
+    }
+  }), []); // TODO: Remplacer par un appel TRPC pour les relations
 
   // === CALCUL DES STATISTIQUES ===
   const statistiques = useMemo((): StatistiquesHierarchie => {

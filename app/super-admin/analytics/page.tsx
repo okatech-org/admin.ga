@@ -101,6 +101,7 @@ interface AnalyticsData {
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [realUserData, setRealUserData] = useState<any>(null);
   const [periodeSelectionnee, setPeriodeSelectionnee] = useState('7j');
   const [typeMetrique, setTypeMetrique] = useState('all');
   const [selectedOrganisme, setSelectedOrganisme] = useState<any>(null);
@@ -200,10 +201,10 @@ export default function AnalyticsPage() {
             connexions: Math.floor(Math.random() * 300) + 100
           })),
           repartitionRoles: [
-            { role: 'ADMIN', count: 333, percentage: 34 },
-            { role: 'AGENT', count: 331, percentage: 34 },
-            { role: 'COLLABORATEUR', count: 160, percentage: 16 },
-            { role: 'USER', count: 155, percentage: 16 }
+            { role: 'ADMIN', count: 333, percentage: 34.0 },
+            { role: 'AGENT', count: 331, percentage: 33.8 },
+            { role: 'COLLABORATEUR', count: 307, percentage: 31.4 },
+            { role: 'USER', count: 8, percentage: 0.8 }
           ],
           activiteParOrganisme: [
             { organisme: 'MIN_ECONOMIE', actifs: 42, total: 45 },

@@ -333,7 +333,7 @@ export async function POST(request: NextRequest) {
       type,
       contenu,
       expediteur: {
-        nom: session.user.name || 'Utilisateur',
+        nom: `${session.user.firstName} ${session.user.lastName}` || 'Utilisateur',
         poste: 'Administrateur',
         organisme: 'Administration GA',
         email: session.user.email || 'admin@administration.ga'
