@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
-import { StructureAdministrativeComplete } from '@/components/organizations/structure-administrative-complete';
+// import { StructureAdministrativeComplete } from '@/components/organizations/structure-administrative-complete';
 import { toast } from 'sonner';
 import {
   Building,
@@ -144,14 +144,14 @@ export default function StructureAdministrativePage() {
       await new Promise(resolve => setTimeout(resolve, 1200));
 
       const statsData: StructureStats = {
-        totalOrganismes: 307,
-        totalMinisteres: 25,
-        totalDirections: 67,
-        totalEtablissements: 89,
-        totalProvinces: 9,
-        totalMairies: 117,
-        hierarchieNiveaux: 6,
-        organismsActifs: 299
+              totalOrganismes: 0,
+      totalMinisteres: 0,
+      totalDirections: 0,
+        totalEtablissements: 0,
+        totalProvinces: 0,
+        totalMairies: 0,
+        hierarchieNiveaux: 0,
+        organismsActifs: 0
       };
 
       setStats(statsData);
@@ -598,7 +598,13 @@ export default function StructureAdministrativePage() {
 
           <TabsContent value="composant">
             <div className="bg-gray-50 rounded-lg p-6">
-              <StructureAdministrativeComplete />
+              {/* <StructureAdministrativeComplete /> */}
+              <div className="text-center py-12">
+                <h3 className="text-lg font-semibold mb-2">Structure Administrative</h3>
+                <p className="text-muted-foreground">
+                  Composant temporairement désactivé pour correction
+                </p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

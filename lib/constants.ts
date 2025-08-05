@@ -1,9 +1,23 @@
 /* @ts-nocheck */
 export const ORGANIZATION_TYPES = {
+  PRESIDENCE: 'Présidence de la République',
+  VICE_PRESIDENCE_REPUBLIQUE: 'Vice-Présidence de la République',
+  VICE_PRESIDENCE_GOUVERNEMENT: 'Vice-Présidence du Gouvernement',
+  MINISTERE_ETAT: 'Ministère d\'État',
   MINISTERE: 'Ministère',
+  SECRETARIAT_GENERAL: 'Secrétariat Général',
   DIRECTION_GENERALE: 'Direction Générale',
+  DIRECTION: 'Direction',
+  SERVICE: 'Service',
+  GOUVERNORAT: 'Gouvernorat',
+  PREFECTURE: 'Préfecture',
   MAIRIE: 'Mairie',
   ORGANISME_SOCIAL: 'Organisme Social',
+  ETABLISSEMENT_PUBLIC: 'Établissement Public',
+  AGENCE_NATIONALE: 'Agence Nationale',
+  CONSEIL_NATIONAL: 'Conseil National',
+  CABINET: 'Cabinet',
+  INSPECTION_GENERALE: 'Inspection Générale',
   AUTRE: 'Autre',
 } as const;
 
@@ -22,24 +36,24 @@ export const SERVICE_TYPES = {
   ACTE_DECES: 'Acte de décès',
   CERTIFICAT_VIE: 'Certificat de vie',
   CERTIFICAT_CELIBAT: 'Certificat de célibat',
-  
+
   // Documents d'Identité
   CNI: 'Carte Nationale d\'Identité',
   PASSEPORT: 'Passeport',
   PERMIS_CONDUIRE: 'Permis de conduire',
   CARTE_SEJOUR: 'Carte de séjour',
-  
+
   // Documents Judiciaires
   CASIER_JUDICIAIRE: 'Casier judiciaire',
   CERTIFICAT_NATIONALITE: 'Certificat de nationalité',
   LEGALISATION: 'Légalisation de documents',
-  
+
   // Services Municipaux
   PERMIS_CONSTRUIRE: 'Permis de construire',
   AUTORISATION_COMMERCE: 'Autorisation de commerce',
   CERTIFICAT_RESIDENCE: 'Certificat de résidence',
   ACTE_FONCIER: 'Acte foncier',
-  
+
   // Services Sociaux
   IMMATRICULATION_CNSS: 'Immatriculation CNSS',
   CARTE_CNAMGS: 'Carte CNAMGS',
@@ -74,7 +88,7 @@ export const GABONESE_ORGANIZATIONS = [
     code: 'MIN_JUS',
     services: ['CASIER_JUDICIAIRE', 'CERTIFICAT_NATIONALITE', 'LEGALISATION']
   },
-  
+
   // Directions Générales
   {
     name: 'Direction Générale de la Documentation et de l\'Immigration (DGDI)',
@@ -82,7 +96,7 @@ export const GABONESE_ORGANIZATIONS = [
     code: 'DGDI',
     services: ['PASSEPORT', 'CARTE_SEJOUR']
   },
-  
+
   // Mairies
   {
     name: 'Mairie de Libreville',
@@ -96,7 +110,7 @@ export const GABONESE_ORGANIZATIONS = [
     code: 'MAIRE_PG',
     services: ['ACTE_NAISSANCE', 'ACTE_MARIAGE', 'ACTE_DECES', 'PERMIS_CONSTRUIRE']
   },
-  
+
   // Organismes Sociaux
   {
     name: 'Caisse Nationale de Sécurité Sociale (CNSS)',

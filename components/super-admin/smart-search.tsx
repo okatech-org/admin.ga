@@ -263,13 +263,14 @@ export const SmartSearch = ({ className }: SmartSearchProps) => {
           {query && filteredResults.suggestions.length > 0 && (
             <>
               {/* Grouper par catégorie */}
-              {Object.entries(
-                filteredResults.suggestions.reduce((acc, item) => {
-                  if (!acc[item.category]) acc[item.category] = [];
-                  acc[item.category].push(item);
-                  return acc;
-                }, {} as Record<string, SearchItem[]>)
-              ).map(([category, items]) => (
+              {(() => {
+                const groupedResults: Record<string, SearchItem[]> = {};
+                filteredResults.suggestions.forEach(item => {
+                  if (!groupedResults[item.category]) groupedResults[item.category] = [];
+                  groupedResults[item.category].push(item);
+                });
+                return Object.entries(groupedResults);
+              })().map(([category, items]) => (
                 <CommandGroup key={category} heading={category}>
                   {items.map((item) => (
                     <CommandItem

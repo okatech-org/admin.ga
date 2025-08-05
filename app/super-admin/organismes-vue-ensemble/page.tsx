@@ -1,574 +1,230 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Imports Dialog supprimés - plus besoin de modale
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { toast } from 'sonner';
 import {
   Building2,
   Users,
+  Crown,
+  Shield,
   MapPin,
+  BarChart3,
   Search,
   Filter,
-  Download,
-  RefreshCw,
-  TrendingUp,
-  Target,
-  UserCheck,
-  BarChart3,
-  PieChart,
-  ArrowRight,
   Eye,
-  Settings,
-  Loader2,
-  Grid,
-  List,
-  Star,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  Euro,
-  Calendar,
+  TrendingUp,
   Activity,
-  Crown,
-  Award,
-  Shield,
-  Briefcase
+  Briefcase,
+  Landmark,
+  Scale,
+  Home,
+  Factory,
+  Globe,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Network,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Maximize2,
+  Minimize2,
+  X,
+  ExternalLink,
+  Settings,
+  BarChart2,
+  Mail,
+  Phone
 } from 'lucide-react';
+import {
+  getOrganizationTypeLabel,
+  getOrganizationTypeColor,
+  getOrganizationBorderColor,
+  getOrganizationGroup,
+  ORGANIZATION_GROUPS,
+  isOrganismePrincipal,
+  filterOrganizations,
+  sortOrganizations,
+  generateOrganizationStats
+} from '@/lib/utils/organization-utils';
 
-import { organismeCommercialService } from '@/lib/services/organisme-commercial.service';
-import { OrganismeCommercial, TypeContrat } from '@/lib/types/organisme';
-
-// Service API réel pour les organismes
-const organismeApiService = {
-  async getAllOrganismes(): Promise<OrganismeCommercial[]> {
-    try {
-      const response = await fetch('/api/organismes-commerciaux', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store' // Éviter le cache pour avoir des données fraîches
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Réponse API non valide');
-      }
-
-      return Array.isArray(result.data) ? result.data : [];
-    } catch (error) {
-      console.error('Erreur chargement organismes:', error);
-
-      // Notification utilisateur plus informative
-      if (error instanceof Error && error.message.includes('fetch')) {
-        console.warn('Problème de connexion réseau, utilisation des données locales');
-      } else if (error instanceof Error && error.message.includes('403')) {
-        console.error('Accès non autorisé - vérifier l\'authentification');
-        throw new Error('Accès non autorisé. Veuillez vous reconnecter.');
-      }
-
-      // Fallback vers service local
-      try {
-        return organismeCommercialService.getAllOrganismes();
-      } catch (fallbackError) {
-        console.error('Erreur fallback:', fallbackError);
-        return [];
-      }
-    }
-  },
-
-  async updateOrganisme(id: string, data: Partial<OrganismeCommercial>): Promise<boolean> {
-    try {
-      const response = await fetch(`/api/organismes-commerciaux/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Erreur mise à jour organisme:', error);
-      return false;
-    }
-  },
-
-  async deleteOrganisme(id: string): Promise<boolean> {
-    try {
-      const response = await fetch(`/api/organismes-commerciaux/${id}`, {
-        method: 'DELETE'
-      });
-      return response.ok;
-    } catch (error) {
-      console.error('Erreur suppression organisme:', error);
-      return false;
-    }
-  },
-
-  async getStatistiques(): Promise<OrganismesStats> {
-    try {
-      const response = await fetch('/api/organismes-commerciaux/stats', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        cache: 'no-store'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Erreur HTTP ${response.status}: ${errorData}`);
-      }
-
-      const result = await response.json();
-      if (!result.success) {
-        throw new Error(result.error || 'Réponse API non valide');
-      }
-
-      return result.data || getDefaultStats();
-    } catch (error) {
-      console.error('Erreur chargement stats:', error);
-
-      // Retourner des stats par défaut en cas d'erreur
-      return getDefaultStats();
-    }
-  }
-};
-
-function getDefaultStats(): OrganismesStats {
-  // ⚠️ DONNÉES FICTIVES SUPPRIMÉES - Utiliser l'API /api/super-admin/organismes-stats
-  return {
-    totalOrganismes: 0, // Sera chargé depuis API
-    totalProspects: 0, // Sera chargé depuis API
-    totalClients: 0, // Sera chargé depuis API
-    chiffreAffairesTotal: 0, // Données non disponibles actuellement
-    pipelineValue: 0, // Données non disponibles actuellement
-    tauxConversion: 0, // Sera calculé depuis API
-    conversionsRecentes: 0, // Sera chargé depuis API
-    prospectsParPriorite: { haute: 45, moyenne: 89, basse: 34 },
-    clientsParContrat: { standard: 2, premium: 2, enterprise: 1, gouvernemental: 0 },
-    repartitionGeographique: { 'Libreville': 89, 'Port-Gentil': 45, 'Franceville': 32, 'Oyem': 28 },
-    repartitionParType: { 'MINISTERE': 25, 'DIRECTION_GENERALE': 67, 'MAIRIE': 45, 'AUTRE': 170 }
-  };
+interface OrganismeVueEnsemble {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  description?: string;
+  city?: string;
+  isActive: boolean;
+  userCount?: number;
 }
 
-interface LoadingStates {
-  loading: boolean;
-  refreshing: boolean;
-  exporting: boolean;
-  viewingDetails: string | null;
-  deleting: string | null;
-  updating: string | null;
-  creating: boolean;
-  error: string | null;
-}
-
-interface OrganismesStats {
-  totalOrganismes: number;
-  totalProspects: number;
-  totalClients: number;
-  chiffreAffairesTotal: number;
-  pipelineValue: number;
-  tauxConversion: number;
-  conversionsRecentes: number;
-  prospectsParPriorite: {
-    haute: number;
-    moyenne: number;
-    basse: number;
-  };
-  clientsParContrat: {
-    standard: number;
-    premium: number;
-    enterprise: number;
-    gouvernemental: number;
-  };
-  repartitionGeographique: Record<string, number>;
-  repartitionParType: Record<string, number>;
-}
-
-function OrganismesVueEnsembleContent() {
-  const router = useRouter();
-
-  // États de base
-  const [searchTerm, setSearchTerm] = useState<string>('');
+export default function OrganismesVueEnsemblePage() {
+  const [organismes, setOrganismes] = useState<OrganismeVueEnsemble[]>([]);
+  const [filteredOrganismes, setFilteredOrganismes] = useState<OrganismeVueEnsemble[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedLocalisation, setSelectedLocalisation] = useState<string>('all');
-  const [selectedStatutCommercial, setSelectedStatutCommercial] = useState<string>('all');
-  const [selectedPriorite, setSelectedPriorite] = useState<string>('all');
-  const [selectedContrat, setSelectedContrat] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showPrincipalOnly, setShowPrincipalOnly] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [allExpanded, setAllExpanded] = useState(true);
+  // État de la modale supprimé - on utilise maintenant expandedGroups pour le déploiement
 
-  // États des données
-  const [organismes, setOrganismes] = useState<OrganismeCommercial[]>([]);
-  const [stats, setStats] = useState<OrganismesStats | null>(null);
-
-  // États de chargement
-  const [loadingStates, setLoadingStates] = useState<LoadingStates>({
-    loading: true,
-    refreshing: false,
-    exporting: false,
-    viewingDetails: null,
-    deleting: null,
-    updating: null,
-    creating: false,
-    error: null
-  });
-
-  // Charger les données
+  // Charger les organismes
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = useCallback(async () => {
-    try {
-      setLoadingStates(prev => ({ ...prev, loading: true, error: null }));
-
-      // Chargement avec API service ET nouvelles statistiques réelles
-      const results = await Promise.allSettled([
-        organismeApiService.getAllOrganismes(),
-        // ✅ NOUVELLES DONNÉES RÉELLES depuis API
-        fetch('/api/super-admin/organismes-stats').then(res => res.json()),
-        organismeApiService.getStatistiques() // Garder l'ancien en fallback
-      ]);
-
-      // Gestion des résultats individuels
-      let allOrganismes: OrganismeCommercial[] = [];
-      let statistiques: OrganismesStats = getDefaultStats();
-      let hasPartialError = false;
-
-      // Traitement des organismes
-      if (results[0].status === 'fulfilled') {
-        allOrganismes = results[0].value;
-      } else {
-        console.error('Erreur chargement organismes:', results[0].reason);
-        hasPartialError = true;
-        // Fallback pour les organismes
-        try {
-          allOrganismes = organismeCommercialService.getAllOrganismes();
-        } catch (fallbackError) {
-          console.error('Erreur fallback organismes:', fallbackError);
-          allOrganismes = [];
-        }
-      }
-
-      // Traitement des NOUVELLES statistiques réelles
-      if (results[1].status === 'fulfilled' && results[1].value.success) {
-        const realStats = results[1].value.data;
-        // ✅ Mapper les nouvelles données réelles
-        statistiques = {
-          totalOrganismes: realStats.overview.totalOrganismes,
-          totalProspects: realStats.overview.prospectsCount,
-          totalClients: realStats.overview.clientsCount,
-          chiffreAffairesTotal: 0, // Pas encore disponible
-          pipelineValue: 0, // Pas encore disponible
-          tauxConversion: realStats.metrics.tauxActivation,
-          conversionsRecentes: realStats.overview.recentOrganismes,
-          prospectsParPriorite: { haute: 45, moyenne: 89, basse: 34 }, // À implémenter
-          clientsParContrat: { standard: 2, premium: 2, enterprise: 1, gouvernemental: 0 }, // À implémenter
-          repartitionGeographique: { 'Libreville': 89, 'Port-Gentil': 45, 'Franceville': 32, 'Oyem': 28 }, // À implémenter
-          repartitionParType: realStats.distribution.byType.reduce((acc: any, item: any) => {
-            acc[item.type] = item.count;
-            return acc;
-          }, {})
-        };
-        console.log('✅ Statistiques réelles chargées:', statistiques);
-      } else if (results[2].status === 'fulfilled') {
-        // Fallback vers anciennes stats si nouvelles API échoue
-        statistiques = results[2].value;
-        console.warn('⚠️ Utilisation fallback statistiques');
-      } else {
-        console.error('❌ Erreur chargement toutes stats:', results[1].reason);
-        hasPartialError = true;
-        statistiques = getDefaultStats();
-      }
-
-      setOrganismes(allOrganismes);
-      setStats(statistiques);
-
-      // Messages de succès/avertissement appropriés
-      if (hasPartialError) {
-        toast.warning(`⚠️ Données partiellement chargées (${allOrganismes.length} organismes)`);
-      } else {
-        toast.success(`✅ ${allOrganismes.length} organismes chargés avec succès`);
-      }
-    } catch (error) {
-      console.error('❌ Erreur critique lors du chargement:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Erreur système critique';
-      setLoadingStates(prev => ({ ...prev, error: errorMessage }));
-
-      // Message d'erreur spécifique selon le type d'erreur
-      if (errorMessage.includes('Accès non autorisé')) {
-        toast.error('🔒 Session expirée. Veuillez vous reconnecter.');
-      } else if (errorMessage.includes('réseau') || errorMessage.includes('fetch')) {
-        toast.error('🌐 Problème de connexion. Vérifiez votre réseau.');
-      } else {
-        toast.error(`❌ Erreur: ${errorMessage}`);
-      }
-
-      // Fallback vers données par défaut en dernier recours
+    loadOrganismes();
+    // Charger l'état des groupes depuis localStorage
+    const savedExpandedState = localStorage.getItem('organismes-expanded-groups');
+    if (savedExpandedState) {
       try {
-        const fallbackOrganismes = organismeCommercialService.getAllOrganismes();
-        const fallbackStats = getDefaultStats();
-        setOrganismes(fallbackOrganismes);
-        setStats(fallbackStats);
-        toast.info('📋 Données de démonstration chargées en mode dégradé');
-      } catch (fallbackError) {
-        console.error('Erreur fallback critique:', fallbackError);
-        setOrganismes([]);
-        setStats(getDefaultStats());
-        toast.error('❌ Impossible de charger les données. Contactez l\'administrateur.');
+        const parsedState = JSON.parse(savedExpandedState);
+        setExpandedGroups(parsedState);
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'état des groupes:', error);
       }
-    } finally {
-      setLoadingStates(prev => ({ ...prev, loading: false }));
     }
   }, []);
 
-  // Filtrer les organismes
-  const filteredOrganismes = useMemo(() => {
+  const loadOrganismes = async () => {
     try {
-      return organismes.filter(org => {
-        const matchSearch = org.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           org.code.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchType = selectedType === 'all' || org.type === selectedType;
-        const matchLocalisation = selectedLocalisation === 'all' || org.localisation === selectedLocalisation;
-        const matchStatutCommercial = selectedStatutCommercial === 'all' || org.status === selectedStatutCommercial;
-        const matchPriorite = selectedPriorite === 'all' ||
-                             (org.status === 'PROSPECT' && org.prospectInfo?.priorite === selectedPriorite);
-        const matchContrat = selectedContrat === 'all' ||
-                           (org.status === 'CLIENT' && org.clientInfo?.type === selectedContrat);
+      setIsLoading(true);
+      setError(null);
 
-        return matchSearch && matchType && matchLocalisation && matchStatutCommercial &&
-               matchPriorite && matchContrat;
+      const response = await fetch('/api/organizations/list?limit=500');
+      const data = await response.json();
+
+      if (data.success) {
+        const sortedOrganismes = sortOrganizations(data.data.organizations || []);
+        setOrganismes(sortedOrganismes);
+      } else {
+        throw new Error(data.error || 'Erreur lors du chargement');
+      }
+    } catch (err) {
+      console.error('Erreur chargement organismes:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filtrage des organismes
+  useEffect(() => {
+    const filtered = filterOrganizations(organismes, {
+      search: searchTerm,
+      type: selectedType === 'all' ? undefined : selectedType,
+      group: selectedGroup === 'all' ? undefined : selectedGroup,
+      isPrincipal: showPrincipalOnly ? true : undefined
+    });
+
+    setFilteredOrganismes(filtered);
+  }, [organismes, searchTerm, selectedType, selectedGroup, showPrincipalOnly]);
+
+  // Initialiser l'état des groupes quand les organismes sont chargés
+  useEffect(() => {
+    if (filteredOrganismes.length > 0 && Object.keys(expandedGroups).length === 0) {
+      const groupKeys = Array.from(new Set(filteredOrganismes.map(org => getOrganizationGroup(org.type) || 'AUTRE')));
+      const initialExpandedState: Record<string, boolean> = {};
+
+      // Par défaut, tous les groupes sont dépliés
+      groupKeys.forEach(groupKey => {
+        initialExpandedState[groupKey] = true;
       });
-    } catch (error) {
-      console.error('❌ Erreur lors du filtrage:', error);
-      return [];
+
+      setExpandedGroups(initialExpandedState);
     }
-  }, [organismes, searchTerm, selectedType, selectedLocalisation, selectedStatutCommercial, selectedPriorite, selectedContrat]);
+  }, [filteredOrganismes, expandedGroups]);
 
-  // Listes uniques pour les filtres
-  const typesUniques = useMemo(() => [...new Set(organismes.map(o => o.type).filter(Boolean))], [organismes]);
-  const localisationsUniques = useMemo(() => [...new Set(organismes.map(o => o.localisation).filter(Boolean))], [organismes]);
+  // Sauvegarder l'état dans localStorage quand il change
+  useEffect(() => {
+    if (Object.keys(expandedGroups).length > 0) {
+      localStorage.setItem('organismes-expanded-groups', JSON.stringify(expandedGroups));
 
-  // Gestionnaires d'événements
-  const handleRefreshData = useCallback(async () => {
-    try {
-      setLoadingStates(prev => ({ ...prev, refreshing: true, error: null }));
-      await loadData();
-    } catch (error) {
-      console.error('Erreur actualisation:', error);
-      toast.error('❌ Erreur lors de l\'actualisation');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, refreshing: false }));
+      // Mettre à jour l'état allExpanded basé sur l'état des groupes
+      const expandedValues = Object.values(expandedGroups);
+      setAllExpanded(expandedValues.length > 0 && expandedValues.every(Boolean));
     }
-  }, [loadData]);
+  }, [expandedGroups]);
 
-  const handleAccederProspects = useCallback(() => {
-    try {
-      router.push('/super-admin/organismes-prospects');
-      toast.info('📊 Navigation vers les prospects');
-    } catch (error) {
-      console.error('Erreur navigation prospects:', error);
-      toast.error('❌ Erreur de navigation');
-    }
-  }, [router]);
+  // Statistiques
+  const stats = useMemo(() => {
+    return generateOrganizationStats(organismes);
+  }, [organismes]);
 
-  const handleAccederClients = useCallback(() => {
-    try {
-      router.push('/super-admin/organismes-clients');
-      toast.info('💼 Navigation vers les clients');
-    } catch (error) {
-      console.error('Erreur navigation clients:', error);
-      toast.error('❌ Erreur de navigation');
-    }
-  }, [router]);
+  // Options pour les filtres
+  const typeOptions = useMemo(() => {
+    return Array.from(new Set(organismes.map(org => org.type))).sort();
+  }, [organismes]);
 
-  const handleDeleteOrganisme = useCallback(async (organismeId: string) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, deleting: organismeId }));
+  // Grouper les organismes par groupe administratif
+  const organismesParGroupe = useMemo(() => {
+    const grouped: Record<string, OrganismeVueEnsemble[]> = {};
 
-      const success = await organismeApiService.deleteOrganisme(organismeId);
-
-      if (success) {
-        toast.success('✅ Organisme supprimé avec succès');
-        await loadData(); // Recharger les données
-      } else {
-        throw new Error('Échec de la suppression');
+    filteredOrganismes.forEach(org => {
+      const group = getOrganizationGroup(org.type) || 'AUTRE';
+      if (!grouped[group]) {
+        grouped[group] = [];
       }
-    } catch (error) {
-      console.error('Erreur suppression:', error);
-      toast.error('❌ Erreur lors de la suppression');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, deleting: null }));
-    }
-  }, [loadData]);
+      grouped[group].push(org);
+    });
 
-  const handleUpdateOrganisme = useCallback(async (organismeId: string, data: Partial<OrganismeCommercial>) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, updating: organismeId }));
+    return grouped;
+  }, [filteredOrganismes]);
 
-      const success = await organismeApiService.updateOrganisme(organismeId, data);
-
-      if (success) {
-        toast.success('✅ Organisme mis à jour avec succès');
-        await loadData(); // Recharger les données
-      } else {
-        throw new Error('Échec de la mise à jour');
-      }
-    } catch (error) {
-      console.error('Erreur mise à jour:', error);
-      toast.error('❌ Erreur lors de la mise à jour');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, updating: null }));
-    }
-  }, [loadData]);
-
-  const handleViewDetails = useCallback(async (organisme: OrganismeCommercial) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, viewingDetails: organisme.code }));
-
-      // Simulation chargement détails
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      toast.success(`📊 Détails de ${organisme.nom} chargés`);
-
-      // Ici vous pouvez ouvrir une modal ou naviguer vers une page de détails
-      console.log('Détails organisme:', organisme);
-
-    } catch (error) {
-      console.error('Erreur chargement détails:', error);
-      toast.error('❌ Erreur lors du chargement des détails');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, viewingDetails: null }));
-    }
-  }, []);
-
-  const handleClearError = useCallback(() => {
-    setLoadingStates(prev => ({ ...prev, error: null }));
-  }, []);
-
-  const handleExportData = useCallback(async () => {
-    try {
-      setLoadingStates(prev => ({ ...prev, exporting: true }));
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      const exportData = {
-        exported_at: new Date().toISOString(),
-        total_organismes: filteredOrganismes.length,
-        organismes: filteredOrganismes,
-        statistics: stats,
-        source: 'SUPER_ADMIN_ORGANISMES_VUE_ENSEMBLE'
-      };
-
-      const dataStr = JSON.stringify(exportData, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
-      const url = URL.createObjectURL(dataBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `organismes-vue-ensemble-${filteredOrganismes.length}-${new Date().toISOString().split('T')[0]}.json`;
-
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-
-      toast.success(`✅ Export de ${filteredOrganismes.length} organismes réussi !`);
-    } catch (error) {
-      console.error('❌ Erreur lors de l\'export:', error);
-      toast.error('❌ Erreur lors de l\'export des données');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, exporting: false }));
-    }
-  }, [filteredOrganismes, stats]);
-
-  // Fonctions utilitaires
-  const formatPrix = (prix: number) => {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XAF',
-      minimumFractionDigits: 0
-    }).format(prix);
+  // Fonctions pour gérer l'expansion des groupes
+  const toggleGroupExpansion = (groupKey: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }));
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'MINISTERE': return Building2;
-      case 'MAIRIE': return MapPin;
-      case 'DIRECTION_GENERALE': return Briefcase;
-      case 'PREFECTURE': return MapPin;
-      case 'PROVINCE': return Crown;
-      default: return Building2;
-    }
+  // Fonctions de modale supprimées - maintenant on utilise le déploiement in-place
+
+  const toggleAllGroups = () => {
+    const newExpandedState = !allExpanded;
+    const newExpandedGroups: Record<string, boolean> = {};
+
+    Object.keys(organismesParGroupe).forEach(groupKey => {
+      newExpandedGroups[groupKey] = newExpandedState;
+    });
+
+    setExpandedGroups(newExpandedGroups);
+    setAllExpanded(newExpandedState);
   };
 
-  const getStatutColor = (statut: string) => {
-    switch (statut) {
-      case 'CLIENT': return 'bg-green-100 text-green-800 border-green-300';
-      case 'PROSPECT': return 'bg-blue-100 text-blue-800 border-blue-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
+  // Icônes pour les groupes
+  const getGroupIcon = (group: string) => {
+    const icons = {
+      A: Crown,
+      B: Building2,
+      C: Briefcase,
+      D: Factory,
+      E: Scale,
+      F: Shield,
+      L: Landmark,
+      I: Network
+    };
+    return icons[group as keyof typeof icons] || Building2;
   };
 
-  const getStatutIcon = (statut: string) => {
-    switch (statut) {
-      case 'CLIENT': return UserCheck;
-      case 'PROSPECT': return Target;
-      default: return Building2;
-    }
-  };
-
-  const getPrioriteColor = (priorite?: string) => {
-    switch (priorite) {
-      case 'HAUTE': return 'bg-red-100 text-red-800 border-red-300';
-      case 'MOYENNE': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      case 'BASSE': return 'bg-green-100 text-green-800 border-green-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
-  const getContratTypeColor = (type?: TypeContrat) => {
-    if (!type) return 'bg-gray-100 text-gray-800 border-gray-300';
-    switch (type) {
-      case 'STANDARD': return 'bg-blue-100 text-blue-800 border-blue-300';
-      case 'PREMIUM': return 'bg-green-100 text-green-800 border-green-300';
-      case 'ENTERPRISE': return 'bg-purple-100 text-purple-800 border-purple-300';
-      case 'GOUVERNEMENTAL': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-      default: return 'bg-gray-100 text-gray-800 border-gray-300';
-    }
-  };
-
-  if (loadingStates.loading) {
+  if (isLoading) {
     return (
       <AuthenticatedLayout>
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Chargement de la vue d'ensemble...</h3>
-              <p className="text-muted-foreground">Analyse des données commerciales en cours</p>
-              {loadingStates.error && (
-                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800 text-sm">{loadingStates.error}</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearError}
-                    className="mt-2"
-                  >
-                    Réessayer
-                  </Button>
-                </div>
-              )}
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
+            <div>
+              <h3 className="font-semibold text-lg">Chargement de la vue d'ensemble...</h3>
+              <p className="text-muted-foreground">Récupération des organismes autonomes gabonais</p>
             </div>
           </div>
         </div>
@@ -576,260 +232,113 @@ function OrganismesVueEnsembleContent() {
     );
   }
 
+  if (error) {
+    return (
+      <AuthenticatedLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="w-96">
+            <CardContent className="text-center p-6">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2">Erreur de chargement</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={loadOrganismes}>
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Réessayer
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
+
   return (
     <AuthenticatedLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center gap-2">
-                <Building2 className="h-8 w-8 text-blue-600" />
-                Organismes - Vue d'Ensemble
-              </h1>
-              <p className="text-gray-600">
-                Tableau de bord commercial complet des organismes publics gabonais
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={handleRefreshData}
-                disabled={loadingStates.refreshing}
-              >
-                {loadingStates.refreshing ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                )}
-                Actualiser
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleExportData}
-                disabled={loadingStates.exporting}
-              >
-                {loadingStates.exporting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="mr-2 h-4 w-4" />
-                )}
-                Exporter
-              </Button>
-            </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Globe className="h-8 w-8 text-green-500" />
+              Vue d'ensemble des Organismes Gabonais
+            </h1>
+            <p className="text-muted-foreground">
+              Administration et gestion des {filteredOrganismes.length} organismes gabonais référencés
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={loadOrganismes}>
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Actualiser
+            </Button>
+            <Button>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Exporter
+            </Button>
           </div>
         </div>
 
-        {/* Métriques principales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm">Total Organismes</p>
-                  <p className="text-2xl font-bold">{stats?.totalOrganismes || 0}</p>
-                  <p className="text-blue-100 text-xs">Organismes publics</p>
-                </div>
-                <Building2 className="h-8 w-8 text-blue-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm">Prospects</p>
-                  <p className="text-2xl font-bold">{stats?.totalProspects || 0}</p>
-                  <p className="text-orange-100 text-xs">En prospection</p>
-                </div>
-                <Target className="h-8 w-8 text-orange-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm">Clients</p>
-                  <p className="text-2xl font-bold">{stats?.totalClients || 0}</p>
-                  <p className="text-green-100 text-xs">Contrats actifs</p>
-                </div>
-                <UserCheck className="h-8 w-8 text-green-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm">Taux Conversion</p>
-                  <p className="text-2xl font-bold">{stats?.tauxConversion || 0}%</p>
-                  <p className="text-purple-100 text-xs">Prospects → Clients</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-purple-200" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Actions rapides vers pages dédiées */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card className="border-l-4 border-l-blue-500 hover:shadow-lg transition-all cursor-pointer"
-                onClick={handleAccederProspects}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Target className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Gérer les Prospects</h3>
-                    <p className="text-gray-600">Prospection, qualification et conversion</p>
-                    <div className="flex items-center gap-4 mt-2">
-                      <Badge className="bg-red-100 text-red-800">
-                        {stats?.prospectsParPriorite.haute || 0} Haute
-                      </Badge>
-                      <Badge className="bg-yellow-100 text-yellow-800">
-                        {stats?.prospectsParPriorite.moyenne || 0} Moyenne
-                      </Badge>
-                      <Badge className="bg-green-100 text-green-800">
-                        {stats?.prospectsParPriorite.basse || 0} Basse
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="h-6 w-6 text-gray-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-green-500 hover:shadow-lg transition-all cursor-pointer"
-                onClick={handleAccederClients}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center">
-                    <UserCheck className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Gérer les Clients</h3>
-                    <p className="text-gray-600">Contrats, facturation et support</p>
-                    <div className="text-sm text-green-600 font-medium mt-2">
-                      CA Total: {stats ? formatPrix(stats.chiffreAffairesTotal) : '0 FCFA'}
-                    </div>
-                  </div>
-                </div>
-                <ArrowRight className="h-6 w-6 text-gray-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Statistiques détaillées */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Statistiques */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChart className="h-5 w-5 text-blue-600" />
-                Répartition par Type
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(stats?.repartitionParType || {}).map(([type, count], index) => (
-                  <div key={`type-stat-${type}-${index}`} className="flex items-center justify-between">
-                    <span className="text-sm">{type}</span>
-                    <Badge variant="outline">{count}</Badge>
-                  </div>
-                ))}
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Organismes</p>
+                  <h3 className="text-2xl font-bold">{stats.total}</h3>
+                </div>
+                <Building2 className="h-8 w-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-green-600" />
-                Contrats Clients
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Award className="h-4 w-4 text-blue-600" />
-                    <span className="text-sm">Standard</span>
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    {stats?.clientsParContrat.standard || 0}
-                  </Badge>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Organismes Actifs</p>
+                  <h3 className="text-2xl font-bold text-green-600">{stats.active}</h3>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Premium</span>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    {stats?.clientsParContrat.premium || 0}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Crown className="h-4 w-4 text-purple-600" />
-                    <span className="text-sm">Enterprise</span>
-                  </div>
-                  <Badge className="bg-purple-100 text-purple-800">
-                    {stats?.clientsParContrat.enterprise || 0}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-yellow-600" />
-                    <span className="text-sm">Gouvernemental</span>
-                  </div>
-                  <Badge className="bg-yellow-100 text-yellow-800">
-                    {stats?.clientsParContrat.gouvernemental || 0}
-                  </Badge>
-                </div>
+                <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-purple-600" />
-                Répartition Géographique
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(stats?.repartitionGeographique || {})
-                  .sort(([,a], [,b]) => b - a)
-                  .slice(0, 6)
-                  .map(([ville, count], index) => (
-                  <div key={`ville-stat-${ville}-${index}`} className="flex items-center justify-between">
-                    <span className="text-sm truncate">{ville}</span>
-                    <Badge variant="outline">{count}</Badge>
-                  </div>
-                ))}
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Organismes Principaux</p>
+                  <h3 className="text-2xl font-bold text-purple-600">{stats.principals}</h3>
+                </div>
+                <Crown className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Groupes Admin</p>
+                  <h3 className="text-2xl font-bold text-orange-600">{Object.keys(stats.byGroup).length}</h3>
+                </div>
+                <Network className="h-8 w-8 text-orange-500" />
               </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Filtres */}
-        <Card className="mb-8">
+        <Card>
           <CardContent className="p-6">
-            <div className="flex flex-wrap gap-4 items-center">
+            <div className="flex gap-4 items-end flex-wrap">
               <div className="flex-1 min-w-64">
+                <label className="text-sm font-medium mb-2 block">Recherche</label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Rechercher un organisme..."
+                    placeholder="Rechercher par nom, code, ville..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -837,336 +346,384 @@ function OrganismesVueEnsembleContent() {
                 </div>
               </div>
 
-              <Select value={selectedStatutCommercial} onValueChange={setSelectedStatutCommercial}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Statut commercial" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="all" value="all">Tous statuts</SelectItem>
-                  <SelectItem key="PROSPECT" value="PROSPECT">Prospects</SelectItem>
-                  <SelectItem key="CLIENT" value="CLIENT">Clients</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedType} onValueChange={setSelectedType}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Type d'organisme" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="all-types" value="all">Tous types</SelectItem>
-                  {typesUniques.map((type, index) => (
-                    <SelectItem key={`type-filter-${type}-${index}`} value={type}>{type}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedLocalisation} onValueChange={setSelectedLocalisation}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Ville" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem key="all-villes" value="all">Toutes villes</SelectItem>
-                  {localisationsUniques.map((ville, index) => (
-                    <SelectItem key={`ville-filter-${ville}-${index}`} value={ville}>{ville}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {selectedStatutCommercial === 'PROSPECT' && (
-                <Select value={selectedPriorite} onValueChange={setSelectedPriorite}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue placeholder="Priorité" />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Groupe Administratif</label>
+                <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Tous les groupes" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem key="all-priorites" value="all">Toutes priorités</SelectItem>
-                    <SelectItem key="HAUTE" value="HAUTE">Haute</SelectItem>
-                    <SelectItem key="MOYENNE" value="MOYENNE">Moyenne</SelectItem>
-                    <SelectItem key="BASSE" value="BASSE">Basse</SelectItem>
+                    <SelectItem value="all">Tous les groupes</SelectItem>
+                    {Object.entries(ORGANIZATION_GROUPS).map(([key, group]) => (
+                      <SelectItem key={key} value={key}>
+                        {(group as any).name} ({stats.byGroup[key] || 0})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
 
-              {selectedStatutCommercial === 'CLIENT' && (
-                <Select value={selectedContrat} onValueChange={setSelectedContrat}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Type contrat" />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Type d'Organisme</label>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Tous les types" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem key="all-contrats" value="all">Tous contrats</SelectItem>
-                    <SelectItem key="STANDARD" value="STANDARD">Standard</SelectItem>
-                    <SelectItem key="PREMIUM" value="PREMIUM">Premium</SelectItem>
-                    <SelectItem key="ENTERPRISE" value="ENTERPRISE">Enterprise</SelectItem>
-                    <SelectItem key="GOUVERNEMENTAL" value="GOUVERNEMENTAL">Gouvernemental</SelectItem>
+                    <SelectItem value="all">Tous les types</SelectItem>
+                    {typeOptions.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {getOrganizationTypeLabel(type)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              )}
+              </div>
 
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedType('all');
-                  setSelectedLocalisation('all');
-                  setSelectedStatutCommercial('all');
-                  setSelectedPriorite('all');
-                  setSelectedContrat('all');
-                }}
-              >
-                <Filter className="mr-2 h-4 w-4" />
-                Réinitialiser
-              </Button>
-
-              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="h-8 w-8 p-0"
-                >
-                  <Grid className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className="h-8 w-8 p-0"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="principalOnly"
+                  checked={showPrincipalOnly}
+                  onChange={(e) => setShowPrincipalOnly(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="principalOnly" className="text-sm font-medium">
+                  Organismes principaux uniquement
+                </label>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Liste des organismes */}
-        <div className={`${
-          viewMode === 'grid'
-            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'
-            : 'space-y-4'
-        }`}>
-          {filteredOrganismes.map((organisme) => {
-            const TypeIcon = getTypeIcon(organisme.type);
-            const StatutIcon = getStatutIcon(organisme.status);
-
-            return (
-              <Card
-                key={organisme.code}
-                className={`border-l-4 ${organisme.status === 'CLIENT' ? 'border-l-green-500' : 'border-l-blue-500'}
-                           hover:shadow-lg transition-all duration-300`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center text-white flex-shrink-0">
-                      <TypeIcon className="h-6 w-6" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-lg leading-tight truncate" title={organisme.nom}>
-                        {organisme.nom}
-                      </h3>
-                      <p className="text-gray-600 text-sm truncate">{organisme.type}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Code: <span className="font-mono">{organisme.code}</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    <Badge className={getStatutColor(organisme.status)}>
-                      <StatutIcon className="h-3 w-3 mr-1" />
-                      {organisme.status}
-                    </Badge>
-
-                    {organisme.status === 'PROSPECT' && organisme.prospectInfo && (
-                      <Badge className={getPrioriteColor(organisme.prospectInfo.priorite)}>
-                        {organisme.prospectInfo.priorite}
-                      </Badge>
-                    )}
-
-                    {organisme.status === 'CLIENT' && organisme.clientInfo && (
-                      <Badge className={getContratTypeColor(organisme.clientInfo.type)}>
-                        {organisme.clientInfo.type}
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Informations clés */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-gray-600">
-                      <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span className="truncate">{organisme.localisation}</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600">
-                      <Users className="h-4 w-4 mr-2 flex-shrink-0" />
-                      <span>{organisme.stats?.totalUsers || 0} utilisateurs</span>
-                    </div>
-                    {organisme.status === 'CLIENT' && organisme.clientInfo && (
-                      <div className="flex items-center text-sm text-green-600 font-medium">
-                        <Euro className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span>{formatPrix(organisme.clientInfo.montantAnnuel)}/an</span>
-                      </div>
-                    )}
-                    {organisme.status === 'PROSPECT' && (
-                      <div className="flex items-center text-sm text-blue-600">
-                        <Target className="h-4 w-4 mr-2 flex-shrink-0" />
-                        <span>Valeur estimée: {formatPrix(15000000)}</span>
-                      </div>
-                    )}
-                  </div>
-
-                                    {/* Actions */}
-                  <div className="space-y-2 pt-4 border-t">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => router.push(
-                          organisme.status === 'PROSPECT'
-                            ? '/super-admin/organismes-prospects'
-                            : '/super-admin/organismes-clients'
-                        )}
-                        className="flex items-center gap-1"
-                      >
-                        <Settings className="h-4 w-4" />
-                        Gérer
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(organisme)}
-                        disabled={loadingStates.viewingDetails === organisme.code}
-                        className="flex items-center gap-1"
-                      >
-                        {loadingStates.viewingDetails === organisme.code ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Eye className="h-4 w-4" />
-                        )}
-                        Détails
-                      </Button>
-                    </div>
-
-                    {/* Actions supplémentaires */}
-                    <div className="grid grid-cols-3 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleUpdateOrganisme(organisme.id, {
-                          ...organisme,
-                          stats: {
-                            totalUsers: organisme.stats?.totalUsers || 0,
-                            totalServices: organisme.stats?.totalServices || 0,
-                            totalPostes: organisme.stats?.totalPostes || 0,
-                            activeUsers: (organisme.stats?.activeUsers || 0) + 1,
-                            chiffreAffaires: organisme.stats?.chiffreAffaires || 0
-                          }
-                        })}
-                        disabled={loadingStates.updating === organisme.id}
-                        className="text-xs"
-                      >
-                        {loadingStates.updating === organisme.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          '📝'
-                        )}
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(organisme.code);
-                          toast.success(`Code ${organisme.code} copié`);
-                        }}
-                        className="text-xs"
-                      >
-                        📋
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          if (confirm(`Supprimer ${organisme.nom} ?`)) {
-                            handleDeleteOrganisme(organisme.id);
-                          }
-                        }}
-                        disabled={loadingStates.deleting === organisme.id}
-                        className="text-xs text-red-600 hover:text-red-700"
-                      >
-                        {loadingStates.deleting === organisme.id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          '🗑️'
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          {filteredOrganismes.length === 0 && (
-            <div className="col-span-full text-center py-12">
-              <Building2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun organisme trouvé</h3>
-              <p className="text-gray-600 mb-4">
-                Aucun organisme ne correspond aux critères de recherche actuels.
-              </p>
+        {/* Organismes groupés */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              Organismes par Groupes Administratifs ({filteredOrganismes.length})
+            </h2>
+            <div className="flex items-center gap-3">
               <Button
                 variant="outline"
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedType('all');
-                  setSelectedLocalisation('all');
-                  setSelectedStatutCommercial('all');
-                  setSelectedPriorite('all');
-                  setSelectedContrat('all');
-                }}
+                onClick={toggleAllGroups}
+                className="flex items-center gap-2"
               >
-                Réinitialiser les filtres
+                {allExpanded ? (
+                  <>
+                    <Minimize2 className="h-4 w-4" />
+                    Réduire tout
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-4 w-4" />
+                    Développer tout
+                  </>
+                )}
               </Button>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                {Object.keys(organismesParGroupe).length} groupes
+              </Badge>
             </div>
+          </div>
+
+          {Object.keys(organismesParGroupe).length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {Object.entries(organismesParGroupe).map(([groupKey, groupOrganismes]) => {
+              const group = ORGANIZATION_GROUPS[groupKey as keyof typeof ORGANIZATION_GROUPS];
+              const isExpanded = expandedGroups[groupKey];
+              const GroupIcon = getGroupIcon(groupKey);
+
+                // Couleurs selon les groupes administratifs pour les cartes principales
+                const getGroupColors = (group: string) => {
+                  switch(group) {
+                    case 'A': return { border: 'border-l-purple-500', bg: 'bg-purple-100', text: 'text-purple-600' }; // Institutions Suprêmes
+                    case 'B': return { border: 'border-l-green-500', bg: 'bg-green-100', text: 'text-green-600' }; // Ministères
+                    case 'C': return { border: 'border-l-blue-500', bg: 'bg-blue-100', text: 'text-blue-600' }; // Directions Générales
+                    case 'G': return { border: 'border-l-red-500', bg: 'bg-red-100', text: 'text-red-600' }; // Administrations Territoriales
+                    case 'E': return { border: 'border-l-orange-500', bg: 'bg-orange-100', text: 'text-orange-600' }; // Agences Spécialisées
+                    case 'F': return { border: 'border-l-yellow-500', bg: 'bg-yellow-100', text: 'text-yellow-600' }; // Institutions Judiciaires
+                    case 'L': return { border: 'border-l-indigo-500', bg: 'bg-indigo-100', text: 'text-indigo-600' }; // Pouvoir Législatif
+                    case 'I': return { border: 'border-l-pink-500', bg: 'bg-pink-100', text: 'text-pink-600' }; // Institutions Indépendantes
+                    default: return { border: 'border-l-gray-500', bg: 'bg-gray-100', text: 'text-gray-600' }; // Autre
+                  }
+                };
+
+                const colors = getGroupColors(groupKey);
+
+              return (
+                  <Card key={groupKey} className={`${colors.border} border-l-4 hover:shadow-lg transition-all duration-300 bg-white ${isExpanded ? 'col-span-full' : ''}`}>
+                    <CardContent className="p-6">
+                                            {/* Design optimisé des blocs de groupes administratifs */}
+                      <div
+                        className="cursor-pointer hover:bg-gradient-to-r hover:from-gray-50 hover:to-white hover:shadow-md transition-all duration-200 rounded-xl -m-2 p-3 group"
+                    onClick={() => toggleGroupExpansion(groupKey)}
+                        title={isExpanded ? "Cliquer pour réduire" : "Cliquer pour développer"}
+                      >
+                        {/* En-tête principal simplifié */}
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className={`relative p-2.5 rounded-lg ${colors.bg} shadow-md`}>
+                            <GroupIcon className={`h-8 w-8 ${colors.text}`} />
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">
+                              {(group as any)?.name || 'Autre'}
+                            </h3>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <Badge variant="outline" className="text-xs px-2 py-0.5 bg-green-50 text-green-700 border-green-200">
+                                ACTIF
+                              </Badge>
+                              <span className="text-xs font-medium text-gray-500 uppercase">
+                                GROUPE {groupKey} - NIVEAU {groupKey === 'A' ? '1' : groupKey === 'B' ? '2' : '3'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Description avec informations compactes */}
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-1">
+                            Code: GRP-{groupKey} • {(group as any)?.description || 'Groupe d\'organismes de l\'administration gabonaise'}
+                          </p>
+                        </div>
+
+                        {/* Dashboard compact des métriques - Layout optimisé */}
+                        <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                          <div className="grid grid-cols-6 gap-3">
+                            {/* Métrique 1: Total */}
+                            <div className="text-center">
+                              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-1.5 mx-auto">
+                                <Building2 className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <p className="text-xs font-medium text-gray-600">Total</p>
+                              <p className="text-lg font-bold text-blue-600">{groupOrganismes.length}</p>
+                            </div>
+
+                            {/* Métrique 2: Actifs */}
+                            <div className="text-center">
+                              <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-1.5 mx-auto">
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                              </div>
+                              <p className="text-xs font-medium text-gray-600">Actifs</p>
+                              <p className="text-lg font-bold text-green-600">
+                                {groupOrganismes.filter(org => org.isActive).length}
+                              </p>
+                            </div>
+
+                            {/* Métrique 3: Principaux */}
+                            <div className="text-center">
+                              <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center mb-1.5 mx-auto`}>
+                                <Crown className={`h-5 w-5 ${colors.text}`} />
+                              </div>
+                              <p className="text-xs font-medium text-gray-600">VIP</p>
+                              <p className={`text-lg font-bold ${colors.text}`}>
+                                {groupOrganismes.filter(org => isOrganismePrincipal(org.type)).length}
+                              </p>
+                            </div>
+
+                            {/* Métrique 4: Types */}
+                            <div className="text-center">
+                              <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-1.5 mx-auto">
+                                <Network className="h-5 w-5 text-orange-600" />
+                              </div>
+                              <p className="text-xs font-medium text-gray-600">Cat.</p>
+                              <p className="text-lg font-bold text-orange-600">
+                                {Array.from(new Set(groupOrganismes.map(org => org.type))).length}
+                              </p>
+                            </div>
+
+                            {/* Métrique 5: Agents */}
+                            <div className="text-center">
+                              <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-1.5 mx-auto">
+                                <Users className="h-5 w-5 text-purple-600" />
+                              </div>
+                              <p className="text-xs font-medium text-gray-600">Staff</p>
+                              <p className="text-lg font-bold text-purple-600">
+                                {groupOrganismes.reduce((total, org) => total + (org.userCount || 0), 0)}
+                              </p>
+                            </div>
+
+                            {/* Métrique 6: Zones */}
+                            <div className="text-center">
+                              <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center mb-1.5 mx-auto">
+                                <MapPin className="h-5 w-5 text-teal-600" />
+                              </div>
+                              <p className="text-xs font-medium text-gray-600">Zones</p>
+                              <p className="text-lg font-bold text-teal-600">
+                                {Array.from(new Set(groupOrganismes.map(org => org.city).filter(Boolean))).length || 1}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Section déployable des organismes */}
+                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                    isExpanded ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'
+                  }`}>
+                        {isExpanded && (
+                          <div className="border-t border-gray-200 pt-6 mt-4">
+                            {/* En-tête des organismes avec actions */}
+                            <div className="flex items-center justify-between mb-6">
+                              <div className="flex items-center gap-2">
+                                <div className={`p-2 rounded-lg ${colors.bg}`}>
+                                  <Building2 className={`h-5 w-5 ${colors.text}`} />
+                                </div>
+                                <div>
+                                  <h4 className="font-semibold text-lg text-gray-900">
+                                    Organismes détaillés
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    Exploration complète du groupe
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm">
+                                  <BarChart2 className="h-4 w-4 mr-2" />
+                                  Statistiques
+                                </Button>
+                                <Button variant="outline" size="sm">
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Exporter
+                                </Button>
+                              </div>
+                            </div>
+
+                            {/* Grille des organismes directement */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {groupOrganismes.map((org, index) => {
+                                const TypeIcon = getGroupIcon(groupKey);
+
+                                return (
+                                  <Card key={org.id} className={`${colors.border} border-l-4 hover:shadow-lg transition-all duration-200 bg-white`}>
+                                    <CardContent className="p-6">
+                                      {/* En-tête avec icône et titre */}
+                                      <div className="flex items-center gap-3 mb-4">
+                                        <div className={`p-3 rounded-lg ${colors.bg}`}>
+                                          <TypeIcon className={`h-8 w-8 ${colors.text}`} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h3 className="font-bold text-lg leading-tight text-gray-900 truncate">{org.name}</h3>
+                                          <p className="text-sm text-gray-600 uppercase font-medium">
+                                            {getOrganizationTypeLabel(org.type)} - Groupe {groupKey}
+                                          </p>
+                                          <p className="text-xs text-gray-500">
+                                            Code: {org.code} • {
+                                              groupKey === 'A' ? 'Institutions Suprêmes' :
+                                              groupKey === 'B' ? 'Ministères' :
+                                              groupKey === 'C' ? 'Directions Générales' :
+                                              groupKey === 'G' ? 'Administrations Territoriales' :
+                                              groupKey === 'E' ? 'Agences Spécialisées' :
+                                              groupKey === 'F' ? 'Institutions Judiciaires' :
+                                              groupKey === 'L' ? 'Pouvoir Législatif' :
+                                              groupKey === 'I' ? 'Institutions Indépendantes' :
+                                              'Autre'
+                                            }
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      {/* Badge de statut */}
+                                      <div className="flex items-center gap-2 mb-4">
+                                        <Badge className={org.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}>
+                                          {org.isActive ? 'ACTIF' : 'INACTIF'}
+                                        </Badge>
+                                        <Badge variant="outline" className="text-xs">
+                                          {org.userCount || 0} agents
+                                        </Badge>
+                                        {isOrganismePrincipal(org.type) && (
+                                          <Crown className="h-4 w-4 text-yellow-500" />
+                                        )}
+                                      </div>
+
+                                      {/* Informations de contact */}
+                                      <div className="space-y-2 mb-4 text-sm">
+                                        <div className="flex items-center gap-2">
+                                          <Users className="h-4 w-4 text-gray-400" />
+                                          <span className="text-gray-600">Responsable non spécifié</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Mail className="h-4 w-4 text-gray-400" />
+                                          <span className="text-gray-600">{org.code.toLowerCase()}@{org.type.toLowerCase()}.ga</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Phone className="h-4 w-4 text-gray-400" />
+                                          <span className="text-gray-600">+241 01 XX XX XX</span>
+                                        </div>
+                                      </div>
+
+                                      {/* Actions */}
+                                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                                        <div className="flex items-center gap-2">
+                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                            <Eye className="h-4 w-4" />
+                                          </Button>
+                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                            <Network className="h-4 w-4" />
+                                          </Button>
+                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                            <Settings className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                        <div className="text-xs text-gray-500">
+                                          {org.city || 'Libreville'}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions du groupe */}
+                      {!isExpanded && (
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                          <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Settings className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <BarChart2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {groupOrganismes.filter(org => org.isActive).length}/{groupOrganismes.length}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                </Card>
+              );
+              })}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="text-center p-12">
+                <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">Aucun organisme trouvé</h3>
+                <p className="text-muted-foreground mb-4">
+                  Aucun organisme ne correspond aux critères de filtrage actuels.
+                </p>
+                <Button variant="outline" onClick={() => {
+                  setSearchTerm('');
+                  setSelectedGroup('all');
+                  setSelectedType('all');
+                  setShowPrincipalOnly(false);
+                }}>
+                  <Filter className="h-4 w-4 mr-2" />
+                  Réinitialiser les filtres
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
 
-        {/* Footer avec résumé */}
-        {filteredOrganismes.length > 0 && (
-          <Card className="mt-8">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600">
-                  Affichage de {filteredOrganismes.length} organisme(s) sur {organismes.length} total
-                </div>
-                <div className="flex gap-4 text-sm">
-                  <span className="text-blue-600">
-                    {filteredOrganismes.filter(o => o.status === 'PROSPECT').length} Prospects
-                  </span>
-                  <span className="text-green-600">
-                    {filteredOrganismes.filter(o => o.status === 'CLIENT').length} Clients
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Ancienne modale supprimée - Les organismes s'affichent maintenant directement dans les cartes déployées */}
       </div>
     </AuthenticatedLayout>
-  );
-}
-
-export default function OrganismesVueEnsemblePage() {
-  return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p>Chargement...</p>
-        </div>
-      </div>
-    }>
-      <OrganismesVueEnsembleContent />
-    </Suspense>
   );
 }

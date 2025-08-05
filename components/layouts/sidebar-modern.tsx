@@ -57,7 +57,7 @@ const navigationStructure = [
     id: 'organismes',
     title: 'Gestion des Organismes',
     icon: Building2,
-    badge: { type: 'count', text: '160' },
+    badge: { type: 'count', text: '0' },
     subItems: [
       {
         title: 'Vue Globale',

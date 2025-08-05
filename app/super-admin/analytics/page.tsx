@@ -201,10 +201,10 @@ export default function AnalyticsPage() {
             connexions: Math.floor(Math.random() * 300) + 100
           })),
           repartitionRoles: [
-            { role: 'ADMIN', count: 333, percentage: 34.0 },
-            { role: 'AGENT', count: 331, percentage: 33.8 },
-            { role: 'COLLABORATEUR', count: 307, percentage: 31.4 },
-            { role: 'USER', count: 8, percentage: 0.8 }
+            { role: 'ADMIN', count: 0, percentage: 0 },
+            { role: 'AGENT', count: 0, percentage: 0 },
+            { role: 'COLLABORATEUR', count: 0, percentage: 0 },
+            { role: 'USER', count: 0, percentage: 0 }
           ],
           activiteParOrganisme: [
             { organisme: 'MIN_ECONOMIE', actifs: 42, total: 45 },

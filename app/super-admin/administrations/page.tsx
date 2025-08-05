@@ -49,7 +49,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { OrganizationType } from '@prisma/client';
+import { OrganizationType } from '@/lib/data/gabon-administrations';
 
 // === INTERFACES ET TYPES ===
 interface LoadingStates {
@@ -128,7 +128,7 @@ export default function SuperAdminAdministrationsPage() {
     refetch
   } = trpc.organizations.list.useQuery({
     search: searchTerm || undefined,
-    type: selectedType !== 'all' ? selectedType : undefined,
+    type: selectedType !== 'all' ? selectedType as any : undefined,
     isActive: selectedStatus === 'all' ? undefined : selectedStatus === 'active',
     limit: 100,
     offset: 0,
@@ -283,7 +283,6 @@ export default function SuperAdminAdministrationsPage() {
           name: editFormData.name,
           // Note: Le code ne peut pas être modifié après création
           city: editFormData.city,
-          isActive: editFormData.isActive,
         }
       });
 

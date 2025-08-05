@@ -261,7 +261,7 @@ export default function MetricsAdvancedPage() {
               endpoint: '/api/auth/login',
               method: 'POST',
               avgResponseTime: 145,
-              requestCount: 12456,
+              requestCount: 0,
               errorRate: 0.8,
               p95ResponseTime: 250,
               p99ResponseTime: 450
@@ -270,7 +270,7 @@ export default function MetricsAdvancedPage() {
               endpoint: '/api/organismes',
               method: 'GET',
               avgResponseTime: 89,
-              requestCount: 45678,
+              requestCount: 0,
               errorRate: 0.3,
               p95ResponseTime: 180,
               p99ResponseTime: 320
@@ -279,7 +279,7 @@ export default function MetricsAdvancedPage() {
               endpoint: '/api/users/profile',
               method: 'GET',
               avgResponseTime: 67,
-              requestCount: 78901,
+              requestCount: 0,
               errorRate: 0.1,
               p95ResponseTime: 120,
               p99ResponseTime: 200
@@ -318,19 +318,19 @@ export default function MetricsAdvancedPage() {
             {
               type: 'Brute Force Attack',
               severity: 'high',
-              count: 12,
+              count: 0,
               lastOccurrence: '2025-01-15T14:30:00Z'
             },
             {
               type: 'SQL Injection Attempt',
               severity: 'critical',
-              count: 3,
+              count: 0,
               lastOccurrence: '2025-01-15T13:45:00Z'
             },
             {
               type: 'Suspicious API Usage',
               severity: 'medium',
-              count: 28,
+              count: 0,
               lastOccurrence: '2025-01-15T14:25:00Z'
             }
           ],

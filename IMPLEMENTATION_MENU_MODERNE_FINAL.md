@@ -215,4 +215,4 @@ Le **menu super-admin moderne** d'ADMIN.GA représente maintenant une **interfac
 ### **🚀 Impact Transformation Digitale**
 Le système ADMIN.GA dispose maintenant d'une **expérience utilisateur exceptionnelle** qui positionne le Gabon comme **leader de l'innovation administrative en Afrique**.
 
-**🇬🇦 L'administration publique gabonaise entre dans une nouvelle ère digitale !**
+## 🇬🇦 L'administration publique gabonaise entre dans une nouvelle ère digitale

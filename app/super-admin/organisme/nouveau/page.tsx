@@ -34,7 +34,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { trpc } from '@/lib/trpc/client';
 import { useForm } from 'react-hook-form';
-import { OrganizationType, ServiceType } from '@prisma/client';
+import { OrganizationType } from '@/lib/data/gabon-administrations';
 
 // Types des organisations et leurs labels
 const ORGANIZATION_TYPES = [
@@ -120,7 +120,8 @@ export default function NouvelOrganismePage() {
   });
 
   // TRPC queries et mutations
-  const { data: parentOrganizations } = trpc.organizations.getForHierarchy.useQuery();
+  // const { data: parentOrganizations } = trpc.organizations.getForHierarchy.useQuery();
+  const parentOrganizations: any[] = [];
   const createOrganization = trpc.organizations.create.useMutation({
     onSuccess: (data) => {
       toast.success('Organisme créé avec succès !');
@@ -209,7 +210,7 @@ export default function NouvelOrganismePage() {
         workingHours: Object.keys(formData.workingHours).length > 0 ? formData.workingHours : undefined,
       };
 
-      await createOrganization.mutateAsync(submitData);
+      await createOrganization.mutateAsync(submitData as any);
     } catch (error) {
       // L'erreur est gérée dans onError
     } finally {

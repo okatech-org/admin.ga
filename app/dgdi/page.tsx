@@ -171,7 +171,7 @@ export default function DGDIHomePage() {
             Bienvenue à la DGDI
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            {organismeDetails?.description || 'Documentation, Immigration et Services aux Citoyens'}
+            Documentation, Immigration et Services aux Citoyens
           </p>
           <div className="flex justify-center gap-6 text-sm text-gray-600">
             <div className="flex items-center">
@@ -372,7 +372,10 @@ export default function DGDIHomePage() {
             <div>
               <h3 className="font-semibold mb-4">Comptes Disponibles</h3>
               <div className="space-y-3">
-                {organismeDetails?.comptesDisponibles?.map((compte, index) => (
+                {[
+                  { titre: "Agent DGDI", description: "Agent de documentation", role: "AGENT", email: "agent@dgdi.ga" },
+                  { titre: "Superviseur", description: "Superviseur des opérations", role: "SUPERVISOR", email: "superviseur@dgdi.ga" }
+                ].map((compte, index) => (
                   <Card
                     key={index}
                     className="hover:shadow-md transition-shadow cursor-pointer group"

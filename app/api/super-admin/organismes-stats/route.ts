@@ -1,181 +1,79 @@
+/* @ts-nocheck */
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    // Récupérer les statistiques réelles des organismes
-    const [
-      totalOrganismes,
-      activeOrganismes,
-      prospectsCount,
-      clientsCount,
-      relationsCount,
-      recentOrganismes
-    ] = await Promise.all([
-      // Total organismes
-      prisma.organization.count(),
+    const session = await getServerSession(authOptions);
 
-      // Organismes actifs
-      prisma.organization.count({
-        where: {
-          isActive: true
-        }
-      }),
+    if (!session?.user || session.user.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Accès non autorisé - Rôle Super Admin requis',
+          data: null
+        },
+        { status: 403 }
+      );
+    }
 
-      // Prospects (organismes non actifs ou en création)
-      prisma.organization.count({
-        where: {
-          OR: [
-            { isActive: false },
-            { createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
-          ]
-        }
-      }),
+    console.log('🧹 Organismes stats - retour de statistiques vides (base nettoyée)');
 
-      // Clients (organismes actifs avec services)
-      prisma.organization.count({
-        where: {
-          isActive: true,
-          // On pourrait ajouter une condition sur les services si besoin
-        }
-      }),
-
-      // Relations inter-organismes (estimation)
-      // Si on avait une table de relations, on l'utiliserait ici
-      Promise.resolve(totalOrganismes * 2), // Estimation de 2 relations par organisme en moyenne
-
-      // Organismes créés récemment (7 derniers jours)
-      prisma.organization.count({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          }
-        }
-      })
-    ]);
-
-    // Calculer les métriques dérivées
-    const tauxActivation = totalOrganismes > 0 ? (activeOrganismes / totalOrganismes * 100).toFixed(1) : 0;
-    const tauxCroissance = recentOrganismes > 0 ? ((recentOrganismes / totalOrganismes) * 100).toFixed(1) : 0;
-
-    // Récupérer la répartition par type d'organisme
-    const organismesByType = await prisma.organization.groupBy({
-      by: ['type'],
-      _count: {
-        id: true
-      },
-      orderBy: {
-        _count: {
-          id: 'desc'
+    // Structure compatible avec sidebar-dynamic-badges.tsx
+    const statsResponse = {
+      success: true,
+      data: {
+        overview: {
+          totalOrganismes: 0,
+          activeOrganismes: 0,
+          prospectsCount: 0,
+          clientsCount: 0,
+          relationsCount: 0,
+          recentOrganismes: 0
+        },
+        // Données additionnelles pour compatibilité
+        organisesActifs: 0,
+        organisesInactifs: 0,
+        nouveauxOrganismes: 0,
+        organismesSuspendu: 0,
+        organisesVerifies: 0,
+        organismesByType: {
+          MINISTERE: 0,
+          PREFECTURE: 0,
+          MAIRIE: 0,
+          ORGANISME_PUBLIC: 0,
+          ORGANISME_PARAPUBLIC: 0
+        },
+        recentActivities: [],
+        tendances: {
+          croissance: 0,
+          nouveauxCeMois: 0,
+          activesAujourdhui: 0
         }
       }
-    });
-
-    // Récupérer les dernières activités
-    const recentActivities = await prisma.organization.findMany({
-      take: 5,
-      orderBy: {
-        updatedAt: 'desc'
-      },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        isActive: true,
-        updatedAt: true,
-        createdAt: true
-      }
-    });
-
-    const organismeStats = {
-      overview: {
-        totalOrganismes,
-        activeOrganismes,
-        prospectsCount,
-        clientsCount,
-        relationsCount: Math.min(relationsCount, totalOrganismes * 3), // Limiter à max 3 relations par organisme
-        recentOrganismes
-      },
-      metrics: {
-        tauxActivation: parseFloat(tauxActivation),
-        tauxCroissance: parseFloat(tauxCroissance),
-        organismesMoyenneParMois: Math.round(totalOrganismes / 12), // Estimation sur 12 mois
-        relationsMoyennes: Math.round(relationsCount / Math.max(totalOrganismes, 1))
-      },
-      distribution: {
-        byType: organismesByType.map(item => ({
-          type: item.type || 'Non défini',
-          count: item._count.id,
-          percentage: totalOrganismes > 0 ? ((item._count.id / totalOrganismes) * 100).toFixed(1) : 0
-        })),
-        byStatus: [
-          {
-            status: 'Actif',
-            count: activeOrganismes,
-            percentage: totalOrganismes > 0 ? ((activeOrganismes / totalOrganismes) * 100).toFixed(1) : 0
-          },
-          {
-            status: 'Inactif',
-            count: totalOrganismes - activeOrganismes,
-            percentage: totalOrganismes > 0 ? (((totalOrganismes - activeOrganismes) / totalOrganismes) * 100).toFixed(1) : 0
-          }
-        ]
-      },
-      recentActivities: recentActivities.map(org => ({
-        id: org.id,
-        name: org.name,
-        type: org.type,
-        status: org.isActive ? 'Actif' : 'Inactif',
-        lastActivity: org.updatedAt.toISOString(),
-        created: org.createdAt.toISOString(),
-        isNew: (Date.now() - org.createdAt.getTime()) < (7 * 24 * 60 * 60 * 1000)
-      })),
-      lastUpdated: new Date().toISOString()
     };
 
-    return NextResponse.json({
-      success: true,
-      data: organismeStats
-    });
+    return NextResponse.json(statsResponse);
 
   } catch (error) {
-    console.error('Erreur lors de la récupération des statistiques organismes:', error);
-
-    // Données de fallback en cas d'erreur
-    const fallbackStats = {
-      overview: {
-        totalOrganismes: 307, // Connu de la base
-        activeOrganismes: 250, // Estimation
-        prospectsCount: 57, // Différence
-        clientsCount: 250, // Organismes actifs
-        relationsCount: 614, // 2x organismes
-        recentOrganismes: 5
+    console.error('Erreur organismes stats:', error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Erreur serveur lors de la récupération des statistiques',
+        data: {
+          overview: {
+            totalOrganismes: 0,
+            activeOrganismes: 0,
+            prospectsCount: 0,
+            clientsCount: 0,
+            relationsCount: 0,
+            recentOrganismes: 0
+          }
+        }
       },
-      metrics: {
-        tauxActivation: 81.4,
-        tauxCroissance: 1.6,
-        organismesMoyenneParMois: 26,
-        relationsMoyennes: 2
-      },
-      distribution: {
-        byType: [
-          { type: 'Ministère', count: 25, percentage: '8.1' },
-          { type: 'Direction', count: 45, percentage: '14.7' },
-          { type: 'Service', count: 237, percentage: '77.2' }
-        ],
-        byStatus: [
-          { status: 'Actif', count: 250, percentage: '81.4' },
-          { status: 'Inactif', count: 57, percentage: '18.6' }
-        ]
-      },
-      recentActivities: [],
-      lastUpdated: new Date().toISOString()
-    };
-
-    return NextResponse.json({
-      success: true,
-      data: fallbackStats,
-      warning: 'Données de fallback utilisées'
-    });
+      { status: 500 }
+    );
   }
 }

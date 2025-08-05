@@ -61,31 +61,9 @@ export async function GET(
         break;
 
       case 'service_requests':
-        data = await prisma.serviceRequest.findMany({
-          take: limit,
-          skip: offset,
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            priority: true,
-            trackingNumber: true,
-            submittedAt: true,
-            submittedBy: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            },
-            organization: {
-              select: {
-                name: true,
-                code: true
-              }
-            }
-          }
-        });
+        // Table service_requests n'existe pas dans le schéma Prisma actuel
+        // Retourner un tableau vide pour éviter l'erreur
+        data = [];
         break;
 
       case 'ai_search_logs':

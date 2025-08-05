@@ -43,6 +43,13 @@ export function DynamicBadge({ type, fallback }: DynamicBadgeProps) {
 
       setLoading(true);
       const response = await fetch('/api/super-admin/organismes-stats');
+
+      if (!response.ok) {
+        console.warn(`Erreur HTTP ${response.status}: ${response.statusText}`);
+        setValue(fallback || 0);
+        return;
+      }
+
       const result = await response.json();
 
       if (result.success) {
@@ -50,7 +57,7 @@ export function DynamicBadge({ type, fallback }: DynamicBadgeProps) {
         cacheTimestamp = now;
         updateValue(result.data);
       } else {
-        console.warn('Erreur API badge:', result.error);
+        console.warn('Erreur API badge:', result.error || 'Erreur inconnue');
         setValue(fallback || 0);
       }
     } catch (error) {
@@ -115,10 +122,18 @@ export function useDynamicBadges() {
     const preloadData = async () => {
       try {
         const response = await fetch('/api/super-admin/organismes-stats');
+
+        if (!response.ok) {
+          console.warn(`Échec pré-chargement badges - HTTP ${response.status}: ${response.statusText}`);
+          return;
+        }
+
         const result = await response.json();
         if (result.success) {
           cachedData = result.data;
           cacheTimestamp = Date.now();
+        } else {
+          console.warn('Échec pré-chargement badges:', result.error || 'Erreur inconnue');
         }
       } catch (error) {
         console.warn('Échec pré-chargement badges:', error);

@@ -84,7 +84,7 @@ export default function SuperAdminHomePage() {
               description: `Organismes gabonais (${orgData.statusDistribution.active} actifs)`
             },
             services: {
-              value: 558,
+              value: 0,
               trend: 0,
               description: 'Services disponibles'
             },
@@ -118,11 +118,24 @@ export default function SuperAdminHomePage() {
               // Données de fallback avec les vraies valeurs connues
         setDashboardData({
           metrics: {
-            totalUsers: { value: 979, trend: 0, description: 'Données indisponibles' },
-            activeUsers: { value: 979, trend: 0, description: 'Données indisponibles' },
-            totalOrganizations: { value: 307, trend: 0, description: 'Organismes gabonais' },
-          services: { value: 558, trend: 0, description: 'Services disponibles' },
+                totalUsers: { value: 0, trend: 0, description: 'Base de données vide' },
+    activeUsers: { value: 0, trend: 0, description: 'Base de données vide' },
+    totalOrganizations: { value: 0, trend: 0, description: 'Base de données vide' },
+    services: { value: 0, trend: 0, description: 'Base de données vide' },
           systemHealth: { value: '99.7%', trend: 0, description: 'Estimation système' }
+        },
+        userStats: {
+          totalUsers: 0,
+          statusDistribution: { active: 0, inactive: 0 },
+          roleDistribution: [],
+          environmentDistribution: {},
+          recentUsers: []
+        },
+        orgStats: {
+          totalOrganizations: 0,
+          statusDistribution: { active: 0, inactive: 0 },
+          typeDistribution: {},
+          recentOrganizations: []
         },
         priorityTasks: [],
         recentActivities: [],
@@ -270,7 +283,7 @@ export default function SuperAdminHomePage() {
                 Répartition Détaillée des Utilisateurs
               </CardTitle>
               <CardDescription>
-                Analyse en temps réel de vos {dashboardData.userStats.totalUsers} utilisateurs
+                Analyse en temps réel de vos {dashboardData.userStats?.totalUsers || 0} utilisateurs
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -278,12 +291,12 @@ export default function SuperAdminHomePage() {
               <div>
                 <h4 className="font-semibold mb-3 text-gray-700">Par Rôle</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {dashboardData.userStats.roleDistribution.map((role: any) => (
+                  {dashboardData.userStats?.roleDistribution?.map((role: any) => (
                     <div key={role.role} className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-lg font-bold text-gray-900">{role.count}</div>
                       <div className="text-sm text-gray-600">{role.role}</div>
                       <div className="text-xs text-gray-500">
-                        {((role.count / dashboardData.userStats.totalUsers) * 100).toFixed(1)}%
+                        {((role.count / (dashboardData.userStats?.totalUsers || 1)) * 100).toFixed(1)}%
                       </div>
                     </div>
                   ))}
@@ -298,13 +311,13 @@ export default function SuperAdminHomePage() {
                     <div className="flex justify-between">
                       <span className="text-sm">Avec organisation</span>
                       <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {dashboardData.userStats.organizationDistribution.withOrganization}
+                        {dashboardData.userStats?.organizationDistribution?.withOrganization || 0}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Sans organisation</span>
                       <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                        {dashboardData.userStats.organizationDistribution.withoutOrganization}
+                        {dashboardData.userStats?.organizationDistribution?.withoutOrganization || 0}
                       </Badge>
                     </div>
                   </div>
@@ -313,7 +326,7 @@ export default function SuperAdminHomePage() {
                 <div>
                   <h4 className="font-semibold mb-3 text-gray-700">Top Domaines Email</h4>
                   <div className="space-y-1">
-                    {dashboardData.userStats.emailDomains.slice(0, 3).map((domain: any) => (
+                    {dashboardData.userStats?.emailDomains?.slice(0, 3).map((domain: any) => (
                       <div key={domain.domain} className="flex justify-between text-sm">
                         <span className="text-gray-600">{domain.domain}</span>
                         <span className="font-medium">{domain.count}</span>
@@ -335,7 +348,7 @@ export default function SuperAdminHomePage() {
                 Répartition Détaillée des Organismes
               </CardTitle>
               <CardDescription>
-                Analyse en temps réel de vos {dashboardData.orgStats.totalOrganizations} organismes gabonais
+                Analyse en temps réel de vos {dashboardData.orgStats?.totalOrganizations || 0} organismes gabonais
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -343,12 +356,12 @@ export default function SuperAdminHomePage() {
               <div>
                 <h4 className="font-semibold mb-3 text-gray-700">Par Type</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {dashboardData.orgStats.typeDistribution.slice(0, 6).map((type: any) => (
+                  {dashboardData.orgStats?.typeDistribution?.slice(0, 6).map((type: any) => (
                     <div key={type.type} className="bg-gray-50 p-3 rounded-lg">
                       <div className="text-lg font-bold text-gray-900">{type.count}</div>
                       <div className="text-sm text-gray-600">{type.type.replace('_', ' ')}</div>
                       <div className="text-xs text-gray-500">
-                        {((type.count / dashboardData.orgStats.totalOrganizations) * 100).toFixed(1)}%
+                        {((type.count / (dashboardData.orgStats?.totalOrganizations || 1)) * 100).toFixed(1)}%
                       </div>
                     </div>
                   ))}
@@ -363,13 +376,13 @@ export default function SuperAdminHomePage() {
                     <div className="flex justify-between">
                       <span className="text-sm">Organismes actifs</span>
                       <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {dashboardData.orgStats.statusDistribution.active}
+                        {dashboardData.orgStats?.statusDistribution?.active || 0}
                       </Badge>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-sm">Organismes inactifs</span>
                       <Badge variant="outline" className="bg-red-50 text-red-700">
-                        {dashboardData.orgStats.statusDistribution.inactive}
+                        {dashboardData.orgStats?.statusDistribution?.inactive || 0}
                       </Badge>
                     </div>
                   </div>
@@ -378,7 +391,7 @@ export default function SuperAdminHomePage() {
                 <div>
                   <h4 className="font-semibold mb-3 text-gray-700">Top Villes</h4>
                   <div className="space-y-1">
-                    {dashboardData.orgStats.cityDistribution.slice(0, 3).map((city: any) => (
+                    {dashboardData.orgStats?.cityDistribution?.slice(0, 3).map((city: any) => (
                       <div key={city.city} className="flex justify-between text-sm">
                         <span className="text-gray-600">{city.city}</span>
                         <span className="font-medium">{city.count}</span>

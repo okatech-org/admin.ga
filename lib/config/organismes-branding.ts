@@ -75,6 +75,22 @@ export const ORGANISMES_BRANDING: Record<string, OrganismeBranding> = {
     },
     description: "Ministère de la Justice et des Droits de l'Homme",
   },
+  "DGDI": {
+    name: "Direction Générale de la Documentation et de l'Immigration",
+    shortName: "DGDI",
+    colors: {
+      primary: "#065F46",
+      secondary: "#047857",
+      accent: "#10B981",
+    },
+    description: "Direction Générale de la Documentation et de l'Immigration",
+    website: "https://dgdi.ga",
+    contact: {
+      email: "info@dgdi.ga",
+      phone: "+241 01 70 XX XX",
+      address: "Libreville, Gabon",
+    },
+  },
 };
 
 export function getOrganismeBranding(organismeId?: string): OrganismeBranding {

@@ -390,4 +390,4 @@ function checkOrganismeAccess(user: User, requestedOrganisme: string) {
 
 **Impact** : Les utilisateurs ne voient plus jamais "ADMIN.GA" sauf les SUPER_ADMIN. Chaque administration vit dans son univers : DGDI.GA, CNSS.GA, JUSTICE.GA, etc.
 
-**Mission accomplie** : 🎯 **Architecture Multi-Organismes Parfaitement Implémentée !**
+## Mission accomplie** : 🎯 **Architecture Multi-Organismes Parfaitement Implémentée !

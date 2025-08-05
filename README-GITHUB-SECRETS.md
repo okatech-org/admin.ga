@@ -100,7 +100,7 @@ J'ai créé un script pour vous aider :
 
 ## 🎉 **C'est Tout !**
 
-**En configurant ces 3 secrets dans GitHub, tous vos warnings disparaîtront et votre CI/CD fonctionnera parfaitement !**
+## En configurant ces 3 secrets dans GitHub, tous vos warnings disparaîtront et votre CI/CD fonctionnera parfaitement !
 
 ---
 

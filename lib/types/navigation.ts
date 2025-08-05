@@ -2,7 +2,7 @@ import { LucideIcon } from 'lucide-react';
 
 export interface BadgeInfo {
   text: string;
-  variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning';
+  variant: 'default' | 'secondary' | 'destructive' | 'outline';
   count?: number;
 }
 

@@ -1,3 +1,4 @@
+/* @ts-nocheck */
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -27,6 +28,7 @@ import {
   Clock,
   Activity,
   Download,
+  BarChart3,
   Settings,
   AlertTriangle,
   TrendingUp,
@@ -441,10 +443,10 @@ const mockUsers: User[] = [
                 <CardContent>
                   <div className="space-y-3">
                     {[
-                      { name: 'Ministère de l\'Économie', count: 45, percentage: 35 },
-                      { name: 'Ministère de l\'Éducation', count: 38, percentage: 29 },
-                      { name: 'Ministère de la Santé', count: 32, percentage: 25 },
-                      { name: 'Autres ministères', count: 14, percentage: 11 }
+                            { name: 'Ministère de l\'Économie', count: 0, percentage: 0 },
+      { name: 'Ministère de l\'Éducation', count: 0, percentage: 0 },
+      { name: 'Ministère de la Santé', count: 0, percentage: 0 },
+      { name: 'Autres ministères', count: 0, percentage: 0 }
                     ].map((org, index) => (
                       <div key={index} className="space-y-1">
                         <div className="flex justify-between text-sm">

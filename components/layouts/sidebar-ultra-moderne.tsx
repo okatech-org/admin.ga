@@ -34,6 +34,7 @@ import {
   UserPlus,
   Briefcase,
   Award,
+  Clock,
 
   // Monitoring - Orange
   Database as DatabaseIcon,
@@ -57,7 +58,6 @@ import {
   Phone,
   MapPin,
   Calendar,
-  Clock,
   Zap,
   Wifi,
   Server
@@ -102,23 +102,26 @@ export function SidebarUltraModerne() {
 
   // Fonction pour déterminer quelle section devrait être ouverte selon l'URL
   const getSectionForPath = useCallback((path: string): string | null => {
-    if (path.includes('/dashboard') || path.includes('/analytics') || path.includes('/communications')) {
-      return 'Dashboard';
-    }
     if (path.includes('/organismes') || path.includes('/relations') || path.includes('/structure-administrative')) {
       return 'Organismes';
     }
-    if (path.includes('/utilisateurs') || path.includes('/fonctionnaires') || path.includes('/postes-administratifs') ||
-        path.includes('/gestion-comptes') || path.includes('/services') || path.includes('/restructuration')) {
-      return 'Administration';
+    if (path.includes('/utilisateurs') || path.includes('/fonctionnaires') || path.includes('/gestion-comptes')) {
+      return 'Utilisateurs';
     }
-    if (path.includes('/base-donnees') || path.includes('/systeme') || path.includes('/logs') || path.includes('/metrics')) {
-      return 'Monitoring';
+    if (path.includes('/services') || path.includes('/configuration')) {
+      return 'Services';
     }
-    if (path.includes('/configuration') || path.includes('/debug')) {
-      return 'Outils';
+    if (path.includes('/analytics') || path.includes('/metrics')) {
+      return 'Analytics';
     }
-    return null;
+         if (path.includes('/base-donnees') || path.includes('/logs')) {
+       return 'Base de Données';
+     }
+     if (path.includes('/configuration-organisme') || path.includes('/postes-emploi')) {
+       return null; // Éléments directs du menu
+     }
+     // Éléments directs ne nécessitent pas d'ouverture de section
+     return null;
   }, []);
 
   // États des sections avec initialisation intelligente et persistance
@@ -147,49 +150,36 @@ export function SidebarUltraModerne() {
 
   // Statistiques système en temps réel
   const [systemStats, setSystemStats] = useState<SystemStats>({
-    organismes: 307,
-    utilisateurs: 979,
-    services: 558,
-    fonctionnaires: 478,
+    organismes: 0,
+    utilisateurs: 0,
+    services: 0,
+    fonctionnaires: 0,
     uptime: 99.8307093030187,
     cpuUsage: 14.140845053521275,
     memoryUsage: 64.15456432054086,
     storageUsage: 45
   });
 
-  // Sections de navigation avec codes couleur (optimisées avec useMemo)
-  const navigationSections: NavigationSection[] = useMemo(() => [
+  // Éléments directs du menu (sans sous-sections)
+  const directMenuItems = [
     {
       title: 'Dashboard',
-      color: 'text-slate-700',
-      bgColor: 'bg-slate-50',
-      borderColor: 'border-slate-200',
+      href: '/super-admin/dashboard-unified',
       icon: Home,
-      badge: 5, // Notifications
-      children: [
-        {
-          title: 'Vue d\'Ensemble',
-          href: '/super-admin/dashboard-unified',
-          icon: BarChart3,
-          description: 'Métriques système et activité',
-          badge: 2
-        },
-        {
-          title: 'Analytics',
-          href: '/super-admin/analytics',
-          icon: TrendingUp,
-          description: 'Analyses de performance détaillées'
-        },
-        {
-          title: 'Communications',
-          href: '/super-admin/communications',
-          icon: Mail,
-          description: 'Communications inter-administration',
-          badge: 5
-        },
-
-      ]
+      description: 'Vue d\'ensemble du système',
+      isDirect: true
     },
+         {
+       title: 'Postes d\'emploi',
+       href: '/super-admin/postes-emploi',
+       icon: Briefcase,
+       description: 'Gestion des offres d\'emploi public',
+       isDirect: true
+     }
+  ];
+
+  // Sections de navigation avec sous-éléments
+  const navigationSections: NavigationSection[] = useMemo(() => [
     {
       title: 'Organismes',
       color: 'text-emerald-700',
@@ -205,31 +195,16 @@ export function SidebarUltraModerne() {
           description: 'Tableau de bord commercial complet'
         },
         {
-          title: 'Prospects',
+          title: 'Administration Organismes',
           href: '/super-admin/organismes-prospects',
-          icon: Target,
-          description: 'Gestion et conversion des prospects'
-          // ⚠️ Badge supprimé - données fictives remplacées par API temps réel
-        },
-        {
-          title: 'Clients',
-          href: '/super-admin/organismes-clients',
-          icon: UserCheck,
-          description: 'Suivi des clients et contrats'
-          // ⚠️ Badge supprimé - données fictives remplacées par API temps réel
-        },
-        {
-          title: 'Gestion Générale',
-          href: '/super-admin/organismes',
           icon: Building2,
-          description: 'Administration des organismes'
+          description: 'Pipeline commercial, organismes officiels du Gabon'
         },
         {
           title: 'Relations Inter-Org',
           href: '/super-admin/relations',
           icon: Network,
           description: 'Gestion des relations'
-          // ⚠️ Badge supprimé - données fictives remplacées par API temps réel
         },
         {
           title: 'Structure Administrative',
@@ -240,15 +215,15 @@ export function SidebarUltraModerne() {
       ]
     },
     {
-      title: 'Administration',
+      title: 'Utilisateurs',
       color: 'text-purple-700',
       bgColor: 'bg-purple-50',
       borderColor: 'border-purple-200',
-      icon: Shield,
+      icon: Users,
       badge: systemStats.utilisateurs,
       children: [
         {
-          title: 'Utilisateurs',
+          title: 'Vue d\'Ensemble',
           href: '/super-admin/utilisateurs',
           icon: Users,
           description: 'Gestion des utilisateurs',
@@ -262,60 +237,48 @@ export function SidebarUltraModerne() {
           badge: systemStats.fonctionnaires
         },
         {
-          title: 'Postes Administratifs',
-          href: '/super-admin/postes-administratifs',
-          icon: Briefcase,
-          description: 'Base de données des postes',
-          isNew: true
-        },
-        {
           title: 'Gestion Comptes',
           href: '/super-admin/gestion-comptes',
           icon: UserPlus,
-          description: 'Création et gestion collaborateurs',
-          isNew: true
-        },
+          description: 'Création et gestion collaborateurs'
+        }
+      ]
+    },
+    {
+      title: 'Services',
+      color: 'text-green-700',
+      bgColor: 'bg-green-50',
+      borderColor: 'border-green-200',
+      icon: FileText,
+      badge: systemStats.services,
+      children: [
         {
-          title: 'Services',
+          title: 'Vue d\'Ensemble',
           href: '/super-admin/services',
           icon: FileText,
           description: 'Services administratifs',
           badge: systemStats.services
         },
         {
-          title: 'Restructuration',
-          href: '/super-admin/restructuration-comptes',
-          icon: Award,
-          description: 'Réorganisation des comptes'
+          title: 'Configuration',
+          href: '/super-admin/configuration',
+          icon: Settings,
+          description: 'Paramètres système'
         }
       ]
     },
     {
-      title: 'Monitoring',
-      color: 'text-orange-700',
-      bgColor: 'bg-orange-50',
-      borderColor: 'border-orange-200',
-      icon: Monitor,
-      badge: Math.round(systemStats.uptime * 10) / 10,
+      title: 'Analytics',
+      color: 'text-indigo-700',
+      bgColor: 'bg-indigo-50',
+      borderColor: 'border-indigo-200',
+      icon: TrendingUp,
       children: [
         {
-          title: 'Base de Données',
-          href: '/super-admin/base-donnees',
-          icon: DatabaseIcon,
-          description: 'Gestion et visualisation DB',
-          isNew: true
-        },
-        {
-          title: 'Santé Système',
-          href: '/super-admin/systeme',
-          icon: Activity,
-          description: 'Monitoring et performance'
-        },
-        {
-          title: 'Logs & Alertes',
-          href: '/super-admin/logs',
-          icon: AlertCircle,
-          description: 'Journaux et notifications'
+          title: 'Dashboard Analytics',
+          href: '/super-admin/analytics',
+          icon: BarChart3,
+          description: 'Analyses de performance détaillées'
         },
         {
           title: 'Métriques Avancées',
@@ -326,25 +289,23 @@ export function SidebarUltraModerne() {
       ]
     },
     {
-      title: 'Outils',
-      color: 'text-gray-700',
-      bgColor: 'bg-gray-50',
-      borderColor: 'border-gray-200',
-      icon: Wrench,
+      title: 'Base de Données',
+      color: 'text-orange-700',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-200',
+      icon: DatabaseIcon,
       children: [
         {
-          title: 'Configuration',
-          href: '/super-admin/configuration',
-          icon: Settings,
-          description: 'Paramètres système'
+          title: 'Vue d\'Ensemble',
+          href: '/super-admin/base-donnees',
+          icon: DatabaseIcon,
+          description: 'Gestion et visualisation DB'
         },
-        // ⚠️ Test Data supprimé - contenait des données fictives polluantes
-
         {
-          title: 'Debug',
-          href: '/super-admin/debug',
-          icon: Code,
-          description: 'Outils de débogage'
+          title: 'Logs & Alertes',
+          href: '/super-admin/logs',
+          icon: AlertCircle,
+          description: 'Journaux et notifications'
         }
       ]
     }
@@ -435,6 +396,37 @@ export function SidebarUltraModerne() {
       {/* Navigation Sections */}
       <div className="flex-1 overflow-y-auto">
         <nav className="p-4 space-y-3">
+          {/* Éléments directs du menu */}
+          {directMenuItems.map((item) => {
+            const isActive = pathname === item.href;
+            const ItemIcon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  'flex items-center justify-between p-3 rounded-xl transition-all duration-200 group relative',
+                  isActive
+                    ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent hover:border-gray-200'
+                )}
+              >
+                <div className="flex items-center space-x-3">
+                  <ItemIcon className={cn(
+                    'w-5 h-5',
+                    isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'
+                  )} />
+                  <span className="font-medium">{item.title}</span>
+                </div>
+                {isActive && (
+                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-l"></div>
+                )}
+              </Link>
+            );
+          })}
+
+          {/* Sections expandables */}
           {navigationSections.map((section) => {
             const SectionIcon = section.icon;
             const hasActiveChild = section.children.some(child => pathname === child.href);
@@ -507,9 +499,9 @@ export function SidebarUltraModerne() {
                                   </Badge>
                                 )}
                                 {/* ✅ BADGES DYNAMIQUES TEMPS RÉEL */}
-                                {item.title === 'Prospects' && <DynamicBadge type="prospects" fallback={57} />}
-                                {item.title === 'Clients' && <DynamicBadge type="clients" fallback={250} />}
-                                {item.title === 'Relations Inter-Org' && <DynamicBadge type="relations" fallback={614} />}
+                                      {item.title === 'Prospects' && <DynamicBadge type="prospects" fallback={0} />}
+      {item.title === 'Clients' && <DynamicBadge type="clients" fallback={0} />}
+      {item.title === 'Relations Inter-Org' && <DynamicBadge type="relations" fallback={0} />}
                               </div>
                               <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">
                                 {item.description}

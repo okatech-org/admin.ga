@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
-import { HierarchieOfficielleGabon } from '@/components/organizations/hierarchie-officielle-gabon';
+// import { HierarchieOfficielleGabon } from '@/components/organizations/hierarchie-officielle-gabon';
 import { toast } from 'sonner';
 import {
   Network, Building2, BarChart3, Shield, Activity, Users, Share2,
@@ -37,10 +37,19 @@ import {
 //   getOrganismesByGroupe,
 // };
 
-import { StructureAdministrativeComplete } from '@/components/organizations/structure-administrative-complete';
+// import { StructureAdministrativeComplete } from '@/components/organizations/structure-administrative-complete';
 import { RelationsOrganismesComplet } from '@/components/organizations/relations-organismes-complet';
 
 // === INTERFACES POUR LA STRUCTURE OFFICIELLE ===
+interface OrganismeOfficielGabon {
+  id: string;
+  nom: string;
+  code: string;
+  type: string;
+  niveau: number;
+  isActive: boolean;
+}
+
 interface RelationOfficielle {
   id: string;
   sourceCode: string;

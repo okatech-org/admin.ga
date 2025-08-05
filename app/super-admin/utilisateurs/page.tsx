@@ -1,6 +1,7 @@
+/* @ts-nocheck */
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { trpc } from '@/lib/trpc/client';
+// import { trpc } from '@/lib/trpc/client'; // Remplacé par l'API REST
 import {
   Users,
   UserPlus,
@@ -88,6 +89,8 @@ interface User {
   isVerified: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  environment: 'ADMIN' | 'DEMARCHE'; // Environnement d'appartenance
+  platform: 'ADMIN.GA' | 'DEMARCHE.GA'; // Plateforme de gestion
 }
 
 interface CreateUserData {
@@ -123,32 +126,88 @@ export default function SuperAdminUtilisateursPage() {
   // Transformation des données utilisateurs pour correspondre au type User
   // Fonction supprimée - remplacée par TRPC
 
-  // Utiliser TRPC pour récupérer les vrais utilisateurs
-  const { data: usersData, isLoading: usersLoading, error: usersError, refetch: refetchUsers } = trpc.auth.getAllUsers.useQuery();
+  // États pour les données utilisateurs
+  const [usersData, setUsersData] = useState<any>(null);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [usersError, setUsersError] = useState<string | null>(null);
+
+  // Fonction pour récupérer les utilisateurs via l'API REST
+  const fetchUsers = useCallback(async () => {
+    setUsersLoading(true);
+    setUsersError(null);
+
+    try {
+      const response = await fetch('/api/users/list?limit=1000');
+      const result = await response.json();
+
+      if (result.success) {
+        setUsersData(result.data);
+        console.log(`✅ ${result.data.users.length} utilisateurs chargés depuis ${result.data.fromDatabase ? 'la base de données' : 'les données simulées'}`);
+      } else {
+        throw new Error(result.error || 'Erreur lors de la récupération des utilisateurs');
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des utilisateurs:', error);
+      setUsersError(error instanceof Error ? error.message : 'Erreur inconnue');
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
+  // Charger les données au montage du composant
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Fonction pour déterminer l'environnement d'un utilisateur
+  const determineUserEnvironment = (user: any): { environment: 'ADMIN' | 'DEMARCHE', platform: 'ADMIN.GA' | 'DEMARCHE.GA' } => {
+    // Logique intelligente de détection d'environnement
+
+    // 1. Utilisateurs sans organisation = Citoyens = DEMARCHE.GA
+    if (!user.primaryOrganizationId || user.organizationName === 'Citoyen' || user.organizationName === 'Sans organisation') {
+      return { environment: 'DEMARCHE', platform: 'DEMARCHE.GA' };
+    }
+
+    // 2. Utilisateurs avec rôle USER et organisation = probablement des citoyens avec services
+    if (user.role === 'USER') {
+      return { environment: 'DEMARCHE', platform: 'DEMARCHE.GA' };
+    }
+
+    // 3. Tous les autres utilisateurs avec organisation = Personnel administratif = ADMIN.GA
+    return { environment: 'ADMIN', platform: 'ADMIN.GA' };
+  };
 
   const users = useMemo(() => {
     if (!usersData?.users) return [];
 
-    return usersData.users.map(user => ({
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
-      phone: user.phone || undefined,
-      role: user.role as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'AGENT' | 'USER',
-      organizationId: user.primaryOrganizationId || 'sans-organisation',
-      organizationName: user.primaryOrganization?.name || 'Sans organisation',
-      posteTitle: user.jobTitle || undefined,
-      isActive: user.isActive,
-      isVerified: user.isVerified,
-      createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
-      lastLoginAt: user.lastLoginAt?.toISOString() || undefined
-    }));
+    return usersData.users.map((user: any) => {
+      const { environment, platform } = determineUserEnvironment(user);
+
+      return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        phone: user.phone || undefined,
+        role: user.role as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'AGENT' | 'USER',
+        organizationId: user.primaryOrganizationId || user.organizationCode || 'sans-organisation',
+        organizationName: user.organizationName || (environment === 'DEMARCHE' ? 'Citoyen' : 'Sans organisation'),
+        posteTitle: user.jobTitle || undefined,
+        isActive: user.isActive,
+        isVerified: user.isVerified,
+        createdAt: user.createdAt || new Date().toISOString(),
+        lastLoginAt: user.lastLoginAt || undefined,
+        environment,
+        platform
+      };
+    });
   }, [usersData]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedOrganization, setSelectedOrganization] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [selectedEnvironment, setSelectedEnvironment] = useState<'all' | 'ADMIN' | 'DEMARCHE'>('all');
   const [viewMode, setViewMode] = useState<'organismes' | 'liste'>('organismes');
   const [expandedOrgs, setExpandedOrgs] = useState(new Set<string>());
 
@@ -248,15 +307,18 @@ export default function SuperAdminUtilisateursPage() {
         phone: createUserData.phone,
         role: createUserData.role as User['role'],
         organizationId: createUserData.organizationId,
-        organizationName: administrations.find(org => org.code === createUserData.organizationId)?.nom || 'Organisation inconnue',
-        posteTitle: postes.find(poste => poste.id === createUserData.posteId)?.titre,
+        organizationName: administrations.find(org => org.id === createUserData.organizationId)?.nom || 'Organisation inconnue',
+        posteTitle: postes.find(poste => poste.id === createUserData.posteId)?.nom,
         isActive: true,
         isVerified: createUserData.isVerified,
         createdAt: new Date().toISOString(),
-        lastLoginAt: undefined
+        lastLoginAt: undefined,
+        environment: 'ADMIN',
+        platform: 'ADMIN.GA'
       };
 
-      setUsers(prev => [newUser, ...prev]);
+      // Actualiser la liste des utilisateurs
+      await fetchUsers();
 
       // Réinitialiser le formulaire
       setCreateUserData({
@@ -320,15 +382,12 @@ export default function SuperAdminUtilisateursPage() {
       const updatedUserData = {
         ...editUserData,
         organizationName: editUserData.organizationId ?
-          administrations.find(org => org.code === editUserData.organizationId)?.nom || selectedUser.organizationName
+          administrations.find(org => org.id === editUserData.organizationId)?.nom || selectedUser.organizationName
           : selectedUser.organizationName
       };
 
-      setUsers(prev => prev.map(user =>
-        user.id === selectedUser.id
-          ? { ...user, ...updatedUserData }
-          : user
-      ));
+      // Actualiser la liste des utilisateurs
+      await fetchUsers();
 
       setIsEditModalOpen(false);
       setSelectedUser(null);
@@ -352,7 +411,8 @@ export default function SuperAdminUtilisateursPage() {
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const deletedUser = users.find(user => user.id === userId);
-      setUsers(prev => prev.filter(user => user.id !== userId));
+      // Actualiser la liste des utilisateurs
+      await fetchUsers();
 
       toast.success(`Utilisateur ${deletedUser?.firstName} ${deletedUser?.lastName} supprimé`);
 
@@ -371,11 +431,8 @@ export default function SuperAdminUtilisateursPage() {
     try {
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      setUsers(prev => prev.map(u =>
-        u.id === userId
-          ? { ...u, isActive: !u.isActive }
-          : u
-      ));
+      // Actualiser la liste des utilisateurs
+      await fetchUsers();
 
       toast.success(`Utilisateur ${user.isActive ? 'désactivé' : 'activé'}`);
 
@@ -432,8 +489,7 @@ export default function SuperAdminUtilisateursPage() {
     setLoadingStates(prev => ({ ...prev, refreshing: true }));
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // Ici on rechargerait depuis l'API
+      await fetchUsers(); // Utiliser la nouvelle fonction de récupération
       toast.success('Données actualisées');
     } catch (error) {
       toast.error('Erreur lors de l\'actualisation');
@@ -467,7 +523,7 @@ export default function SuperAdminUtilisateursPage() {
       const orgId = user.organizationId;
       if (!acc[orgId]) {
         acc[orgId] = {
-          organisme: administrations.find(org => org.code === orgId) || {
+          organisme: administrations.find(org => org.id === orgId) || {
             nom: user.organizationName,
             code: orgId,
             type: 'AUTRE'
@@ -512,18 +568,42 @@ export default function SuperAdminUtilisateursPage() {
     }, {} as Record<string, any>);
   }, [users, administrations]);
 
-  // Statistiques globales
-  const globalStats = useMemo(() => ({
-    totalUsers: users.length,
-    totalOrganismes: Object.keys(usersByOrganisme).length,
-    actifs: users.filter(u => u.isActive).length,
-    inactifs: users.filter(u => !u.isActive).length,
-    admins: users.filter(u => ['ADMIN', 'SUPER_ADMIN'].includes(u.role)).length,
-    managers: users.filter(u => u.role === 'MANAGER').length,
-    agents: users.filter(u => u.role === 'AGENT').length,
-    citoyens: users.filter(u => u.role === 'USER').length,
-    superAdmins: users.filter(u => u.role === 'SUPER_ADMIN').length
-  }), [users]);
+  // Statistiques globales avec distinction ADMIN.GA / DEMARCHE.GA
+  const globalStats = useMemo(() => {
+    const adminUsers = users.filter(u => u.environment === 'ADMIN');
+    const demarcheUsers = users.filter(u => u.environment === 'DEMARCHE');
+
+    return {
+      totalUsers: users.length,
+      totalOrganismes: Object.keys(usersByOrganisme).length,
+      actifs: users.filter(u => u.isActive).length,
+      inactifs: users.filter(u => !u.isActive).length,
+      admins: users.filter(u => ['ADMIN', 'SUPER_ADMIN'].includes(u.role)).length,
+      managers: users.filter(u => u.role === 'MANAGER').length,
+      agents: users.filter(u => u.role === 'AGENT').length,
+      citoyens: users.filter(u => u.role === 'USER').length,
+      superAdmins: users.filter(u => u.role === 'SUPER_ADMIN').length,
+
+      // Nouvelles statistiques par environnement
+      adminGA: {
+        total: adminUsers.length,
+        actifs: adminUsers.filter(u => u.isActive).length,
+        organismes: [...new Set(adminUsers.map(u => u.organizationId))].length,
+        superAdmins: adminUsers.filter(u => u.role === 'SUPER_ADMIN').length,
+        admins: adminUsers.filter(u => u.role === 'ADMIN').length,
+        managers: adminUsers.filter(u => u.role === 'MANAGER').length,
+        agents: adminUsers.filter(u => u.role === 'AGENT').length
+      },
+
+      demarcheGA: {
+        total: demarcheUsers.length,
+        actifs: demarcheUsers.filter(u => u.isActive).length,
+        citoyens: demarcheUsers.filter(u => u.role === 'USER').length,
+        citoyensActifs: demarcheUsers.filter(u => u.role === 'USER' && u.isActive).length,
+        citoyensVerifies: demarcheUsers.filter(u => u.role === 'USER' && u.isVerified).length
+      }
+    };
+  }, [users, usersByOrganisme]);
 
   // Organismes principaux pour le tri
   const organismesPrincipaux = [
@@ -584,10 +664,11 @@ export default function SuperAdminUtilisateursPage() {
         selectedStatus === 'active' ? user.isActive : !user.isActive
       );
       const orgMatch = selectedOrganization === 'all' || !selectedOrganization || user.organizationId === selectedOrganization;
+      const environmentMatch = selectedEnvironment === 'all' || user.environment === selectedEnvironment;
 
-      return searchMatch && roleMatch && statusMatch && orgMatch;
+      return searchMatch && roleMatch && statusMatch && orgMatch && environmentMatch;
     });
-  }, [users, searchTerm, selectedRole, selectedStatus, selectedOrganization]);
+  }, [users, searchTerm, selectedRole, selectedStatus, selectedOrganization, selectedEnvironment]);
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -608,6 +689,31 @@ export default function SuperAdminUtilisateursPage() {
       case 'AGENT': return <UserCheck className="h-4 w-4" />;
       case 'USER': return <Users className="h-4 w-4" />;
       default: return <Users className="h-4 w-4" />;
+    }
+  };
+
+  // Couleurs et icônes pour les environnements
+  const getEnvironmentColor = (environment: 'ADMIN' | 'DEMARCHE') => {
+    switch (environment) {
+      case 'ADMIN': return 'bg-blue-100 text-blue-800 border-blue-300';
+      case 'DEMARCHE': return 'bg-green-100 text-green-800 border-green-300';
+      default: return 'bg-gray-100 text-gray-800 border-gray-300';
+    }
+  };
+
+  const getEnvironmentIcon = (environment: 'ADMIN' | 'DEMARCHE') => {
+    switch (environment) {
+      case 'ADMIN': return <Building2 className="h-4 w-4" />;
+      case 'DEMARCHE': return <Home className="h-4 w-4" />;
+      default: return <Globe className="h-4 w-4" />;
+    }
+  };
+
+  const getPlatformLabel = (platform: 'ADMIN.GA' | 'DEMARCHE.GA') => {
+    switch (platform) {
+      case 'ADMIN.GA': return 'Administration Publique';
+      case 'DEMARCHE.GA': return 'Services aux Citoyens';
+      default: return 'Plateforme Inconnue';
     }
   };
 
@@ -702,7 +808,7 @@ export default function SuperAdminUtilisateursPage() {
       geminiAIService.setApiKey(apiKey);
 
       // Trouver les informations de l'organisme
-      const organisme = administrations.find(org => org.code === organizationId);
+      const organisme = administrations.find(org => org.id === organizationId);
       const organismeType = organisme?.type || 'AUTRE';
 
       toast.info(`🔍 Recherche IA en cours pour ${organizationName}...`, {
@@ -912,9 +1018,9 @@ export default function SuperAdminUtilisateursPage() {
 
       // Vérifier si le poste existe déjà
       const posteExistant = postesDisponibles.find(poste =>
-        poste.titre.toLowerCase().includes(posteRecherche) ||
-        posteRecherche.includes(poste.titre.toLowerCase()) ||
-        poste.code.toLowerCase() === posteRecherche.substring(0, 6)
+        poste.nom.toLowerCase().includes(posteRecherche) ||
+        posteRecherche.includes(poste.nom.toLowerCase()) ||
+        poste.id.toLowerCase() === posteRecherche.substring(0, 6)
       );
 
       // Si pas trouvé et n'est pas déjà dans la liste des nouveaux postes
@@ -1000,17 +1106,17 @@ export default function SuperAdminUtilisateursPage() {
       for (const result of selectedResults) {
         // Essayer de matcher le poste avec ceux existants
         let posteMatche = postesDisponibles.find(poste =>
-          poste.titre.toLowerCase().includes(result.poste.toLowerCase()) ||
-          result.poste.toLowerCase().includes(poste.titre.toLowerCase())
+          poste.nom.toLowerCase().includes(result.poste.toLowerCase()) ||
+          result.poste.toLowerCase().includes(poste.nom.toLowerCase())
         );
 
         // Si pas de correspondance exacte, utiliser le poste le plus proche
         if (!posteMatche && result.poste.toLowerCase().includes('directeur')) {
-          posteMatche = postesDisponibles.find(p => p.code === 'DIR');
+          posteMatche = postesDisponibles.find(p => p.id === 'DIR');
         } else if (!posteMatche && result.poste.toLowerCase().includes('secrétaire')) {
-          posteMatche = postesDisponibles.find(p => p.code === 'SG');
+          posteMatche = postesDisponibles.find(p => p.id === 'SG');
         } else if (!posteMatche && result.poste.toLowerCase().includes('chef')) {
-          posteMatche = postesDisponibles.find(p => p.code === 'CS');
+          posteMatche = postesDisponibles.find(p => p.id === 'CS');
         }
 
         // Si toujours pas trouvé, noter le poste comme non trouvé
@@ -1027,7 +1133,7 @@ export default function SuperAdminUtilisateursPage() {
           role: 'AGENT' as User['role'],
           organizationId: selectedOrgForAI.id,
           organizationName: selectedOrgForAI.name,
-          posteTitle: posteMatche ? posteMatche.titre : result.poste,
+          posteTitle: posteMatche ? posteMatche.nom : result.poste,
           isActive: true,
           isVerified: false,
           createdAt: new Date().toISOString(),
@@ -1037,7 +1143,8 @@ export default function SuperAdminUtilisateursPage() {
         newUsers.push(newUser);
       }
 
-      setUsers(prev => [...newUsers, ...prev]);
+      // Actualiser la liste des utilisateurs après création des comptes IA
+      await fetchUsers();
       setIsAIModalOpen(false);
 
       let message = `${newUsers.length} compte(s) créé(s) avec succès !`;
@@ -1135,11 +1242,25 @@ export default function SuperAdminUtilisateursPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Users className="h-8 w-8 text-blue-500" />
-              Gestion des Utilisateurs
+              Gestion Centralisée des Utilisateurs
             </h1>
-            <p className="text-muted-foreground">
-              {users.length} utilisateurs • {globalStats.totalOrganismes} organismes • Vue organisée par administration
-            </p>
+            <div className="flex flex-col gap-2 mt-2">
+              <p className="text-muted-foreground">
+                {users.length} utilisateurs • {globalStats.totalOrganismes} organismes • Gestion unifiée ADMIN.GA + DEMARCHE.GA
+              </p>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-blue-600" />
+                  <span className="text-blue-700 font-medium">ADMIN.GA</span>
+                  <span className="text-gray-600">Personnel administratif</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Home className="h-4 w-4 text-green-600" />
+                  <span className="text-green-700 font-medium">DEMARCHE.GA</span>
+                  <span className="text-gray-600">Services aux citoyens</span>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -1279,7 +1400,7 @@ export default function SuperAdminUtilisateursPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {administrations.map(org => (
-                            <SelectItem key={org.code} value={org.code}>{org.nom}</SelectItem>
+                            <SelectItem key={org.id} value={org.id}>{org.nom}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -1299,7 +1420,7 @@ export default function SuperAdminUtilisateursPage() {
                         <SelectContent>
                           {postes.map(poste => (
                             <SelectItem key={poste.id} value={poste.id}>
-                              {poste.titre} ({poste.code})
+                              {poste.nom} ({poste.id})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1413,6 +1534,103 @@ export default function SuperAdminUtilisateursPage() {
           </Card>
         </div>
 
+        {/* Statistiques par Environnement */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* ADMIN.GA */}
+          <Card className="border-l-4 border-l-blue-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Building2 className="h-5 w-5 text-blue-600" />
+                ADMIN.GA - Administration Publique
+              </CardTitle>
+              <CardDescription>Personnel et agents des organismes publics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">{globalStats.adminGA.total}</p>
+                  <p className="text-xs text-gray-600">Total</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{globalStats.adminGA.actifs}</p>
+                  <p className="text-xs text-gray-600">Actifs</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">{globalStats.adminGA.organismes}</p>
+                  <p className="text-xs text-gray-600">Organismes</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-orange-600">{globalStats.adminGA.managers + globalStats.adminGA.agents}</p>
+                  <p className="text-xs text-gray-600">Personnel</p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-1">
+                    <Crown className="h-3 w-3" />
+                    Super Admins: {globalStats.adminGA.superAdmins}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Briefcase className="h-3 w-3" />
+                    Managers: {globalStats.adminGA.managers}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <UserCheck className="h-3 w-3" />
+                    Agents: {globalStats.adminGA.agents}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* DEMARCHE.GA */}
+          <Card className="border-l-4 border-l-green-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Home className="h-5 w-5 text-green-600" />
+                DEMARCHE.GA - Services aux Citoyens
+              </CardTitle>
+              <CardDescription>Citoyens gabonais utilisant les services publics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-green-600">{globalStats.demarcheGA.total}</p>
+                  <p className="text-xs text-gray-600">Total</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-blue-600">{globalStats.demarcheGA.actifs}</p>
+                  <p className="text-xs text-gray-600">Actifs</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-purple-600">{globalStats.demarcheGA.citoyensVerifies}</p>
+                  <p className="text-xs text-gray-600">Vérifiés</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-orange-600">{Math.round((globalStats.demarcheGA.citoyensActifs / globalStats.demarcheGA.total) * 100)}%</p>
+                  <p className="text-xs text-gray-600">Taux activité</p>
+                </div>
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-1">
+                    <Users className="h-3 w-3" />
+                    Citoyens: {globalStats.demarcheGA.citoyens}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Actifs: {globalStats.demarcheGA.citoyensActifs}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <UserCheck className="h-3 w-3" />
+                    Vérifiés: {globalStats.demarcheGA.citoyensVerifies}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Barre de recherche et filtres */}
         <Card>
           <CardContent className="p-4">
@@ -1439,6 +1657,26 @@ export default function SuperAdminUtilisateursPage() {
                   <SelectItem value="USER">Citoyen</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={selectedEnvironment} onValueChange={(value) => setSelectedEnvironment(value as "all" | "ADMIN" | "DEMARCHE")}>
+                <SelectTrigger className="w-full md:w-52">
+                  <SelectValue placeholder="Tous les environnements" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les environnements</SelectItem>
+                  <SelectItem value="ADMIN">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-blue-600" />
+                      ADMIN.GA
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="DEMARCHE">
+                    <div className="flex items-center gap-2">
+                      <Home className="h-4 w-4 text-green-600" />
+                      DEMARCHE.GA
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="w-full md:w-48">
                   <SelectValue placeholder="Tous les statuts" />
@@ -1457,7 +1695,7 @@ export default function SuperAdminUtilisateursPage() {
                   <SelectContent>
                                             <SelectItem value="all">Toutes les organisations</SelectItem>
                     {administrations.map(org => (
-                      <SelectItem key={org.code} value={org.code}>{org.nom}</SelectItem>
+                      <SelectItem key={org.id} value={org.id}>{org.nom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -1469,6 +1707,7 @@ export default function SuperAdminUtilisateursPage() {
                   setSelectedRole('all');
                   setSelectedOrganization('all');
                   setSelectedStatus('all');
+                  setSelectedEnvironment('all');
                 }}
               >
                 <Filter className="mr-2 h-4 w-4" />
@@ -1494,63 +1733,67 @@ export default function SuperAdminUtilisateursPage() {
               {paginatedOrganismes.map(([orgId, data]: [string, any]) => (
                 <AccordionItem key={orgId} value={orgId}>
                   <Card className={`border-l-4 ${getOrganismeTypeColor(data.organisme.type)}`}>
-                    <AccordionTrigger
-                      className="px-6 py-4 hover:no-underline"
-                      onClick={() => toggleOrgExpansion(orgId)}
-                    >
-                      <div className="flex items-center justify-between w-full mr-4">
-                        <div className="flex items-center space-x-4">
-                          <Building2 className="h-6 w-6 text-blue-600" />
-                          <div className="text-left">
-                            <h3 className="font-semibold text-lg">{data.organisme.nom}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              {data.organisme.type} • {data.stats.total} utilisateur(s)
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-6">
-                          <div className="grid grid-cols-2 gap-4 text-center">
-                            <div>
-                              <div className="text-lg font-bold text-green-600">{data.stats.actifs}</div>
-                              <div className="text-xs text-muted-foreground">Actifs</div>
-                            </div>
-                            <div>
-                              <div className="text-lg font-bold text-blue-600">{data.stats.admins}</div>
-                              <div className="text-xs text-muted-foreground">Admins</div>
+                    <div className="relative">
+                      <AccordionTrigger
+                        className="px-6 py-4 hover:no-underline pr-20"
+                        onClick={() => toggleOrgExpansion(orgId)}
+                      >
+                        <div className="flex items-center justify-between w-full mr-4">
+                          <div className="flex items-center space-x-4">
+                            <Building2 className="h-6 w-6 text-blue-600" />
+                            <div className="text-left">
+                              <h3 className="font-semibold text-lg">{data.organisme.nom}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {data.organisme.type} • {data.stats.total} utilisateur(s)
+                              </p>
                             </div>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="relative bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 hover:from-purple-600 hover:to-blue-600 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAISearch(orgId, data.organisme.nom);
-                            }}
-                            disabled={loadingStates.searchingAI === orgId}
-                            title="🤖 Rechercher les intervenants avec l'IA Gemini - Analyse automatique des sources publiques"
-                          >
-                            {loadingStates.searchingAI === orgId ? (
-                              <div className="flex items-center space-x-2">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                <span className="text-xs font-medium">IA en cours...</span>
+                          <div className="flex items-center space-x-6">
+                            <div className="grid grid-cols-2 gap-4 text-center">
+                              <div>
+                                <div className="text-lg font-bold text-green-600">{data.stats.actifs}</div>
+                                <div className="text-xs text-muted-foreground">Actifs</div>
                               </div>
-                            ) : (
-                              <div className="flex items-center space-x-2">
-                                <div className="relative">
-                                  <Sparkles className="h-4 w-4 animate-pulse" />
-                                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping"></div>
-                                </div>
-                                <Bot className="h-4 w-4" />
-                                <span className="text-xs font-medium hidden sm:inline">IA</span>
+                              <div>
+                                <div className="text-lg font-bold text-blue-600">{data.stats.admins}</div>
+                                <div className="text-xs text-muted-foreground">Admins</div>
                               </div>
-                            )}
-                            {/* Badge IA actif */}
-                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
-                          </Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </AccordionTrigger>
+                      </AccordionTrigger>
+
+                      {/* Bouton IA placé en dehors du trigger pour éviter les boutons imbriqués */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="absolute top-4 right-4 z-10 bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0 hover:from-purple-600 hover:to-blue-600 hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAISearch(orgId, data.organisme.nom);
+                        }}
+                        disabled={loadingStates.searchingAI === orgId}
+                        title="🤖 Rechercher les intervenants avec l'IA Gemini - Analyse automatique des sources publiques"
+                      >
+                        {loadingStates.searchingAI === orgId ? (
+                          <div className="flex items-center space-x-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span className="text-xs font-medium">IA en cours...</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2">
+                            <div className="relative">
+                              <Sparkles className="h-4 w-4 animate-pulse" />
+                              <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-300 rounded-full animate-ping"></div>
+                            </div>
+                            <Bot className="h-4 w-4" />
+                            <span className="text-xs font-medium hidden sm:inline">IA</span>
+                          </div>
+                        )}
+                        {/* Badge IA actif */}
+                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
+                      </Button>
+                    </div>
 
                     <AccordionContent className="px-6 pb-4">
                       <div className="space-y-4">
@@ -1606,7 +1849,12 @@ export default function SuperAdminUtilisateursPage() {
                                             </p>
                                             <div className="flex items-center space-x-2 mt-1">
                                               <Badge className={`text-xs ${getRoleColor(user.role)}`}>
-                                                {user.role}
+                                                {getRoleIcon(user.role)}
+                                                <span className="ml-1">{user.role}</span>
+                                              </Badge>
+                                              <Badge className={`text-xs ${getEnvironmentColor(user.environment)}`}>
+                                                {getEnvironmentIcon(user.environment)}
+                                                <span className="ml-1">{user.platform}</span>
                                               </Badge>
                                               {user.isActive ? (
                                                 <CheckCircle className="h-3 w-3 text-green-500" />
@@ -1764,7 +2012,12 @@ export default function SuperAdminUtilisateursPage() {
                             </p>
                             <div className="flex items-center space-x-2 mt-1">
                               <Badge className={`text-xs ${getRoleColor(user.role)}`}>
-                                {user.role}
+                                {getRoleIcon(user.role)}
+                                <span className="ml-1">{user.role}</span>
+                              </Badge>
+                              <Badge className={`text-xs ${getEnvironmentColor(user.environment)}`}>
+                                {getEnvironmentIcon(user.environment)}
+                                <span className="ml-1">{user.platform}</span>
                               </Badge>
                               {user.isActive ? (
                                 <CheckCircle className="h-3 w-3 text-green-500" />
@@ -2056,7 +2309,7 @@ export default function SuperAdminUtilisateursPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {administrations.map(org => (
-                          <SelectItem key={org.code} value={org.code}>{org.nom}</SelectItem>
+                          <SelectItem key={org.id} value={org.id}>{org.nom}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

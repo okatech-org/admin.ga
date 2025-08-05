@@ -1,0 +1,545 @@
+'use client';
+
+import React, { useState, useEffect, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
+import { toast } from 'sonner';
+import {
+  Building2,
+  Users,
+  Crown,
+  Shield,
+  MapPin,
+  BarChart3,
+  Search,
+  Filter,
+  Eye,
+  TrendingUp,
+  Activity,
+  Briefcase,
+  Landmark,
+  Scale,
+  Home,
+  Factory,
+  Globe,
+  FileText,
+  CheckCircle,
+  AlertCircle,
+  Network,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Maximize2,
+  Minimize2
+} from 'lucide-react';
+import {
+  getOrganizationTypeLabel,
+  getOrganizationTypeColor,
+  getOrganizationBorderColor,
+  getOrganizationGroup,
+  ORGANIZATION_GROUPS,
+  isOrganismePrincipal,
+  filterOrganizations,
+  sortOrganizations,
+  generateOrganizationStats
+} from '@/lib/utils/organization-utils';
+
+interface OrganismeVueEnsemble {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  description?: string;
+  city?: string;
+  isActive: boolean;
+  userCount?: number;
+}
+
+export default function OrganismesVueEnsemblePage() {
+  const [organismes, setOrganismes] = useState<OrganismeVueEnsemble[]>([]);
+  const [filteredOrganismes, setFilteredOrganismes] = useState<OrganismeVueEnsemble[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedGroup, setSelectedGroup] = useState<string>('all');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [showPrincipalOnly, setShowPrincipalOnly] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [allExpanded, setAllExpanded] = useState(true);
+
+  // Charger les organismes
+  useEffect(() => {
+    loadOrganismes();
+    // Charger l'état des groupes depuis localStorage
+    const savedExpandedState = localStorage.getItem('organismes-expanded-groups');
+    if (savedExpandedState) {
+      try {
+        const parsedState = JSON.parse(savedExpandedState);
+        setExpandedGroups(parsedState);
+      } catch (error) {
+        console.error('Erreur lors du chargement de l\'état des groupes:', error);
+      }
+    }
+  }, []);
+
+  const loadOrganismes = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await fetch('/api/organizations/list?limit=500');
+      const data = await response.json();
+
+      if (data.success) {
+        const sortedOrganismes = sortOrganizations(data.data.organizations || []);
+        setOrganismes(sortedOrganismes);
+      } else {
+        throw new Error(data.error || 'Erreur lors du chargement');
+      }
+    } catch (err) {
+      console.error('Erreur chargement organismes:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filtrage des organismes
+  useEffect(() => {
+    const filtered = filterOrganizations(organismes, {
+      search: searchTerm,
+      type: selectedType === 'all' ? undefined : selectedType,
+      group: selectedGroup === 'all' ? undefined : selectedGroup,
+      isPrincipal: showPrincipalOnly ? true : undefined
+    });
+
+    setFilteredOrganismes(filtered);
+  }, [organismes, searchTerm, selectedType, selectedGroup, showPrincipalOnly]);
+
+  // Initialiser l'état des groupes quand les organismes sont chargés
+  useEffect(() => {
+    if (filteredOrganismes.length > 0 && Object.keys(expandedGroups).length === 0) {
+      const groupKeys = Array.from(new Set(filteredOrganismes.map(org => getOrganizationGroup(org.type) || 'AUTRE')));
+      const initialExpandedState: Record<string, boolean> = {};
+
+      // Par défaut, tous les groupes sont dépliés
+      groupKeys.forEach(groupKey => {
+        initialExpandedState[groupKey] = true;
+      });
+
+      setExpandedGroups(initialExpandedState);
+    }
+  }, [filteredOrganismes, expandedGroups]);
+
+  // Sauvegarder l'état dans localStorage quand il change
+  useEffect(() => {
+    if (Object.keys(expandedGroups).length > 0) {
+      localStorage.setItem('organismes-expanded-groups', JSON.stringify(expandedGroups));
+
+      // Mettre à jour l'état allExpanded basé sur l'état des groupes
+      const expandedValues = Object.values(expandedGroups);
+      setAllExpanded(expandedValues.length > 0 && expandedValues.every(Boolean));
+    }
+  }, [expandedGroups]);
+
+  // Statistiques
+  const stats = useMemo(() => {
+    return generateOrganizationStats(organismes);
+  }, [organismes]);
+
+  // Options pour les filtres
+  const typeOptions = useMemo(() => {
+    return Array.from(new Set(organismes.map(org => org.type))).sort();
+  }, [organismes]);
+
+  // Grouper les organismes par groupe administratif
+  const organismesParGroupe = useMemo(() => {
+    const grouped: Record<string, OrganismeVueEnsemble[]> = {};
+
+    filteredOrganismes.forEach(org => {
+      const group = getOrganizationGroup(org.type) || 'AUTRE';
+      if (!grouped[group]) {
+        grouped[group] = [];
+      }
+      grouped[group].push(org);
+    });
+
+    return grouped;
+  }, [filteredOrganismes]);
+
+  // Fonctions pour gérer l'expansion des groupes
+  const toggleGroupExpansion = (groupKey: string) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupKey]: !prev[groupKey]
+    }));
+  };
+
+  const toggleAllGroups = () => {
+    const newExpandedState = !allExpanded;
+    const newExpandedGroups: Record<string, boolean> = {};
+
+    Object.keys(organismesParGroupe).forEach(groupKey => {
+      newExpandedGroups[groupKey] = newExpandedState;
+    });
+
+    setExpandedGroups(newExpandedGroups);
+    setAllExpanded(newExpandedState);
+  };
+
+  // Icônes pour les groupes
+  const getGroupIcon = (group: string) => {
+    const icons = {
+      A: Crown,
+      B: Building2,
+      C: Briefcase,
+      D: Factory,
+      E: Network,
+      F: Scale,
+      G: Home,
+      L: Landmark,
+      I: Shield
+    };
+    return icons[group as keyof typeof icons] || Building2;
+  };
+
+  if (isLoading) {
+    return (
+      <AuthenticatedLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
+            <div>
+              <h3 className="font-semibold text-lg">Chargement de la vue d'ensemble...</h3>
+              <p className="text-muted-foreground">Récupération des organismes autonomes gabonais</p>
+            </div>
+          </div>
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AuthenticatedLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="w-96">
+            <CardContent className="text-center p-6">
+              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2">Erreur de chargement</h3>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={loadOrganismes}>
+                <TrendingUp className="h-4 w-4 mr-2" />
+                Réessayer
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </AuthenticatedLayout>
+    );
+  }
+
+  return (
+    <AuthenticatedLayout>
+      <div className="space-y-6">
+        {/* En-tête */}
+          <div className="flex items-center justify-between">
+            <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Globe className="h-8 w-8 text-green-500" />
+              Vue d'Ensemble des Organismes
+              </h1>
+            <p className="text-muted-foreground">
+              {stats.total} organismes autonomes gabonais • {stats.active} actifs • Interface optimisée avec groupes pliables
+              </p>
+            </div>
+            <div className="flex gap-2">
+            <Button variant="outline" onClick={loadOrganismes}>
+              <TrendingUp className="h-4 w-4 mr-2" />
+                Actualiser
+              </Button>
+            <Button>
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Statistiques Détaillées
+              </Button>
+          </div>
+        </div>
+
+        {/* Statistiques globales */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Total Organismes</p>
+                  <h3 className="text-2xl font-bold">{stats.total}</h3>
+                </div>
+                <Building2 className="h-8 w-8 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Organismes Actifs</p>
+                  <h3 className="text-2xl font-bold text-green-600">{stats.active}</h3>
+                </div>
+                <CheckCircle className="h-8 w-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Organismes Principaux</p>
+                  <h3 className="text-2xl font-bold text-purple-600">{stats.principals}</h3>
+                </div>
+                <Crown className="h-8 w-8 text-purple-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Groupes Admin</p>
+                  <h3 className="text-2xl font-bold text-orange-600">{Object.keys(stats.byGroup).length}</h3>
+                </div>
+                <Network className="h-8 w-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filtres */}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex gap-4 items-end flex-wrap">
+              <div className="flex-1 min-w-64">
+                <label className="text-sm font-medium mb-2 block">Recherche</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher par nom, code, ville..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Groupe Administratif</label>
+                <Select value={selectedGroup} onValueChange={setSelectedGroup}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Tous les groupes" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les groupes</SelectItem>
+                    {Object.entries(ORGANIZATION_GROUPS).map(([key, group]) => (
+                      <SelectItem key={key} value={key}>
+                        {group.name} ({stats.byGroup[key] || 0})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium mb-2 block">Type d'Organisme</label>
+                <Select value={selectedType} onValueChange={setSelectedType}>
+                  <SelectTrigger className="w-56">
+                    <SelectValue placeholder="Tous les types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tous les types</SelectItem>
+                    {typeOptions.map(type => (
+                      <SelectItem key={type} value={type}>
+                        {getOrganizationTypeLabel(type)} ({stats.byType[type] || 0})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="principalOnly"
+                  checked={showPrincipalOnly}
+                  onChange={(e) => setShowPrincipalOnly(e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="principalOnly" className="text-sm font-medium">
+                  Organismes principaux uniquement
+                </label>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Résultats groupés */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">
+              {filteredOrganismes.length} organismes trouvés
+            </h2>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={toggleAllGroups}
+                className="flex items-center gap-2"
+              >
+                {allExpanded ? (
+                  <>
+                    <Minimize2 className="h-4 w-4" />
+                    Tout plier
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="h-4 w-4" />
+                    Tout déplier
+                  </>
+                )}
+              </Button>
+              <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                {Object.keys(organismesParGroupe).length} groupes affichés
+              </Badge>
+            </div>
+          </div>
+
+          {Object.entries(organismesParGroupe).map(([groupKey, groupOrgs]) => {
+            const group = ORGANIZATION_GROUPS[groupKey as keyof typeof ORGANIZATION_GROUPS];
+            const GroupIcon = getGroupIcon(groupKey);
+            const isExpanded = expandedGroups[groupKey] ?? true;
+
+            return (
+              <Card key={groupKey}>
+                <CardHeader
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleGroupExpansion(groupKey)}
+                >
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? (
+                        <ChevronDown className="h-5 w-5 text-gray-500" />
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-gray-500" />
+                      )}
+                      <GroupIcon className="h-6 w-6 text-blue-600" />
+                    </div>
+                    <span>Groupe {groupKey} - {group?.name || 'Autre'}</span>
+                    <Badge variant="outline" className={isExpanded ? '' : 'bg-gray-100'}>
+                      {groupOrgs.length} organismes
+                    </Badge>
+                    {!isExpanded && (
+                      <Badge variant="secondary" className="text-xs">
+                        Plié
+                      </Badge>
+                    )}
+                  </CardTitle>
+                  <CardDescription className="ml-9">
+                    {group?.description || 'Autres organismes'}
+                    {!isExpanded && (
+                      <span className="text-sm text-gray-500 ml-2">
+                        • Cliquez pour afficher les {groupOrgs.length} organismes
+                      </span>
+                    )}
+                  </CardDescription>
+                </CardHeader>
+                <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                  isExpanded ? 'max-h-none opacity-100' : 'max-h-0 opacity-0'
+                }`}>
+                  <CardContent className={`transition-all duration-300 ${isExpanded ? 'pb-6' : 'pb-0'}`}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {groupOrgs.map((org) => (
+                      <Card key={org.id} className={`border-l-4 ${getOrganizationBorderColor(org.type)}`}>
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <h4 className="font-semibold text-sm leading-tight">{org.name}</h4>
+                                <p className="text-xs text-muted-foreground mt-1">{org.code}</p>
+                    </div>
+                              {isOrganismePrincipal(org.type) && (
+                                <Crown className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                              )}
+                  </div>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <Badge className={getOrganizationTypeColor(org.type)} variant="outline">
+                                {getOrganizationTypeLabel(org.type)}
+                    </Badge>
+                              <Badge className={org.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                                {org.isActive ? 'Actif' : 'Inactif'}
+                      </Badge>
+                  </div>
+
+                            {org.city && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <MapPin className="h-3 w-3" />
+                                <span>{org.city}</span>
+                      </div>
+                    )}
+
+                            {org.description && (
+                              <p className="text-xs text-gray-600 line-clamp-2">
+                                {org.description}
+                              </p>
+                            )}
+
+                            <div className="flex items-center justify-between pt-2">
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Users className="h-3 w-3" />
+                                <span>{org.userCount || 0} utilisateurs</span>
+                  </div>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  </CardContent>
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+          {filteredOrganismes.length === 0 && (
+          <Card>
+            <CardContent className="text-center p-12">
+              <Search className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="font-semibold text-lg mb-2">Aucun organisme trouvé</h3>
+              <p className="text-muted-foreground mb-4">
+                Aucun organisme ne correspond à vos critères de recherche.
+              </p>
+              <Button variant="outline" onClick={() => {
+                  setSearchTerm('');
+                setSelectedGroup('all');
+                  setSelectedType('all');
+                setShowPrincipalOnly(false);
+              }}>
+                <Filter className="h-4 w-4 mr-2" />
+                Réinitialiser les filtres
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </AuthenticatedLayout>
+  );
+}

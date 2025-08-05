@@ -21,6 +21,26 @@ model Organization {
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  users       User[]
 
   @@map("organizations")
+}
+
+model User {
+  id                    String        @id @default(cuid())
+  email                 String        @unique
+  phone                 String?
+  firstName             String
+  lastName              String
+  role                  String        @default("USER")
+  isActive              Boolean       @default(true)
+  isVerified            Boolean       @default(false)
+  jobTitle              String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  lastLoginAt           DateTime?
+  primaryOrganizationId String?
+  primaryOrganization   Organization? @relation(fields: [primaryOrganizationId], references: [id])
+
+  @@map("users")
 }

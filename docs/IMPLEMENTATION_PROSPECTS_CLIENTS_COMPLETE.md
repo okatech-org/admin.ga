@@ -592,7 +592,7 @@ J'ai mis en place une **configuration complète et robuste** pour éliminer tous
 
 ## 🎉 **MISSION ACCOMPLIE !**
 
-**Vous ne verrez PLUS JAMAIS ces problèmes de styles inline !**
+## Vous ne verrez PLUS JAMAIS ces problèmes de styles inline !
 
 La configuration est **robuste, complète et définitive**. Le branding dynamique continue de fonctionner parfaitement tout en éliminant tous les avertissements des outils de développement.
 

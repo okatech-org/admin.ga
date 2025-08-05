@@ -37,8 +37,8 @@ const navigationItems = [
     href: '/super-admin/dashboard-unified',
     icon: Home,
     description: 'Vue d\'ensemble du système',
-    count: null,
-    countColor: 'blue',
+    count: 0,
+    countColor: 'gray',
     section: 'dashboard',
     sectionColor: 'slate'
   },
@@ -47,32 +47,32 @@ const navigationItems = [
   {
     title: 'Organismes',
     icon: Building2,
-    description: 'Gestion complète des organismes publics',
-    count: 307,
-    countColor: 'emerald',
+    description: 'Gestion complète des organismes publics (Base vide)',
+    count: 0,
+    countColor: 'gray',
     section: 'gestion',
-    sectionColor: 'emerald',
+    sectionColor: 'gray',
     isSection: true,
     children: [
       {
         title: 'Vue d\'Ensemble',
         href: '/super-admin/organismes',
         icon: BarChart3,
-        description: 'Dashboard des organismes',
-        count: 307,
-        countColor: 'emerald'
+        description: 'Dashboard des organismes (0)',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Structure Administrative',
         href: '/super-admin/structure-administrative',
         icon: Crown,
-        description: 'Hiérarchie officielle du Gabon'
+        description: 'Hiérarchie vide'
       },
       {
         title: 'Relations Inter-Organismes',
         href: '/super-admin/relations',
         icon: Network,
-        description: 'Gestion des relations'
+        description: 'Aucune relation'
       }
     ]
   },
@@ -81,41 +81,40 @@ const navigationItems = [
   {
     title: 'Utilisateurs',
     icon: Users,
-    description: 'Administration des comptes utilisateurs',
-    count: 979,
-    countColor: 'emerald',
+    description: 'Administration des comptes utilisateurs (Base vide)',
+    count: 0,
+    countColor: 'gray',
     section: 'administration',
-    sectionColor: 'purple',
+    sectionColor: 'gray',
     isSection: true,
     children: [
       {
         title: 'Vue d\'Ensemble',
         href: '/super-admin/utilisateurs',
         icon: Users,
-        description: 'Gestion des utilisateurs',
-        count: 979,
-        countColor: 'emerald'
+        description: 'Gestion des utilisateurs (0)',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Création Comptes',
         href: '/super-admin/gestion-comptes',
         icon: UserPlus,
-        description: 'Gestion des collaborateurs'
+        description: 'Base vide'
       },
       {
         title: 'Fonctionnaires en Attente',
         href: '/super-admin/fonctionnaires-attente',
         icon: Clock,
-        description: 'Gestion des affectations',
-        count: 478,
-        countColor: 'orange',
-        isNew: true
+        description: 'Aucun en attente',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Postes & Fonctions',
         href: '/super-admin/postes-administratifs',
         icon: Briefcase,
-        description: 'Base des postes'
+        description: 'Base des postes vide'
       }
     ]
   },
@@ -124,20 +123,20 @@ const navigationItems = [
   {
     title: 'Services',
     icon: FileText,
-    description: 'Gestion des services administratifs',
-    count: 558,
-    countColor: 'emerald',
+    description: 'Gestion des services administratifs (Base vide)',
+    count: 0,
+    countColor: 'gray',
     section: 'administration',
-    sectionColor: 'purple',
+    sectionColor: 'gray',
     isSection: true,
     children: [
       {
         title: 'Vue d\'Ensemble',
         href: '/super-admin/services',
         icon: FileText,
-        description: 'Gestion des services',
-        count: 558,
-        countColor: 'emerald'
+        description: 'Gestion des services (0)',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Configuration',
@@ -148,293 +147,226 @@ const navigationItems = [
     ]
   },
 
-  // 📊 MONITORING & ANALYTICS
+  // 💼 POSTES D'EMPLOI
+  {
+    title: 'Postes d\'emploi',
+    href: '/super-admin/postes-emploi',
+    icon: Briefcase,
+    description: 'Gestion des offres d\'emploi public',
+    count: 0,
+    countColor: 'gray',
+    section: 'emploi',
+    sectionColor: 'blue'
+  },
+
+  // 📈 ANALYTICS & MONITORING
   {
     title: 'Analytics',
     icon: BarChart3,
-    description: 'Analyses et métriques système',
-    section: 'monitoring',
-    sectionColor: 'orange',
-    isSection: true,
-    children: [
-      {
-        title: 'Tableau de Bord',
-        href: '/super-admin/analytics',
-        icon: BarChart3,
-        description: 'Métriques temps réel'
-      },
-      {
-        title: 'Statistiques Système',
-        href: '/super-admin/systeme',
-        icon: TrendingUp,
-        description: 'Performance système'
-      },
-      {
-        title: 'Base de Données',
-        href: '/super-admin/base-donnees',
-        icon: DatabaseIcon,
-        description: 'Gestion et maintenance'
-      }
-    ]
-  },
-
-  // 🛠️ OUTILS SYSTÈME
-  {
-    title: 'Outils',
-    icon: Award,
-    description: 'Outils d\'administration',
-    section: 'outils',
+    description: 'Analyses et métriques (Données vides)',
+    count: 0,
+    countColor: 'gray',
+    section: 'analytics',
     sectionColor: 'gray',
     isSection: true,
     children: [
       {
-        title: 'Debug & Diagnostic',
+        title: 'Dashboard Analytics',
+        href: '/super-admin/analytics',
+        icon: BarChart3,
+        description: 'Métriques générales (0)',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Métriques Avancées',
+        href: '/super-admin/metrics-advanced',
+        icon: Target,
+        description: 'Analyses détaillées (0)'
+      }
+    ]
+  },
+
+  // 🗄️ BASE DE DONNÉES
+  {
+    title: 'Base de Données',
+    icon: DatabaseIcon,
+    description: 'Gestion et monitoring BDD (Vide)',
+    count: 0,
+    countColor: 'gray',
+    section: 'system',
+    sectionColor: 'gray',
+    isSection: true,
+    children: [
+      {
+        title: 'Vue d\'Ensemble',
+        href: '/super-admin/base-donnees',
+        icon: DatabaseIcon,
+        description: 'État de la base (Vide)'
+      },
+      {
+        title: 'Logs Système',
+        href: '/super-admin/logs',
+        icon: FileText,
+        description: 'Journaux d\'activité'
+      },
+      {
+        title: 'Diagnostic',
         href: '/super-admin/debug',
         icon: Bug,
-        description: 'Outils de debug système',
-        isNew: true
-      },
-
+        description: 'Outils de débogage'
+      }
     ]
   }
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string;
+}
+
+export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [expandedSections, setExpandedSections] = React.useState<Set<string>>(new Set(['dashboard', 'gestion']));
 
-  // État pour gérer l'ouverture des sections
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
-    gestion: true,
-    administration: true,
-    monitoring: false,
-    outils: false
-  });
-
-  const toggleSection = (sectionKey: string) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [sectionKey]: !prev[sectionKey]
-    }));
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
   };
 
-  // Vérifier si l'utilisateur est super admin
+  const isActive = (href: string) => {
+    if (href === '/super-admin' && pathname === '/super-admin') return true;
+    if (href !== '/super-admin' && pathname.startsWith(href)) return true;
+    return false;
+  };
+
+  const getCountBadge = (count: number | null, color: string) => {
+    if (count === null || count === 0) return null;
+
+    const colorClasses = {
+      blue: 'bg-blue-100 text-blue-800 border-blue-200',
+      emerald: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      orange: 'bg-orange-100 text-orange-800 border-orange-200',
+      red: 'bg-red-100 text-red-800 border-red-200',
+      purple: 'bg-purple-100 text-purple-800 border-purple-200',
+      gray: 'bg-gray-100 text-gray-500 border-gray-200'
+    };
+
+    return (
+      <span className={cn(
+        'ml-auto px-2 py-1 text-xs font-medium rounded-full border text-center min-w-[2rem]',
+        colorClasses[color as keyof typeof colorClasses] || colorClasses.gray
+      )}>
+        {count === 0 ? '0' : count.toLocaleString()}
+      </span>
+    );
+  };
+
   if (session?.user?.role !== 'SUPER_ADMIN') {
     return null;
   }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
-      <div className="p-6">
-        <div className="flex items-center space-x-2 mb-8">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">ADMIN.GA</h2>
-            <p className="text-xs text-gray-600">Super Admin</p>
-          </div>
+    <div className={cn(
+      "flex h-full w-64 flex-col overflow-y-auto border-r bg-white px-3 py-4",
+      className
+    )}>
+      <div className="space-y-1">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900">
+            🧹 Admin Nettoyé
+          </h2>
+          <p className="px-4 text-sm text-gray-500">
+            Base de données entièrement vide
+          </p>
         </div>
 
-        <nav className="space-y-2">
+        <div className="space-y-1">
           {navigationItems.map((item, index) => {
-            // Si c'est une section avec des enfants
-            if (item.isSection && item.children) {
-              const getSectionColors = (sectionColor: string) => {
-                const colors = {
-                  slate: { bg: 'bg-slate-50', text: 'text-slate-700', icon: 'text-slate-500', border: 'border-slate-200', hover: 'hover:bg-slate-100' },
-                  emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: 'text-emerald-500', border: 'border-emerald-200', hover: 'hover:bg-emerald-100' },
-                  purple: { bg: 'bg-purple-50', text: 'text-purple-700', icon: 'text-purple-500', border: 'border-purple-200', hover: 'hover:bg-purple-100' },
-                  orange: { bg: 'bg-orange-50', text: 'text-orange-700', icon: 'text-orange-500', border: 'border-orange-200', hover: 'hover:bg-orange-100' },
-                  gray: { bg: 'bg-gray-50', text: 'text-gray-700', icon: 'text-gray-500', border: 'border-gray-200', hover: 'hover:bg-gray-100' }
-                };
-                return colors[sectionColor] || colors.gray;
-              };
-
-              const getCountColor = (color: string) => {
-                const colors = {
-                  blue: 'bg-blue-100 text-blue-800 border-blue-300',
-                  emerald: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                  orange: 'bg-orange-100 text-orange-800 border-orange-300',
-                  purple: 'bg-purple-100 text-purple-800 border-purple-300',
-                  red: 'bg-red-100 text-red-800 border-red-300'
-                };
-                return colors[color] || colors.blue;
-              };
-
-              const sectionColors = getSectionColors(item.sectionColor);
-              const isOpen = openSections[item.section];
-              const Icon = item.icon;
-
+            if (item.isSection) {
+              const isExpanded = expandedSections.has(item.section || '');
               return (
-                <div key={index}>
-                  {/* Header de la section */}
+                <div key={index} className="space-y-1">
                   <button
-                    onClick={() => toggleSection(item.section)}
-                    className={cn(
-                      'w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 border',
-                      sectionColors.bg,
-                      sectionColors.hover,
-                      sectionColors.border
-                    )}
+                    onClick={() => toggleSection(item.section || '')}
+                    className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <div className="flex items-center space-x-3">
-                      <Icon className={cn('w-5 h-5', sectionColors.icon)} />
-                      <div className="flex-1 text-left">
-                        <div className="flex items-center space-x-2">
-                          <span className={cn('font-semibold', sectionColors.text)}>{item.title}</span>
-                          {item.count && (
-                            <span className={cn('px-2 py-0.5 text-xs font-semibold rounded-full border', getCountColor(item.countColor))}>
-                              {item.count}
-                            </span>
-                          )}
-                        </div>
-                        <p className={cn('text-xs mt-0.5', sectionColors.text, 'opacity-70')}>{item.description}</p>
-                      </div>
-                    </div>
-                    {isOpen ? (
-                      <ChevronDown className={cn('w-4 h-4', sectionColors.icon)} />
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span className="flex-1 text-left">{item.title}</span>
+                    {getCountBadge(item.count, item.countColor)}
+                    {isExpanded ? (
+                      <ChevronDown className="ml-2 h-4 w-4" />
                     ) : (
-                      <ChevronRight className={cn('w-4 h-4', sectionColors.icon)} />
+                      <ChevronRight className="ml-2 h-4 w-4" />
                     )}
                   </button>
 
-                  {/* Sous-éléments */}
-                  {isOpen && (
-                    <div className="ml-4 mt-1 space-y-1">
-                      {item.children.map((child, childIndex) => {
-                        const isActive = pathname === child.href;
-                        const ChildIcon = child.icon;
-
-                        return (
-                          <Link
-                            key={childIndex}
-                            href={child.href}
-                            className={cn(
-                              'flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
-                              isActive
-                                ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
-                            )}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <ChildIcon className={cn('w-4 h-4', isActive ? 'text-blue-600' : 'text-gray-400')} />
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <span>{child.title}</span>
-                                  {child.count && (
-                                    <span className={cn('px-1.5 py-0.5 text-xs font-semibold rounded border', getCountColor(child.countColor))}>
-                                      {child.count}
-                                    </span>
-                                  )}
-                                  {child.isNew && (
-                                    <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-green-100 text-green-800 border border-green-300">
-                                      Nouveau
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-0.5">{child.description}</p>
-                              </div>
-                            </div>
-                          </Link>
-                        );
-                      })}
+                  {isExpanded && item.children && (
+                    <div className="ml-4 space-y-1 border-l border-gray-200 pl-4">
+                      {item.children.map((child, childIndex) => (
+                        <Link
+                          key={childIndex}
+                          href={child.href || '#'}
+                          className={cn(
+                            "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive(child.href || '')
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          )}
+                        >
+                          <child.icon className="mr-2 h-4 w-4" />
+                          <span className="flex-1">{child.title}</span>
+                          {getCountBadge(child.count, child.countColor)}
+                          {'isNew' in child && child.isNew && (
+                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                              Nouveau
+                            </span>
+                          )}
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
               );
+            } else {
+              return (
+                <Link
+                  key={index}
+                  href={item.href || '#'}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive(item.href || '')
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span className="flex-1">{item.title}</span>
+                  {getCountBadge(item.count, item.countColor)}
+                </Link>
+              );
             }
-
-            // Élément normal (sans enfants)
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-            const getSectionColors = (sectionColor: string) => {
-              const colors = {
-                slate: { bg: 'bg-slate-50', text: 'text-slate-700', icon: 'text-slate-500', border: 'border-slate-200', hover: 'hover:bg-slate-100' },
-                emerald: { bg: 'bg-emerald-50', text: 'text-emerald-700', icon: 'text-emerald-500', border: 'border-emerald-200', hover: 'hover:bg-emerald-100' },
-                purple: { bg: 'bg-purple-50', text: 'text-purple-700', icon: 'text-purple-500', border: 'border-purple-200', hover: 'hover:bg-purple-100' },
-                orange: { bg: 'bg-orange-50', text: 'text-orange-700', icon: 'text-orange-500', border: 'border-orange-200', hover: 'hover:bg-orange-100' },
-                gray: { bg: 'bg-gray-50', text: 'text-gray-700', icon: 'text-gray-500', border: 'border-gray-200', hover: 'hover:bg-gray-100' }
-              };
-              return colors[sectionColor] || colors.gray;
-            };
-
-            const getCountColor = (color: string) => {
-              const colors = {
-                blue: 'bg-blue-100 text-blue-800 border-blue-300',
-                emerald: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-                orange: 'bg-orange-100 text-orange-800 border-orange-300',
-                purple: 'bg-purple-100 text-purple-800 border-purple-300',
-                red: 'bg-red-100 text-red-800 border-red-300'
-              };
-              return colors[color] || colors.blue;
-            };
-
-            const sectionColors = getSectionColors(item.sectionColor);
-
-            return (
-              <Link
-                key={index}
-                href={item.href}
-                className={cn(
-                  'flex items-center justify-between px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 border',
-                  isActive
-                    ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                    : cn(sectionColors.bg, sectionColors.hover, sectionColors.border)
-                )}
-              >
-                <div className="flex items-center space-x-3">
-                  <Icon className={cn('w-5 h-5', isActive ? 'text-blue-600' : sectionColors.icon)} />
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <span className={cn('font-semibold', isActive ? 'text-blue-700' : sectionColors.text)}>{item.title}</span>
-                      {item.count && (
-                        <span className={cn('px-2 py-0.5 text-xs font-semibold rounded-full border', getCountColor(item.countColor))}>
-                          {item.count}
-                        </span>
-                      )}
-                    </div>
-                    <p className={cn('text-xs opacity-70 mt-0.5', isActive ? 'text-blue-600' : sectionColors.text)}>{item.description}</p>
-                  </div>
-                </div>
-              </Link>
-            );
           })}
-        </nav>
+        </div>
+      </div>
 
-        {/* Section Information */}
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-emerald-50 to-blue-50 p-4 rounded-xl border border-emerald-200">
-            <div className="flex items-center space-x-2 mb-2">
-              <Shield className="w-5 h-5 text-emerald-600" />
-              <h3 className="font-semibold text-gray-900">Menu Moderne</h3>
+      <div className="mt-auto">
+        <div className="rounded-lg bg-gray-50 p-4">
+          <div className="flex items-center text-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
+              <Shield className="h-4 w-4 text-gray-600" />
             </div>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Interface unifiée avec 6 sections, compteurs dynamiques et design moderne cohérent entre les deux sidebars.
-            </p>
-            <div className="flex items-center justify-between mt-3 text-xs">
-              <span className="text-emerald-600 font-medium">🎯 Système Unifié</span>
-              <span className="text-gray-500">307 • 979 • 558</span>
+            <div className="ml-3">
+              <p className="font-medium text-gray-900">🧹 Base Nettoyée</p>
+              <p className="text-gray-500">0 éléments</p>
             </div>
           </div>
         </div>
-
-        {/* Session info */}
-                 <div className="mt-6 pt-6 border-t border-gray-200">
-           <div className="flex items-center space-x-3">
-             <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-               {session?.user?.firstName?.charAt(0) || 'S'}
-             </div>
-             <div>
-               <p className="text-sm font-medium text-gray-900">
-                 {session?.user?.firstName ? `${session.user.firstName} ${session.user.lastName}` : 'Super Admin'}
-               </p>
-               <p className="text-xs text-gray-600">
-                 {session?.user?.email || 'admin@admin.ga'}
-               </p>
-             </div>
-           </div>
-         </div>
       </div>
     </div>
   );

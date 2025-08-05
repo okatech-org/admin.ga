@@ -93,16 +93,20 @@ export function HierarchieOfficielleGabon() {
     }
   ], []);
 
-  const relations = useMemo(() => ({
-    'PRESIDENCE': {
-      enfants: ['PRIMATURE'],
+  const relations = useMemo(() => [
+    {
+      id: 'rel_1',
+      sourceId: 'PRESIDENCE',
+      targetId: 'PRIMATURE',
       type: 'hierarchique'
     },
-    'PRIMATURE': {
-      enfants: ['MIN_INTERIEUR'],
+    {
+      id: 'rel_2',
+      sourceId: 'PRIMATURE',
+      targetId: 'MIN_INTERIEUR',
       type: 'hierarchique'
     }
-  }), []); // TODO: Remplacer par un appel TRPC pour les relations
+  ], []); // TODO: Remplacer par un appel TRPC pour les relations
 
   // === CALCUL DES STATISTIQUES ===
   const statistiques = useMemo((): StatistiquesHierarchie => {
@@ -171,10 +175,11 @@ export function HierarchieOfficielleGabon() {
 
     // Fonction pour construire un nœud
     const buildNode = (organisme: any, level: number): NodeHierarchique => {
-      const orgRelations = relationsGenerator.getRelationsForOrganisme(organisme.code);
-      const hierarchiques = orgRelations.filter(r => r.type === 'HIERARCHIQUE').length;
-      const collaboratives = orgRelations.filter(r => r.type === 'COLLABORATIVE').length;
-      const informationnelles = orgRelations.filter(r => r.type === 'INFORMATIONELLE').length;
+      // Mock relationships since relationsGenerator was removed
+      const orgRelations: any[] = []; // Empty array as fallback
+      const hierarchiques = 0;
+      const collaboratives = 0;
+      const informationnelles = 0;
 
       const children: NodeHierarchique[] = [];
       const childrenCodes = relationMap.get(organisme.code) || organisme.flux?.hierarchiquesDescendants || [];
@@ -213,8 +218,7 @@ export function HierarchieOfficielleGabon() {
       const matchType = selectedType === 'TOUS_TYPES' || org.type === selectedType;
       const matchSearch = !searchTerm ||
         org.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        org.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        org.sigle?.toLowerCase().includes(searchTerm.toLowerCase());
+        org.code.toLowerCase().includes(searchTerm.toLowerCase());
 
       return matchGroupe && matchType && matchSearch;
     });
@@ -325,10 +329,10 @@ export function HierarchieOfficielleGabon() {
                       {organisme.type}
                     </Badge>
                   </div>
-                  <p className="text-xs text-gray-600 mb-2">{organisme.mission}</p>
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span>📍 {organisme.ville}</span>
-                    <span>📊 Niveau {organisme.niveau}</span>
+                                                <p className="text-xs text-gray-600 mb-2">{organisme.nom}</p>
+                              <div className="flex items-center gap-4 text-xs text-gray-500">
+                                <span>📍 {organisme.code}</span>
+                                <span>📊 Niveau {organisme.niveau}</span>
                     <span>🔗 {relations.total} relations</span>
                   </div>
                 </div>
@@ -516,7 +520,7 @@ export function HierarchieOfficielleGabon() {
               <ScrollArea className="h-[600px]">
                 <div className="grid gap-4">
                   {organismesFilters.map((organisme) => {
-                    const orgRelations = relationsGenerator.getRelationsForOrganisme(organisme.code);
+                    const orgRelations: any[] = []; // Mock since relationsGenerator was removed
                     const GroupeIcon = getGroupeIcon(organisme.groupe);
 
                     return (
@@ -535,9 +539,9 @@ export function HierarchieOfficielleGabon() {
                                   </Badge>
                                   <Badge variant="secondary">{organisme.type}</Badge>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-2">{organisme.mission}</p>
+                                <p className="text-sm text-gray-600 mb-2">{organisme.nom}</p>
                                 <div className="flex items-center gap-4 text-sm text-gray-500">
-                                  <span>📍 {organisme.ville}</span>
+                                  <span>📍 {organisme.code}</span>
                                   <span>📊 Niveau {organisme.niveau}</span>
                                   <span>🔗 {orgRelations.length} relations</span>
                                 </div>

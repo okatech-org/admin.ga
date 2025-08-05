@@ -130,13 +130,13 @@ export default function DGDIDashboard() {
         <div
           className="rounded-2xl p-8 text-white"
           style={{
-            background: `linear-gradient(135deg, ${branding.couleurPrimaire}, ${branding.couleurSecondaire})`
+            background: `linear-gradient(135deg, ${branding.colors.primary}, ${branding.colors.secondary})`
           }}
         >
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold mb-2">
-                Tableau de bord {branding.nomCourt}
+                Tableau de bord {branding.shortName}
                 {isDemoAccount && (
                   <Badge variant="outline" className="ml-3 bg-white/20 text-white border-white/30">
                     <Star className="w-4 h-4 mr-1" />
@@ -145,7 +145,7 @@ export default function DGDIDashboard() {
                 )}
               </h1>
               <p className="text-xl text-blue-100 mb-4">
-                {branding.slogan} - {branding.description}
+                {branding.description}
               </p>
               <div className="flex items-center space-x-6 text-sm">
                 <div className="flex items-center space-x-2">
@@ -164,7 +164,7 @@ export default function DGDIDashboard() {
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
               <div className="flex items-center space-x-3">
-                <branding.icon className="w-8 h-8 text-white" />
+                <Shield className="w-8 h-8 text-white" />
                 <div>
                   <p className="font-semibold">Direction Générale</p>
                   <p className="text-sm text-blue-100">Documentation & Immigration</p>
@@ -179,24 +179,24 @@ export default function DGDIDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
         <Card
           className="border-l-4 shadow-lg"
-          style={{ borderLeftColor: branding.couleurPrimaire }}
+          style={{ borderLeftColor: branding.colors.primary }}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle
               className="text-sm font-medium"
-              style={{ color: branding.couleurPrimaire }}
+              style={{ color: branding.colors.primary }}
             >
               Demandes en cours
             </CardTitle>
             <Clock
               className="h-4 w-4"
-              style={{ color: branding.couleurPrimaire }}
+              style={{ color: branding.colors.primary }}
             />
           </CardHeader>
           <CardContent>
             <div
             className="text-3xl font-bold"
-            style={{ color: branding.couleurPrimaire }}
+            style={{ color: branding.colors.primary }}
           >
               {stats.demandesEnCours}
             </div>
@@ -279,17 +279,17 @@ export default function DGDIDashboard() {
         {/* Actions rapides DGDI */}
         <Card
           className="lg:col-span-1 shadow-lg border-t-4"
-          style={{ borderTopColor: branding.couleurPrimaire }}
+          style={{ borderTopColor: branding.colors.primary }}
         >
           <CardHeader
             style={{
-              background: `linear-gradient(135deg, ${branding.couleurPrimaire}10, ${branding.couleurSecondaire}10)`
+              background: `linear-gradient(135deg, ${branding.colors.primary}10, ${branding.colors.secondary}10)`
             }}
           >
             <CardTitle
-              style={{ color: branding.couleurPrimaire }}
+              style={{ color: branding.colors.primary }}
             >
-              Services {branding.nomCourt}
+              Services {branding.shortName}
             </CardTitle>
             <CardDescription>
               Gestion des documents d'identité
@@ -299,7 +299,7 @@ export default function DGDIDashboard() {
             <Button
                           className="w-full justify-start text-white"
             style={{
-              background: `linear-gradient(135deg, ${branding.couleurPrimaire}, ${branding.couleurSecondaire})`
+              background: `linear-gradient(135deg, ${branding.colors.primary}, ${branding.colors.secondary})`
             }}
               asChild
             >
@@ -311,7 +311,7 @@ export default function DGDIDashboard() {
             <Button
               variant="outline"
               className="w-full justify-start hover:bg-blue-50"
-              style={{ borderColor: `${branding.couleurPrimaire}40` }}
+              style={{ borderColor: `${branding.colors.primary}40` }}
               asChild
             >
               <Link href="/dgdi/passeports">
@@ -322,7 +322,7 @@ export default function DGDIDashboard() {
             <Button
               variant="outline"
               className="w-full justify-start hover:bg-purple-50"
-              style={{ borderColor: `${branding.couleurSecondaire}40` }}
+              style={{ borderColor: `${branding.colors.secondary}40` }}
               asChild
             >
               <Link href="/dgdi/cni">

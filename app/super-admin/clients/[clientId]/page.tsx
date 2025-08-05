@@ -121,7 +121,8 @@ interface ServiceConfig {
   dependencies?: string[];
   sla?: string;
 }
-import { getOrganismeDetails, hasOrganismeDetails } from '@/lib/data/gabon-services-detailles';
+import { getOrganismeDetails } from '@/lib/data/gabon-services-detailles';
+import { ORGANISMES_BRANDING } from '@/lib/config/organismes-branding';
 // Import supprimé - utiliser les APIs TRPC
 
 // Types pour la gestion complète du client
@@ -393,9 +394,9 @@ export default function ClientManagementPage() {
     expireDays: 7
   });
   const [userGroups, setUserGroups] = useState([
-    { id: 'admin_group', name: 'Administrateurs', description: 'Accès complet au système', userCount: 2, permissions: ['ADMIN_ACCESS', 'USER_MANAGEMENT'] },
-    { id: 'agents_group', name: 'Agents', description: 'Accès aux demandes et guichet', userCount: 5, permissions: ['VIEW_REQUESTS', 'PROCESS_REQUESTS'] },
-    { id: 'managers_group', name: 'Responsables', description: 'Supervision et reporting', userCount: 2, permissions: ['VIEW_ANALYTICS', 'MANAGE_TEAM'] }
+    { id: 'admin_group', name: 'Administrateurs', description: 'Accès complet au système', userCount: 0, permissions: ['ADMIN_ACCESS', 'USER_MANAGEMENT'] },
+    { id: 'agents_group', name: 'Agents', description: 'Accès aux demandes et guichet', userCount: 0, permissions: ['VIEW_REQUESTS', 'PROCESS_REQUESTS'] },
+    { id: 'managers_group', name: 'Responsables', description: 'Supervision et reporting', userCount: 0, permissions: ['VIEW_ANALYTICS', 'MANAGE_TEAM'] }
   ]);
   const [bulkAction, setBulkAction] = useState('');
 
@@ -3654,13 +3655,13 @@ export default function ClientManagementPage() {
   };
 
   const getBrandingForClient = (clientCode: string) => {
-    return Object.values(ORGANISMES_BRANDING).find(b => b.code === clientCode) || {
-      code: 'DEFAULT',
-      nom: 'Organisme',
-      couleurPrimaire: '#3B82F6',
-      couleurSecondaire: '#10B981',
-      gradientClasses: 'from-blue-600 to-blue-800',
-      icon: Building2,
+    return ORGANISMES_BRANDING[clientCode] || ORGANISMES_BRANDING['default'] || {
+      name: 'Organisme',
+      shortName: 'Org',
+      colors: {
+        primary: '#3B82F6',
+        secondary: '#10B981',
+      },
       description: 'Au service du citoyen'
     };
   };
@@ -3717,7 +3718,7 @@ export default function ClientManagementPage() {
             <Separator orientation="vertical" className="h-6" />
             <div
               className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
-              style={{ backgroundColor: branding.couleurPrimaire }}
+              style={{ backgroundColor: branding.colors.primary }}
             >
               <Building2 className="h-6 w-6" />
             </div>

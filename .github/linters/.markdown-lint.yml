@@ -8,6 +8,10 @@ MD013: false  # Longueur de ligne (trop strict pour les URLs et le code)
 MD033: false  # HTML inline autorisé (pour les emojis et badges)
 MD041: false  # Premier élément doit être un h1 (on a des métadonnées)
 
+# Règles strictes pour maintenir la qualité
+MD036: true   # Pas d'emphase comme titre - doit utiliser # ## ### etc.
+MD026: false  # Autorise la ponctuation dans les titres (émojis)
+
 # Configuration des liens
 MD051:
   # Fragments de liens - permet les caractères spéciaux dans les ancres

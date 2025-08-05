@@ -995,7 +995,7 @@ export default function BaseDonneesPage() {
                     <Table className="h-16 w-16 mx-auto mb-4 opacity-30" />
                     <h3 className="text-lg font-medium mb-2">Aucune table sélectionnée</h3>
                     <p className="text-sm mb-6">Sélectionnez une table dans l'onglet "Tables" pour explorer ses données</p>
-                    <Button variant="outline" onClick={() => document.querySelector('[value="tables"]')?.click()}>
+                    <Button variant="outline" onClick={() => (document.querySelector('[value="tables"]') as HTMLElement)?.click()}>
                       <Building2 className="h-4 w-4 mr-2" />
                       Aller aux Tables
                     </Button>

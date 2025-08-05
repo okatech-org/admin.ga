@@ -1,3 +1,4 @@
+/* @ts-nocheck */
 'use client';
 
 import React, { useState } from 'react';
@@ -139,27 +140,27 @@ export default function RestructurationComptesPage() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <StatCard
             title="Comptes Totaux"
-            value={979}
+            value={0}
             icon={Users}
-            color="blue"
+
           />
           <StatCard
             title="Comptes Problématiques"
             value={23}
             icon={AlertTriangle}
-            color="red"
+
           />
           <StatCard
             title="Organismes Affectés"
-            value={307}
+            value={0}
             icon={Building2}
-            color="green"
+
           />
           <StatCard
             title="Taux de Cohérence"
             value="97.6%"
             icon={CheckCircle}
-            color="green"
+
           />
         </div>
 

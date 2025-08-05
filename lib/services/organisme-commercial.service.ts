@@ -103,6 +103,13 @@ export class OrganismeCommercialService {
    */
   private initializeOrganismes(): void {
     const administrations = getAllAdministrations();
+
+    if (!Array.isArray(administrations) || administrations.length === 0) {
+      console.log('🧹 Aucune administration trouvée - base de données nettoyée');
+      this.organismes = [];
+      return;
+    }
+
     const users = this.generateBasicUsers(administrations);
 
     console.log('🏢 Initialisation des organismes commerciaux...');

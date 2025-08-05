@@ -8,6 +8,7 @@
     "postinstall": "npx prisma generate",
     "start": "next start",
     "lint": "next lint",
+    "lint:md": "node scripts/fix-markdown-emphasis.js",
     "clean": "node scripts/clean-dev.js",
     "dev:clean": "npm run clean && npm run dev",
     "db:generate": "prisma generate",

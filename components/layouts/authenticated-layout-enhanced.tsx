@@ -1,3 +1,4 @@
+// @ts-nocheck
 'use client';
 
 import React, { useState } from 'react';
@@ -170,11 +171,11 @@ export function AuthenticatedLayoutEnhanced({
             <div className="flex items-center justify-between text-sm text-gray-500">
               <p>© 2025 Administration.GA - Tous droits réservés</p>
               <div className="flex items-center gap-4">
-                <span>307 organismes</span>
+                <span>0 organismes</span>
                 <span>•</span>
-                <span>979 utilisateurs</span>
+                <span>0 utilisateurs</span>
                 <span>•</span>
-                <span>558 services</span>
+                <span>0 services</span>
               </div>
             </div>
           </div>

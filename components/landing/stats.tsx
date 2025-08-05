@@ -39,7 +39,7 @@ export function StatsSection() {
                 </div>
                 <ul className="space-y-1 text-sm">
                   <li>❌ <code>"50,000+ Citoyens inscrits"</code> (complètement fictif)</li>
-                  <li>❌ <code>"160 Organismes publics"</code> (obsolète, maintenant 307 organismes réels)</li>
+                  <li>✅ <code>"0 Organismes publics"</code> (base de données entièrement nettoyée)</li>
                   <li>❌ <code>"1,117 Relations actives"</code> (inventé de toute pièce)</li>
                   <li>❌ <code>"98% Satisfaction"</code> (non mesuré, fictif)</li>
                 </ul>

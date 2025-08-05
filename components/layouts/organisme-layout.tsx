@@ -1,4 +1,4 @@
-/* @ts-nocheck */
+// @ts-nocheck
 /* eslint-disable react/no-unknown-property */
 /* webhint-disable no-inline-styles */
 "use client";
@@ -9,14 +9,14 @@ import { ReactNode, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Bell, 
-  MessageCircle, 
-  User, 
-  Home, 
-  FileText, 
-  Users, 
-  Settings, 
+import {
+  Bell,
+  MessageCircle,
+  User,
+  Home,
+  FileText,
+  Users,
+  Settings,
   LogOut,
   Calendar,
   HelpCircle,
@@ -77,7 +77,7 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
   // Navigation selon le rôle utilisateur
   const getNavigationItems = () => {
     const role = session.user.role;
-    
+
     const commonItems = [
       { name: 'Accueil', href: `/${branding.code.toLowerCase()}/dashboard`, icon: Home },
     ];
@@ -136,27 +136,27 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
 
             {/* Navigation principale */}
             <nav className="hidden md:flex space-x-8">
-              <Link 
-                href={`/${branding.code.toLowerCase()}/dashboard`} 
+              <Link
+                href={`/${branding.code.toLowerCase()}/dashboard`}
                 className={cn(
                   "px-3 py-2 text-sm font-medium border-b-2 transition-colors",
                   "text-gray-900 border-transparent hover:border-gray-300"
                 )}
-                style={{ 
+                style={{
                   color: branding.couleurPrimaire,
-                  borderBottomColor: branding.couleurPrimaire 
+                  borderBottomColor: branding.couleurPrimaire
                 }}
               >
                 Mon Espace
               </Link>
-              <Link 
-                href={`/${branding.code.toLowerCase()}/services`} 
+              <Link
+                href={`/${branding.code.toLowerCase()}/services`}
                 className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
               >
                 Nos Services
               </Link>
-              <Link 
-                href={`/${branding.code.toLowerCase()}/aide`} 
+              <Link
+                href={`/${branding.code.toLowerCase()}/aide`}
                 className="text-gray-700 hover:text-gray-900 px-3 py-2 text-sm font-medium"
               >
                 Aide & Support
@@ -191,15 +191,15 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
         <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
           <div className="p-6">
             {/* Informations de l'organisme */}
-            <div 
+            <div
               className="mb-6 p-4 rounded-lg border"
-              style={{ 
+              style={{
                 background: `linear-gradient(135deg, ${branding.couleurPrimaire}10, ${branding.couleurSecondaire}10)`,
                 borderColor: `${branding.couleurPrimaire}30`
               }}
             >
               <div className="flex items-center space-x-3">
-                <div 
+                <div
                   className="w-10 h-10 rounded-full flex items-center justify-center"
                   style={{ backgroundColor: branding.couleurPrimaire }}
                 >
@@ -210,12 +210,12 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
                     {session?.user?.firstName} {session?.user?.lastName}
                   </p>
                   <p className="text-xs text-gray-600">{session?.user?.role}</p>
-                  <Badge 
-                    variant="outline" 
+                  <Badge
+                    variant="outline"
                     className="text-xs mt-1"
-                    style={{ 
+                    style={{
                       color: branding.couleurPrimaire,
-                      borderColor: branding.couleurPrimaire 
+                      borderColor: branding.couleurPrimaire
                     }}
                   >
                     {branding.type}
@@ -252,20 +252,20 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
 
             {/* Informations de contact */}
             <div className="mt-8 space-y-3">
-              <div 
+              <div
                 className="p-3 rounded-lg border"
-                style={{ 
+                style={{
                   backgroundColor: `${branding.couleurPrimaire}05`,
                   borderColor: `${branding.couleurPrimaire}20`
                 }}
               >
                 <div className="flex items-center space-x-2 mb-2">
-                                     <div 
-                     className="w-2 h-2 rounded-full" 
+                                     <div
+                     className="w-2 h-2 rounded-full"
                      style={{ backgroundColor: branding.couleurSecondaire }}
                    ></div>
-                   <span 
-                     className="text-sm font-medium" 
+                   <span
+                     className="text-sm font-medium"
                      style={{ color: branding.couleurPrimaire }}
                    >
                     Informations
@@ -291,7 +291,7 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
             </div>
           </div>
         </aside>
-        
+
         {/* Contenu principal */}
         <main className="flex-1 p-6 max-w-none">
           {children}
@@ -311,7 +311,7 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
                 <p className="text-xs text-gray-500">{branding.description}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-6 text-sm text-gray-600">
               <Link href={`/${branding.code.toLowerCase()}/confidentialite`} className="hover:text-gray-900">
                 Confidentialité
@@ -329,4 +329,4 @@ export function OrganismeLayout({ children }: OrganismeLayoutProps) {
       </footer>
     </div>
   );
-} 
+}

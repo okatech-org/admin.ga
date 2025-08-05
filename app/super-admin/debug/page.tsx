@@ -114,7 +114,7 @@ export default function SuperAdminDebugPage() {
       await new Promise(resolve => setTimeout(resolve, check.delay));
 
       // Logique plus réaliste pour les statuts avec pondération
-      const statusWeights = [
+      const statusWeights: Array<{ status: "error" | "healthy" | "warning", weight: number }> = [
         { status: 'healthy', weight: 0.6 },
         { status: 'warning', weight: 0.3 },
         { status: 'error', weight: 0.1 }
@@ -122,7 +122,7 @@ export default function SuperAdminDebugPage() {
 
       const rand = Math.random();
       let cumulativeWeight = 0;
-      let selectedStatus = 'healthy';
+      let selectedStatus: "error" | "healthy" | "warning" = 'healthy';
 
       for (const { status, weight } of statusWeights) {
         cumulativeWeight += weight;

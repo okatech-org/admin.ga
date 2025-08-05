@@ -103,7 +103,7 @@ export const SUPER_ADMIN_SECTIONS: NavigationSection[] = [
         href: '/super-admin/diagnostic-administrations',
         icon: Stethoscope,
         description: 'Monitoring et évaluation de la santé organisationnelle',
-        badge: { text: 'NOUVEAU', variant: 'success' },
+        badge: { text: 'NOUVEAU', variant: 'default' },
         helpTip: 'Tableau de bord consolidé pour diagnostiquer les problèmes'
       }
     ]
@@ -143,7 +143,7 @@ export const SUPER_ADMIN_SECTIONS: NavigationSection[] = [
         href: '/super-admin/fonctionnaires-attente',
         icon: UserCheck,
         description: 'Validation des demandes d\'accès des fonctionnaires',
-        badge: { text: '25', variant: 'warning' },
+        badge: { text: '25', variant: 'secondary' },
         helpTip: 'Traitez les demandes d\'inscription en attente'
       }
     ]
@@ -214,7 +214,7 @@ export const SUPER_ADMIN_SECTIONS: NavigationSection[] = [
         href: '/super-admin/knowledge-base',
         icon: HelpCircle,
         description: 'Gestion de la base de connaissances organisationnelle',
-        badge: { text: 'IA', variant: 'success' },
+        badge: { text: 'IA', variant: 'outline' },
         helpTip: 'Exploitez l\'intelligence artificielle pour la documentation'
       }
     ]

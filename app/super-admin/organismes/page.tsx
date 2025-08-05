@@ -9,6 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { toast } from 'sonner';
 import {
+  getOrganizationTypeLabel,
+  getOrganizationTypeColor,
+  getOrganizationBorderColor,
+  sortOrganizations,
+  generateOrganizationStats
+} from '@/lib/utils/organization-utils';
+import {
   Building2,
   Users,
   MapPin,
@@ -41,7 +48,7 @@ import {
   Flag
 } from 'lucide-react';
 
-import { trpc } from '@/lib/trpc/client';
+import { useEffect } from 'react';
 
 // Types pour la gestion d'état basés sur Prisma
 interface OrganismeDisplay {
@@ -84,13 +91,49 @@ export default function OrganismesPage() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [organizationsData, setOrganizationsData] = useState<any>(null);
   const itemsPerPage = 20;
 
-  // Requête TRPC pour récupérer les organisations
-  const { data: organizationsData, isLoading, error, refetch } = trpc.organizations.getAll.useQuery({
-    limit: 1000,
-    offset: 0
-  });
+  // Fonction pour récupérer les organisations via API REST
+  const fetchOrganizations = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams({
+        limit: '500', // Augmenter pour récupérer tous les organismes
+        page: '1',
+        search: searchTerm,
+        type: selectedType === 'all' ? '' : selectedType,
+        isActive: selectedStatus === 'all' ? '' : (selectedStatus === 'ACTIF' ? 'true' : 'false')
+      });
+
+      const response = await fetch(`/api/organizations/list?${params}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setOrganizationsData(data.data);
+      } else {
+        throw new Error(data.error || 'Erreur lors du chargement des organisations');
+      }
+    } catch (err) {
+      console.error('Erreur lors du chargement des organisations:', err);
+      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [searchTerm, selectedType, selectedStatus]);
+
+  // Charger les données au montage du composant et lors des changements de filtres
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchOrganizations();
+    }, 300); // Debounce pour éviter trop d'appels API
+
+    return () => clearTimeout(debounceTimer);
+  }, [fetchOrganizations]);
 
   // Transformation des données de l'API
   const organismes = useMemo((): OrganismeDisplay[] => {
@@ -101,19 +144,19 @@ export default function OrganismesPage() {
       name: org.name,
       code: org.code,
       type: org.type,
-      description: org.description,
-      city: org.city,
-      address: org.address,
-      phone: org.phone,
-      email: org.email,
-      website: org.website,
+      description: org.description || '',
+      city: org.city || '',
+      address: org.address || '',
+      phone: org.phone || '',
+      email: org.email || '',
+      website: org.website || '',
       isActive: org.isActive,
-      parentId: org.parentId,
-      parent: org.parent,
-      children: org.children,
-      createdAt: org.createdAt?.toISOString() || new Date().toISOString(),
-      updatedAt: org.updatedAt?.toISOString() || new Date().toISOString(),
-      // Statistiques réelles depuis la base de données
+      parentId: org.parentId || undefined,
+      parent: org.parent || undefined,
+      children: org.children || [],
+      createdAt: org.createdAt || new Date().toISOString(),
+      updatedAt: org.updatedAt || new Date().toISOString(),
+      // Statistiques simulées depuis l'API
       userCount: org._count?.userMemberships || 0,
       requestCount: org._count?.requests || 0,
       appointmentCount: org._count?.appointments || 0,
@@ -189,12 +232,12 @@ export default function OrganismesPage() {
   // Gestionnaires d'événements
   const handleRefresh = useCallback(async () => {
     try {
-      await refetch();
+      await fetchOrganizations();
       toast.success('Données actualisées avec succès');
     } catch (error) {
       toast.error('Erreur lors de l\'actualisation');
     }
-  }, [refetch]);
+  }, [fetchOrganizations]);
 
   const handleExport = useCallback(() => {
     const csvContent = [
@@ -248,7 +291,7 @@ export default function OrganismesPage() {
               <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
               <h3 className="font-semibold text-lg mb-2">Erreur de chargement</h3>
               <p className="text-muted-foreground mb-4">
-                Impossible de charger les organismes
+                {error}
               </p>
               <Button onClick={handleRefresh}>
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -369,7 +412,7 @@ export default function OrganismesPage() {
                     <SelectItem value="all">Tous les types</SelectItem>
                     {typeOptions.map(type => (
                       <SelectItem key={type} value={type}>
-                        {type.replace('_', ' ')}
+                        {getOrganizationTypeLabel(type)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -408,20 +451,23 @@ export default function OrganismesPage() {
           <CardContent>
             <div className="space-y-4">
               {paginatedOrganismes.map((org) => (
-                <Card key={org.id} className="border-l-4 border-l-blue-500">
+                <Card key={org.id} className={`border-l-4 ${getOrganizationBorderColor(org.type)}`}>
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-3 mb-2 flex-wrap">
                           <h3 className="font-semibold text-lg">{org.name}</h3>
                           <Badge variant="outline">{org.code}</Badge>
+                          <Badge className={getOrganizationTypeColor(org.type)}>
+                            {getOrganizationTypeLabel(org.type)}
+                          </Badge>
                           <Badge className={org.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
                             {org.isActive ? 'Actif' : 'Inactif'}
                           </Badge>
                         </div>
 
                         <div className="text-sm text-muted-foreground mb-2">
-                          {org.type.replace('_', ' ')} • {org.city || 'Ville non spécifiée'}
+                          {getOrganizationTypeLabel(org.type)} • {org.city || 'Ville non spécifiée'}
                         </div>
 
                         {org.description && (

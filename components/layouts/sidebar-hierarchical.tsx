@@ -27,31 +27,7 @@ import {
   Building2,
   ChevronDown,
   ChevronRight,
-  MessageSquare,
-  Activity,
-  Zap,
-  Bell,
-  Search,
-  Plus,
-  Clock,
-  Calendar,
-  FileX,
-  Globe,
-  Server,
-  Terminal,
-  Eye,
-  Layers,
-  Cpu,
-  PieChart,
-  Monitor,
-  Gauge,
-  SplitSquareVertical,
-  GitBranch,
-  LifeBuoy,
-  BookOpen,
-  HelpCircle,
-  User,
-  LogOut
+  Clock
 } from 'lucide-react';
 
 const navigationItems = [
@@ -60,9 +36,9 @@ const navigationItems = [
     title: 'Dashboard',
     href: '/super-admin/dashboard-unified',
     icon: Home,
-    description: 'Vue d\'ensemble du système',
-    count: null,
-    countColor: 'blue',
+    description: 'Vue d\'ensemble du système (Vide)',
+    count: 0,
+    countColor: 'gray',
     section: 'dashboard',
     sectionColor: 'slate'
   },
@@ -72,40 +48,33 @@ const navigationItems = [
     title: 'Organismes',
     icon: Building2,
     description: 'Gestion complète des organismes publics',
-    count: 307,
-    countColor: 'emerald',
+    count: 0,
+    countColor: 'gray',
     section: 'gestion',
-    sectionColor: 'emerald',
+    sectionColor: 'gray',
     isSection: true,
     children: [
       {
         title: 'Vue d\'Ensemble',
         href: '/super-admin/organismes',
-        icon: Eye,
-        description: 'Dashboard des organismes',
-        count: 307,
-        countColor: 'emerald'
+        icon: BarChart3,
+        description: 'Dashboard des organismes (0)',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Nouvel Organisme',
+        href: '/super-admin/organisme/nouveau',
+        icon: Building,
+        description: 'Création d\'organismes (Désactivé)',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Structure Administrative',
         href: '/super-admin/structure-administrative',
-        icon: Layers,
-        description: 'Hiérarchie officielle du Gabon'
-      },
-      {
-        title: 'Relations Inter-Organismes',
-        href: '/super-admin/relations',
-        icon: Network,
-        description: 'Gestion des relations'
-      },
-      {
-        title: 'Communications Inter-Administration',
-        href: '/super-admin/communications',
-        icon: MessageSquare,
-        description: 'Système de communication',
-        count: 5,
-        countColor: 'blue',
-        isNew: true
+        icon: Crown,
+        description: 'Hiérarchie officielle (Vide)'
       }
     ]
   },
@@ -115,47 +84,33 @@ const navigationItems = [
     title: 'Utilisateurs',
     icon: Users,
     description: 'Administration des comptes utilisateurs',
-    count: 979,
-    countColor: 'emerald',
+    count: 0,
+    countColor: 'gray',
     section: 'administration',
-    sectionColor: 'purple',
+    sectionColor: 'gray',
     isSection: true,
     children: [
       {
         title: 'Vue d\'Ensemble',
         href: '/super-admin/utilisateurs',
         icon: Users,
-        description: 'Gestion des utilisateurs',
-        count: 979,
-        countColor: 'emerald'
+        description: 'Gestion des utilisateurs (0)',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Création Comptes',
         href: '/super-admin/gestion-comptes',
         icon: UserPlus,
-        description: 'Gestion des collaborateurs'
-      },
-      {
-        title: 'Restructuration',
-        href: '/super-admin/restructuration-comptes',
-        icon: Users,
-        description: 'Restructuration avancée',
-        isCritical: true
+        description: 'Gestion des collaborateurs (Vide)'
       },
       {
         title: 'Fonctionnaires en Attente',
         href: '/super-admin/fonctionnaires-attente',
         icon: Clock,
-        description: 'Gestion des affectations',
-        count: 478,
-        countColor: 'orange',
-        isNew: true
-      },
-      {
-        title: 'Postes & Fonctions',
-        href: '/super-admin/postes-administratifs',
-        icon: Briefcase,
-        description: 'Base des postes'
+        description: 'Gestion des affectations (0)',
+        count: 0,
+        countColor: 'gray'
       }
     ]
   },
@@ -163,21 +118,21 @@ const navigationItems = [
   // 🔧 SERVICES
   {
     title: 'Services',
-    icon: Zap,
+    icon: FileText,
     description: 'Gestion des services administratifs',
-    count: 558,
-    countColor: 'emerald',
+    count: 0,
+    countColor: 'gray',
     section: 'administration',
-    sectionColor: 'purple',
+    sectionColor: 'gray',
     isSection: true,
     children: [
       {
         title: 'Vue d\'Ensemble',
         href: '/super-admin/services',
-        icon: Zap,
-        description: 'Gestion des services',
-        count: 558,
-        countColor: 'emerald'
+        icon: FileText,
+        description: 'Gestion des services (0)',
+        count: 0,
+        countColor: 'gray'
       },
       {
         title: 'Configuration',
@@ -186,345 +141,137 @@ const navigationItems = [
         description: 'Configuration système'
       }
     ]
-  },
-
-  // 📊 MONITORING & ANALYTICS
-  {
-    title: 'Analytics',
-    icon: BarChart3,
-    description: 'Analyses et métriques système',
-    section: 'monitoring',
-    sectionColor: 'orange',
-    isSection: true,
-    children: [
-      {
-        title: 'Tableau de Bord',
-        href: '/super-admin/analytics',
-        icon: PieChart,
-        description: 'Métriques temps réel'
-      },
-      {
-        title: 'Statistiques Système',
-        href: '/super-admin/systeme',
-        icon: Monitor,
-        description: 'Performance système'
-      },
-      {
-        title: 'Base de Données',
-        href: '/super-admin/base-donnees',
-        icon: DatabaseIcon,
-        description: 'Gestion et maintenance'
-      }
-    ]
-  },
-
-  // 🛠️ OUTILS SYSTÈME
-  {
-    title: 'Outils',
-    icon: Terminal,
-    description: 'Outils d\'administration',
-    section: 'outils',
-    sectionColor: 'gray',
-    isSection: true,
-    children: [
-
-      {
-        title: 'Debug & Diagnostic',
-        href: '/super-admin/debug',
-        icon: Bug,
-        description: 'Outils de debug système',
-        isNew: true
-      },
-      // ⚠️ Test Data supprimé - contenait des données fictives polluantes
-
-    ]
   }
 ];
 
-const getSectionColor = (sectionColor: string) => {
-  const colors = {
-    slate: {
-      bg: 'bg-slate-50',
-      text: 'text-slate-700',
-      icon: 'text-slate-500',
-      border: 'border-slate-200',
-      hover: 'hover:bg-slate-100'
-    },
-    emerald: {
-      bg: 'bg-emerald-50',
-      text: 'text-emerald-700',
-      icon: 'text-emerald-500',
-      border: 'border-emerald-200',
-      hover: 'hover:bg-emerald-100'
-    },
-    purple: {
-      bg: 'bg-purple-50',
-      text: 'text-purple-700',
-      icon: 'text-purple-500',
-      border: 'border-purple-200',
-      hover: 'hover:bg-purple-100'
-    },
-    orange: {
-      bg: 'bg-orange-50',
-      text: 'text-orange-700',
-      icon: 'text-orange-500',
-      border: 'border-orange-200',
-      hover: 'hover:bg-orange-100'
-    },
-    gray: {
-      bg: 'bg-gray-50',
-      text: 'text-gray-700',
-      icon: 'text-gray-500',
-      border: 'border-gray-200',
-      hover: 'hover:bg-gray-100'
-    }
-  };
-  return colors[sectionColor] || colors.gray;
-};
+interface SidebarHierarchicalProps {
+  className?: string;
+}
 
-const getCountColor = (color: string) => {
-  const colors = {
-    blue: 'bg-blue-100 text-blue-800 border-blue-300',
-    emerald: 'bg-emerald-100 text-emerald-800 border-emerald-300',
-    orange: 'bg-orange-100 text-orange-800 border-orange-300',
-    purple: 'bg-purple-100 text-purple-800 border-purple-300',
-    red: 'bg-red-100 text-red-800 border-red-300'
-  };
-  return colors[color] || colors.blue;
-};
-
-export default function SidebarHierarchical() {
+export function SidebarHierarchical({ className }: SidebarHierarchicalProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const [openSections, setOpenSections] = React.useState<Record<string, boolean>>({
-    gestion: true,
-    administration: true,
-    monitoring: false,
-    outils: false
-  });
+  const [expandedSections, setExpandedSections] = React.useState<Set<string>>(new Set(['dashboard', 'gestion']));
 
-  const toggleSection = (sectionKey: string) => {
-    setOpenSections(prev => ({
-      ...prev,
-      [sectionKey]: !prev[sectionKey]
-    }));
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
   };
 
-  const isActive = (href: string) => pathname === href;
+  const isActive = (href: string) => {
+    if (href === '/super-admin' && pathname === '/super-admin') return true;
+    if (href !== '/super-admin' && pathname.startsWith(href)) return true;
+    return false;
+  };
 
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  const getCountBadge = (count: number | null, color: string) => {
+    if (count === null || count === 0) return null;
+
+    return (
+      <span className="ml-auto px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-500 border border-gray-200 text-center min-w-[2rem]">
+        0
+      </span>
+    );
+  };
+
+  if (session?.user?.role !== 'SUPER_ADMIN') {
     return null;
   }
 
   return (
-    <div className="flex h-screen bg-white border-r border-gray-200">
-      <div className="flex flex-col w-80">
-        {/* Header */}
-        <div className="flex items-center justify-center h-16 px-6 bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <Crown className="h-8 w-8 mr-3" />
-          <div className="text-center">
-            <h1 className="text-lg font-bold">Super Admin</h1>
-            <p className="text-xs text-blue-100">Administration.GA</p>
-          </div>
+    <div className={cn(
+      "flex h-full w-64 flex-col overflow-y-auto border-r bg-white px-3 py-4",
+      className
+    )}>
+      <div className="space-y-1">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900">
+            🧹 Navigation Vide
+          </h2>
+          <p className="px-4 text-sm text-gray-500">
+            Système entièrement nettoyé
+          </p>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-6">
-          <div className="px-4 space-y-2">
-            {navigationItems.map((item, index) => {
-              if (item.isSection && item.children) {
-                const sectionColors = getSectionColor(item.sectionColor);
-                const isOpen = openSections[item.section];
-
-                return (
-                  <div key={index} className="space-y-1">
-                    {/* Section Header */}
-                    <button
-                      onClick={() => toggleSection(item.section)}
-                      className={cn(
-                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200",
-                        sectionColors.bg,
-                        sectionColors.hover,
-                        sectionColors.border,
-                        "border"
-                      )}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <item.icon className={cn("h-5 w-5", sectionColors.icon)} />
-                        <div className="flex-1 text-left">
-                          <div className="flex items-center space-x-2">
-                            <span className={cn("font-semibold text-sm", sectionColors.text)}>
-                              {item.title}
-                            </span>
-                            {item.count && (
-                              <span className={cn(
-                                "px-2 py-0.5 text-xs font-semibold rounded-full border",
-                                getCountColor(item.countColor)
-                              )}>
-                                {item.count}
-                              </span>
-                            )}
-                          </div>
-                          <p className={cn("text-xs", sectionColors.text, "opacity-70")}>
-                            {item.description}
-                          </p>
-                        </div>
-                      </div>
-                      {isOpen ? (
-                        <ChevronDown className={cn("h-4 w-4 transition-transform", sectionColors.icon)} />
-                      ) : (
-                        <ChevronRight className={cn("h-4 w-4 transition-transform", sectionColors.icon)} />
-                      )}
-                    </button>
-
-                    {/* Section Children */}
-                    {isOpen && (
-                      <div className="ml-4 space-y-1">
-                        {item.children.map((child, childIndex) => (
-                          <Link
-                            key={childIndex}
-                            href={child.href}
-                            className={cn(
-                              "flex items-center justify-between px-4 py-2.5 rounded-lg transition-all duration-200",
-                              isActive(child.href)
-                                ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                            )}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <child.icon className={cn(
-                                "h-4 w-4",
-                                isActive(child.href) ? "text-blue-600" : "text-gray-400"
-                              )} />
-                              <div>
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-sm font-medium">
-                                    {child.title}
-                                  </span>
-                                  {child.count && (
-                                    <span className={cn(
-                                      "px-1.5 py-0.5 text-xs font-semibold rounded border",
-                                      getCountColor(child.countColor)
-                                    )}>
-                                      {child.count}
-                                    </span>
-                                  )}
-                                  {child.isNew && (
-                                    <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-green-100 text-green-800 border border-green-300">
-                                      Nouveau
-                                    </span>
-                                  )}
-                                  {child.isCritical && (
-                                    <span className="px-1.5 py-0.5 text-xs font-semibold rounded bg-red-100 text-red-800 border border-red-300">
-                                      Critique
-                                    </span>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500">
-                                  {child.description}
-                                </p>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              } else {
-                const sectionColors = getSectionColor(item.sectionColor);
-
-                return (
-                  <Link
-                    key={index}
-                    href={item.href}
-                    className={cn(
-                      "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200",
-                      isActive(item.href)
-                        ? "bg-blue-50 text-blue-700 border-l-4 border-blue-500"
-                        : cn(sectionColors.bg, sectionColors.hover, "border", sectionColors.border)
-                    )}
+        <div className="space-y-1">
+          {navigationItems.map((item, index) => {
+            if (item.isSection) {
+              const isExpanded = expandedSections.has(item.section || '');
+              return (
+                <div key={index} className="space-y-1">
+                  <button
+                    onClick={() => toggleSection(item.section || '')}
+                    className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   >
-                    <div className="flex items-center space-x-3">
-                      <item.icon className={cn(
-                        "h-5 w-5",
-                        isActive(item.href) ? "text-blue-600" : sectionColors.icon
-                      )} />
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className={cn(
-                            "font-semibold text-sm",
-                            isActive(item.href) ? "text-blue-700" : sectionColors.text
-                          )}>
-                            {item.title}
-                          </span>
-                          {item.count && (
-                            <span className={cn(
-                              "px-2 py-0.5 text-xs font-semibold rounded-full border",
-                              getCountColor(item.countColor)
-                            )}>
-                              {item.count}
-                            </span>
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span className="flex-1 text-left">{item.title}</span>
+                    {getCountBadge(item.count, item.countColor)}
+                    {isExpanded ? (
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    )}
+                  </button>
+
+                  {isExpanded && item.children && (
+                    <div className="ml-4 space-y-1 border-l border-gray-200 pl-4">
+                      {item.children.map((child, childIndex) => (
+                        <Link
+                          key={childIndex}
+                          href={child.href || '#'}
+                          className={cn(
+                            "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive(child.href || '')
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                           )}
-                        </div>
-                        <p className={cn(
-                          "text-xs opacity-70",
-                          isActive(item.href) ? "text-blue-600" : sectionColors.text
-                        )}>
-                          {item.description}
-                        </p>
-                      </div>
+                        >
+                          <child.icon className="mr-2 h-4 w-4" />
+                          <span className="flex-1">{child.title}</span>
+                          {getCountBadge(child.count, child.countColor)}
+                        </Link>
+                      ))}
                     </div>
-                  </Link>
-                );
-              }
-            })}
-          </div>
-        </nav>
-
-        {/* Statistiques Système */}
-        <div className="px-4 py-4 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg p-3 space-y-2">
-            <h3 className="text-sm font-semibold text-gray-700 flex items-center">
-              <Gauge className="h-4 w-4 mr-2" />
-              Statistiques Système
-            </h3>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="text-center">
-                <div className="font-semibold text-emerald-600">307</div>
-                <div className="text-gray-500">Organismes</div>
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-emerald-600">979</div>
-                <div className="text-gray-500">Utilisateurs</div>
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-blue-600">558</div>
-                <div className="text-gray-500">Services</div>
-              </div>
-              <div className="text-center">
-                <div className="font-semibold text-orange-600">478</div>
-                <div className="text-gray-500">En attente</div>
-              </div>
-            </div>
-          </div>
+                  )}
+                </div>
+              );
+            } else {
+              return (
+                <Link
+                  key={index}
+                  href={item.href || '#'}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive(item.href || '')
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span className="flex-1">{item.title}</span>
+                  {getCountBadge(item.count, item.countColor)}
+                </Link>
+              );
+            }
+          })}
         </div>
+      </div>
 
-        {/* Profil Utilisateur */}
-        <div className="px-4 py-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-            <div className="flex-shrink-0">
-              <User className="h-8 w-8 text-purple-600" />
+      <div className="mt-auto">
+        <div className="rounded-lg bg-gray-50 p-4">
+          <div className="flex items-center text-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
+              <Shield className="h-4 w-4 text-gray-600" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900">
-                {session?.user?.firstName} {session?.user?.lastName}
-              </p>
-              <p className="text-xs text-purple-600 font-medium">Super Administrateur</p>
+            <div className="ml-3">
+              <p className="font-medium text-gray-900">🧹 Système Vide</p>
+              <p className="text-gray-500">0 données</p>
             </div>
-            <button className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600">
-              <LogOut className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </div>

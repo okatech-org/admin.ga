@@ -38,7 +38,7 @@ export function StatsSection() {
 
         setStats({
           totalUsers: userData.totalUsers,
-          totalOrganizations: orgData.totalOrganizations, // Vraies données : 307 organismes
+          totalOrganizations: orgData.totalOrganizations, // Base de données vide : 0 organismes
           totalRelations: userData.organizationDistribution.withOrganization, // Utilisateurs connectés à des organismes
           systemHealth: 98 // Basé sur la disponibilité système
         });
@@ -47,9 +47,9 @@ export function StatsSection() {
       console.error('Erreur chargement stats:', error);
       // Données de fallback avec les vraies données connues
       setStats({
-        totalUsers: 979,
-        totalOrganizations: 307, // Nombre réel d'organismes
-        totalRelations: 352, // Utilisateurs avec organisation
+            totalUsers: 0,
+    totalOrganizations: 0, // Base de données vide
+    totalRelations: 0, // Base de données vide
         systemHealth: 98
       });
     } finally {

@@ -127,35 +127,35 @@ export default function DebugOrgsPage() {
       };
 
       // Détection des codes dupliqués avec détails
-      const codeMap = new Map();
+      const codeMap: Record<string, any[]> = {};
       allAdministrations.forEach((org, index) => {
         if (org.code) {
-          if (codeMap.has(org.code)) {
-            codeMap.get(org.code).push({ ...org, originalIndex: index });
+          if (codeMap[org.code]) {
+            codeMap[org.code].push({ ...org, originalIndex: index });
           } else {
-            codeMap.set(org.code, [{ ...org, originalIndex: index }]);
+            codeMap[org.code] = [{ ...org, originalIndex: index }];
           }
         }
       });
 
-      report.duplicateCodes = Array.from(codeMap.entries())
+      report.duplicateCodes = Object.entries(codeMap)
         .filter(([_, orgs]) => orgs.length > 1)
         .map(([code, orgs]) => ({ code, organismes: orgs }));
 
       // Détection des incohérences de type
-      const typeVariations = new Map();
+      const typeVariations: Record<string, Set<string>> = {};
       allAdministrations.forEach(org => {
         if (org.type) {
           const similar = org.type.toLowerCase().replace(/[^a-z]/g, '');
-          if (typeVariations.has(similar)) {
-            typeVariations.get(similar).add(org.type);
+          if (typeVariations[similar]) {
+            typeVariations[similar].add(org.type);
           } else {
-            typeVariations.set(similar, new Set([org.type]));
+            typeVariations[similar] = new Set([org.type]);
           }
         }
       });
 
-      report.inconsistentTypes = Array.from(typeVariations.entries())
+      report.inconsistentTypes = Object.entries(typeVariations)
         .filter(([_, variations]) => variations.size > 1)
         .map(([base, variations]) => ({ base, variations: Array.from(variations) }));
 
@@ -242,32 +242,32 @@ export default function DebugOrgsPage() {
       <PageHeader
         title="Debug - Organismes Gabonais"
         description="Outils de débogage et d'analyse des données des organismes"
-                  icon={Bug}
+        icon={Bug}
         badge={{ text: `${analysis.total} organismes`, variant: 'outline' }}
-        actions={
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={runDetailedAnalysis}
-              disabled={isAnalyzing}
-            >
-              {isAnalyzing ? (
-                <LoadingSpinner size="sm" />
-              ) : (
-                <AlertTriangle className="h-4 w-4 mr-2" />
-              )}
-              Analyser
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportDebugReport}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        }
       />
+
+      {/* Actions */}
+      <div className="flex gap-2 mb-6">
+        <Button
+          variant="outline"
+          onClick={runDetailedAnalysis}
+          disabled={isAnalyzing}
+        >
+          {isAnalyzing ? (
+            <LoadingSpinner size="sm" />
+          ) : (
+            <AlertTriangle className="h-4 w-4 mr-2" />
+          )}
+          Analyser
+        </Button>
+        <Button
+          variant="outline"
+          onClick={handleExportDebugReport}
+        >
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+      </div>
 
       {/* Statistiques de santé */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -303,7 +303,6 @@ export default function DebugOrgsPage() {
           value={analysis.issues.missingCodes + analysis.issues.missingServices + analysis.issues.duplicates}
           description="Issues à résoudre"
           icon={XCircle}
-          badge={{ text: 'Debug', variant: 'destructive' }}
         />
       </div>
 
@@ -631,7 +630,7 @@ export default function DebugOrgsPage() {
                 <div className="text-center py-8">
                   <Button onClick={runDetailedAnalysis} disabled={isAnalyzing}>
                     {isAnalyzing ? (
-                      <LoadingSpinner size="sm" text="Génération du rapport..." />
+                      <LoadingSpinner size="sm" />
                     ) : (
                       <>
                         <AlertTriangle className="h-4 w-4 mr-2" />

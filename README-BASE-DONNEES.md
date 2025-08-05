@@ -199,7 +199,7 @@ J'ai créé une **interface complète et intuitive** pour que vous puissiez gér
 
 ## 🏆 ACCOMPLISSEMENT
 
-**Vous disposez maintenant d'une interface de gestion de base de données de niveau professionnel !**
+## Vous disposez maintenant d'une interface de gestion de base de données de niveau professionnel !
 
 ✅ **Interface graphique complète**
 ✅ **API backend robuste** 
