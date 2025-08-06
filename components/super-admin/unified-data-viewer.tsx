@@ -349,7 +349,7 @@ export default function UnifiedDataViewer() {
                             {org.type.replace(/_/g, ' ')}
                           </Badge>
                           {org.status === 'ACTIF' ? (
-                            <Badge variant="success">Actif</Badge>
+                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-100">Actif</Badge>
                           ) : (
                             <Badge variant="secondary">Inactif</Badge>
                           )}
@@ -443,7 +443,10 @@ export default function UnifiedDataViewer() {
                         <Badge variant="outline">
                           {user.organismeCode}
                         </Badge>
-                        <Badge variant={user.status === 'active' ? 'success' : 'secondary'}>
+                        <Badge 
+                          variant={user.status === 'active' ? 'default' : 'secondary'}
+                          className={user.status === 'active' ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}
+                        >
                           {user.status === 'active' ? 'Actif' : 'Inactif'}
                         </Badge>
                       </div>
