@@ -137,12 +137,12 @@ export default function SuperAdminUtilisateursPage() {
     setUsersError(null);
 
     try {
-      const response = await fetch('/api/users/list?limit=1000');
+      const response = await fetch('/api/rh/utilisateurs?limit=1000&includeStats=true');
       const result = await response.json();
 
       if (result.success) {
         setUsersData(result.data);
-        console.log(`✅ ${result.data.users.length} utilisateurs chargés depuis ${result.data.fromDatabase ? 'la base de données' : 'les données simulées'}`);
+        console.log(`✅ ${result.data.users.length} utilisateurs chargés depuis le système RH gabonais (${result.data.breakdown?.fonctionnaires || 0} fonctionnaires + ${result.data.breakdown?.citoyens || 0} citoyens + ${result.data.breakdown?.superAdmins || 0} super admins)`);
       } else {
         throw new Error(result.error || 'Erreur lors de la récupération des utilisateurs');
       }
@@ -186,9 +186,9 @@ export default function SuperAdminUtilisateursPage() {
 
       return {
         id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
         phone: user.phone || undefined,
         role: user.role as 'SUPER_ADMIN' | 'ADMIN' | 'MANAGER' | 'AGENT' | 'USER',
         organizationId: user.primaryOrganizationId || user.organizationCode || 'sans-organisation',
@@ -274,7 +274,7 @@ export default function SuperAdminUtilisateursPage() {
     if (!userData.organizationId) errors.organizationId = 'L\'organisation est requise';
 
     // Vérifier si l'email existe déjà
-    if (users.some(user => user.email.toLowerCase() === userData.email.toLowerCase())) {
+    if (users.some(user => (user.email || '').toLowerCase() === (userData.email || '').toLowerCase())) {
       errors.email = 'Cet email est déjà utilisé';
     }
 
@@ -364,7 +364,7 @@ export default function SuperAdminUtilisateursPage() {
 
       // Vérifier si l'email existe déjà (sauf pour l'utilisateur actuel)
       if (editUserData.email && users.some(user =>
-        user.email.toLowerCase() === editUserData.email!.toLowerCase() && user.id !== selectedUser.id
+        (user.email || '').toLowerCase() === (editUserData.email || '').toLowerCase() && user.id !== selectedUser.id
       )) {
         errors.email = 'Cet email est déjà utilisé par un autre utilisateur';
       }
@@ -654,10 +654,10 @@ export default function SuperAdminUtilisateursPage() {
   // Utilisateurs filtrés pour la vue liste
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
-      const searchMatch = user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.organizationName.toLowerCase().includes(searchTerm.toLowerCase());
+      const searchMatch = (user.firstName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.lastName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.organizationName || '').toLowerCase().includes(searchTerm.toLowerCase());
 
       const roleMatch = selectedRole === 'all' || !selectedRole || user.role === selectedRole;
       const statusMatch = selectedStatus === 'all' || !selectedStatus || (
