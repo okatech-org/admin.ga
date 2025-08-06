@@ -2,7 +2,7 @@
  * Wrapper pour les organismes complets - Compatibility layer
  */
 
-import { OrganismeGabonais, getOrganismesComplets, STATISTIQUES_ORGANISMES } from '@/lib/data/gabon-organismes-160';
+import { OrganismeGabonais, getOrganismesComplets, STATISTIQUES_ORGANISMES } from '@/lib/data/gabon-organismes-141';
 
 // Type alias pour compatibilité
 export type OrganismeComplet = OrganismeGabonais;

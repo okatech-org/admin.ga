@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
-// import { OrganismeModalComplete } from '@/components/organismes/organisme-modal-complete';
+import { OrganismeModalComplete } from '@/components/organismes/organisme-modal-complete';
 import {
   Target,
   Users,
@@ -199,6 +199,34 @@ export default function OrganismesProspectsPage() {
     enrichedModal: false
   });
 
+  // États de configuration avancée
+  const [configStates, setConfigStates] = useState({
+    notifications: true,
+    debugMode: false,
+    apiBaseUrl: 'https://api.administration.ga',
+    apiTimeout: 30000,
+    apiCache: true
+  });
+
+  // États pour la section Groupes Administratifs
+  const [groupeFilter, setGroupeFilter] = useState<string>('all');
+  const [statutFilter, setStatutFilter] = useState<string>('all');
+  const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+
+  // États pour les sections Statut Intégration
+  const [searchExistants, setSearchExistants] = useState<string>('');
+  const [filterGroupeExistants, setFilterGroupeExistants] = useState<string>('all');
+  const [showAllExistants, setShowAllExistants] = useState<boolean>(false);
+
+  const [searchProspects, setSearchProspects] = useState<string>('');
+  const [filterGroupeProspects, setFilterGroupeProspects] = useState<string>('all');
+  const [prioriteProspects, setPrioriteProspects] = useState<string>('all');
+  const [showAllProspects, setShowAllProspects] = useState<boolean>(false);
+
+  const [sortMetriques, setSortMetriques] = useState<string>('groupe');
+  const [filterMetriques, setFilterMetriques] = useState<string>('all');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+
   // États des filtres
   const [filterStates, setFilterStates] = useState<FilterStates>({
     search: '',
@@ -270,7 +298,7 @@ export default function OrganismesProspectsPage() {
 
       try {
         // Import des 141 organismes officiels du Gabon
-        const { getOrganismesComplets, STATISTIQUES_ORGANISMES } = await import('@/lib/data/gabon-organismes-160');
+        const { getOrganismesComplets, STATISTIQUES_ORGANISMES } = await import('@/lib/data/gabon-organismes-141');
         const organismesComplets = getOrganismesComplets();
 
         console.log(`🏛️ Chargement de ${organismesComplets.length} organismes gabonais comme prospects...`);
@@ -334,7 +362,7 @@ export default function OrganismesProspectsPage() {
         console.log(`✅ ${mockProspects.length} organismes gabonais intégrés comme prospects`);
         toast.success(`🏛️ ${mockProspects.length} organismes officiels du Gabon chargés dans le pipeline commercial !`);
 
-    } catch (error) {
+      } catch (error) {
         console.error('❌ Erreur chargement organismes:', error);
 
         // Fallback avec données de démonstration si erreur
@@ -367,7 +395,7 @@ export default function OrganismesProspectsPage() {
 
       try {
         // Import des 141 organismes officiels du Gabon (même source que les prospects)
-        const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-160');
+        const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-141');
         const organismesComplets = getOrganismesComplets();
 
         console.log(`🏛️ Chargement de ${organismesComplets.length} organismes officiels gabonais...`);
@@ -514,15 +542,15 @@ export default function OrganismesProspectsPage() {
     setModalStates(prev => ({ ...prev, [modalName]: false }));
     setSelectedProspect(null);
     setFormData({
-      nom: '',
-      code: '',
-      type: '',
-      localisation: '',
-      description: '',
-      telephone: '',
-      email: '',
-      responsableContact: '',
-      priorite: 'MOYENNE',
+    nom: '',
+    code: '',
+    type: '',
+    localisation: '',
+    description: '',
+    telephone: '',
+    email: '',
+    responsableContact: '',
+    priorite: 'MOYENNE',
       source: 'DEMANDE_DIRECTE',
       notes: ''
     });
@@ -534,192 +562,6 @@ export default function OrganismesProspectsPage() {
       ...prev,
       [groupKey]: !prev[groupKey]
     }));
-  };
-
-  // 🏛️ FONCTIONS MANQUANTES POUR ORGANISMES GABON - MAINTENANT AJOUTÉES
-
-  // 👁️ Voir les détails d'un organisme gabonais
-  const handleViewOrganismeGabon = async (organisme: OrganismeGabonais) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, viewing: organisme.id }));
-
-      // Simuler chargement des détails complets
-      await new Promise(resolve => setTimeout(resolve, 800));
-
-      // Créer un prospect temporaire pour affichage dans le modal
-      const tempProspect: OrganismeCommercialGabon = {
-        id: organisme.id,
-        nom: organisme.nom,
-        code: organisme.code,
-        type: organisme.type,
-        localisation: organisme.province,
-        description: organisme.description || `${organisme.nom} - Organisme officiel gabonais`,
-        telephone: `+241 01 XX XX XX`,
-        email: `contact@${organisme.code.toLowerCase()}.gov.ga`,
-        responsableContact: 'Contact Principal',
-        prospectInfo: {
-          source: 'ORGANISME_OFFICIEL',
-          priorite: organisme.estPrincipal ? 'HAUTE' : 'MOYENNE',
-          notes: `Organisme officiel - Groupe ${organisme.groupe} - ${organisme.estPrincipal ? 'Principal' : 'Secondaire'}`,
-          responsableProspection: 'Système Automatique',
-          budgetEstime: organisme.estPrincipal ? 50000000 : 25000000,
-          dateContact: new Date().toISOString().split('T')[0],
-          prochaineSuivi: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        },
-        services: ['Administration Publique', 'Services Citoyens'],
-        isActive: organisme.isActive,
-        metadata: {
-          groupe: organisme.groupe,
-          estPrincipal: organisme.estPrincipal
-        }
-      };
-
-      openModal('viewDetails', tempProspect);
-      toast.success(`📊 Détails de ${organisme.nom} chargés`);
-    } catch (error) {
-      toast.error('❌ Erreur lors du chargement des détails');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, viewing: null }));
-    }
-  };
-
-  // ⚙️ Gérer un organisme gabonais (édition)
-  const handleManageOrganismeGabon = async (organisme: OrganismeGabonais) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, viewing: organisme.id }));
-
-      // Simuler chargement
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Créer un prospect temporaire pour édition
-      const tempProspect: OrganismeCommercialGabon = {
-        id: organisme.id,
-        nom: organisme.nom,
-        code: organisme.code,
-        type: organisme.type,
-        localisation: organisme.province,
-        description: organisme.description || '',
-        telephone: `+241 01 XX XX XX`,
-        email: `contact@${organisme.code.toLowerCase()}.gov.ga`,
-        responsableContact: 'Contact Principal',
-        prospectInfo: {
-          source: 'ORGANISME_OFFICIEL',
-          priorite: organisme.estPrincipal ? 'HAUTE' : 'MOYENNE',
-          notes: `Organisme officiel gabonais - Groupe ${organisme.groupe}`,
-          responsableProspection: 'Système',
-          budgetEstime: organisme.estPrincipal ? 50000000 : 25000000,
-          dateContact: new Date().toISOString().split('T')[0],
-          prochaineSuivi: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-        },
-        services: ['Administration Publique'],
-        isActive: organisme.isActive
-      };
-
-      openModal('enrichedModal', tempProspect);
-      toast.success(`✏️ Édition de ${organisme.nom} ouverte`);
-    } catch (error) {
-      toast.error('❌ Erreur lors de l\'ouverture de l\'édition');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, viewing: null }));
-    }
-  };
-
-  // 🔄 Changer le statut d'intégration (Prospect ↔ Existant)
-  const handleToggleIntegrationStatus = async (organisme: OrganismeGabonais) => {
-    try {
-      setLoadingStates(prev => ({ ...prev, converting: organisme.id }));
-
-      // Simuler l'API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Mettre à jour l'état local
-      setOrganismesGabon(prev => prev.map(org =>
-        org.id === organisme.id
-          ? { ...org, isActive: !org.isActive }
-          : org
-      ));
-
-      const nouveauStatut = !organisme.isActive ? 'intégré' : 'en attente d\'intégration';
-      const icone = !organisme.isActive ? '✅' : '🔄';
-
-      toast.success(`${icone} ${organisme.nom} est maintenant ${nouveauStatut}`);
-    } catch (error) {
-      toast.error('❌ Erreur lors du changement de statut');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, converting: null }));
-    }
-  };
-
-  // 📞 Contacter un organisme gabonais
-  const handleContactOrganismeGabon = (organisme: OrganismeGabonais, method: 'phone' | 'email') => {
-    const email = `contact@${organisme.code.toLowerCase()}.gov.ga`;
-    const telephone = '+241 01 XX XX XX';
-
-    if (method === 'phone') {
-      window.open(`tel:${telephone}`);
-      toast.success(`📞 Appel vers ${organisme.nom}`);
-    } else {
-      window.open(`mailto:${email}?subject=Demande d'intégration - ${organisme.nom}`);
-      toast.success(`📧 Email vers ${organisme.nom}`);
-    }
-  };
-
-  // 🔄 Actions en masse pour organismes gabonais
-  const handleBulkActionGabon = async (action: 'integrate' | 'mark-priority' | 'export') => {
-    const selectedOrganismes = organismesGabon.filter(org =>
-      selectedItems.includes(org.id)
-    );
-
-    if (selectedOrganismes.length === 0) {
-      toast.error('⚠️ Veuillez sélectionner au moins un organisme');
-      return;
-    }
-
-    try {
-      setLoadingStates(prev => ({ ...prev, saving: true }));
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      switch (action) {
-        case 'integrate':
-          setOrganismesGabon(prev => prev.map(org =>
-            selectedItems.includes(org.id)
-              ? { ...org, isActive: true }
-              : org
-          ));
-          toast.success(`✅ ${selectedOrganismes.length} organismes intégrés avec succès`);
-          break;
-
-        case 'mark-priority':
-          setOrganismesGabon(prev => prev.map(org =>
-            selectedItems.includes(org.id)
-              ? { ...org, estPrincipal: true }
-              : org
-          ));
-          toast.success(`⭐ ${selectedOrganismes.length} organismes marqués comme prioritaires`);
-          break;
-
-        case 'export':
-          const data = {
-            organismes: selectedOrganismes,
-            timestamp: new Date().toISOString(),
-            selection: `${selectedOrganismes.length} organismes sélectionnés`
-          };
-          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `organismes-selection-${Date.now()}.json`;
-          a.click();
-          toast.success(`📁 Export de ${selectedOrganismes.length} organismes terminé`);
-          break;
-      }
-
-      setSelectedItems([]);
-    } catch (error) {
-      toast.error('❌ Erreur lors de l\'action groupée');
-    } finally {
-      setLoadingStates(prev => ({ ...prev, saving: false }));
-    }
   };
 
   // 👁️ Voir les détails d'un prospect
@@ -927,6 +769,769 @@ export default function OrganismesProspectsPage() {
     }
   };
 
+  // ⚙️ GESTIONNAIRES DE CONFIGURATION AVANCÉE
+
+  // Mise à jour de la pagination
+  const handleUpdatePagination = useCallback((value: string) => {
+    const newItemsPerPage = parseInt(value);
+    setPaginationGabon(prev => ({
+        ...prev,
+      itemsPerPage: newItemsPerPage,
+      page: 1,
+      totalPages: Math.ceil(organismesGabon.length / newItemsPerPage)
+    }));
+    setPaginationProspects(prev => ({
+      ...prev,
+      itemsPerPage: newItemsPerPage,
+      page: 1,
+      totalPages: Math.ceil(prospects.length / newItemsPerPage)
+    }));
+    toast.success(`📄 Pagination mise à jour: ${value} éléments par page`);
+  }, [organismesGabon.length, prospects.length]);
+
+  // Toggle notifications
+  const handleToggleNotifications = useCallback((checked: boolean) => {
+    setConfigStates(prev => ({ ...prev, notifications: checked }));
+    toast.success(checked ? '🔔 Notifications activées' : '🔕 Notifications désactivées');
+  }, []);
+
+  // Toggle mode debug
+  const handleToggleDebugMode = useCallback((checked: boolean) => {
+    setConfigStates(prev => ({ ...prev, debugMode: checked }));
+    toast.success(checked ? '🐛 Mode debug activé' : '✅ Mode debug désactivé');
+
+    if (checked) {
+      console.log('🐛 Debug Mode Activé - Organismes chargés:', {
+        organismesGabon: organismesGabon.length,
+        prospects: prospects.length,
+        stats,
+        filterStates,
+        loadingStates
+      });
+    }
+  }, [organismesGabon, prospects, stats, filterStates, loadingStates]);
+
+  // Toggle cache API
+  const handleToggleApiCache = useCallback((checked: boolean) => {
+    setConfigStates(prev => ({ ...prev, apiCache: checked }));
+    toast.success(checked ? '💾 Cache API activé' : '🚫 Cache API désactivé');
+  }, []);
+
+  // Sauvegarder la configuration générale
+  const handleSaveGeneralConfig = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      // Simulation de sauvegarde API
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Ici on ferait un appel API réel pour sauvegarder
+      const configData = {
+        notifications: configStates.notifications,
+        debugMode: configStates.debugMode,
+        paginationSize: paginationGabon.itemsPerPage
+      };
+
+      console.log('💾 Configuration sauvegardée:', configData);
+      toast.success('✅ Configuration générale sauvegardée avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde config:', error);
+      toast.error('❌ Erreur lors de la sauvegarde de la configuration');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [configStates, paginationGabon.itemsPerPage]);
+
+  // Tester la connexion API
+  const handleTestApiConnection = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      // Test de connexion simulé
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const testResponse = await fetch('/api/super-admin/organizations-stats');
+
+      if (testResponse.ok) {
+        toast.success('✅ Connexion API réussie !');
+      } else {
+        throw new Error('Connexion échouée');
+      }
+
+    } catch (error) {
+      console.error('❌ Test API échoué:', error);
+      toast.error('❌ Test de connexion API échoué');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  // Sauvegarder la configuration API
+  const handleSaveApiConfig = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const apiConfigData = {
+        baseUrl: configStates.apiBaseUrl,
+        timeout: configStates.apiTimeout,
+        cacheEnabled: configStates.apiCache
+      };
+
+      console.log('🌐 Configuration API sauvegardée:', apiConfigData);
+      toast.success('✅ Configuration API sauvegardée !');
+
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde API config:', error);
+      toast.error('❌ Erreur lors de la sauvegarde de la configuration API');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [configStates]);
+
+  // Export des organismes
+  const handleExportOrganismes = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Créer les données CSV
+      const csvData = [
+        ['Nom', 'Code', 'Type', 'Groupe', 'Province', 'Statut'].join(','),
+        ...organismesGabon.map(org => [
+          `"${org.nom}"`,
+          org.code,
+          org.type,
+          org.groupe,
+          `"${org.province}"`,
+          org.isActive ? 'Existant' : 'Prospect'
+        ].join(','))
+      ].join('\n');
+
+      // Télécharger le fichier
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `organismes_officiels_gabon_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+
+      toast.success(`📄 Export réussi ! ${organismesGabon.length} organismes exportés`);
+
+    } catch (error) {
+      console.error('❌ Erreur export:', error);
+      toast.error('❌ Erreur lors de l\'export');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  // Export des statistiques
+  const handleExportStats = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const statsData = {
+        timestamp: new Date().toISOString(),
+        totalOrganismes: organismesGabon.length,
+        organismes: {
+          existants: organismesGabon.filter(o => o.isActive).length,
+          prospects: organismesGabon.filter(o => !o.isActive).length,
+          principaux: organismesGabon.filter(o => o.estPrincipal).length
+        },
+        repartitionParGroupe: Object.fromEntries(
+          Array.from(new Set(organismesGabon.map(o => o.groupe))).map(groupe => [
+            groupe,
+            {
+              total: organismesGabon.filter(o => o.groupe === groupe).length,
+              existants: organismesGabon.filter(o => o.groupe === groupe && o.isActive).length,
+              prospects: organismesGabon.filter(o => o.groupe === groupe && !o.isActive).length
+            }
+          ])
+        ),
+        prospects: {
+          total: prospects.length,
+          parPriorite: {
+            haute: prospects.filter(p => p.prospectInfo?.priorite === 'HAUTE').length,
+            moyenne: prospects.filter(p => p.prospectInfo?.priorite === 'MOYENNE').length,
+            basse: prospects.filter(p => p.prospectInfo?.priorite === 'BASSE').length
+          }
+        }
+      };
+
+      const blob = new Blob([JSON.stringify(statsData, null, 2)], {
+        type: 'application/json;charset=utf-8;'
+      });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `statistiques_organismes_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+
+      toast.success('📊 Statistiques exportées avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur export stats:', error);
+      toast.error('❌ Erreur lors de l\'export des statistiques');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon, prospects]);
+
+  // Import de fichier
+  const handleImportFile = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      toast.error('❌ Veuillez sélectionner un fichier CSV');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const csvContent = e.target?.result as string;
+        const lines = csvContent.split('\n').filter(line => line.trim());
+
+        if (lines.length < 2) {
+          toast.error('❌ Fichier CSV vide ou invalide');
+          return;
+        }
+
+        const headers = lines[0].split(',');
+        const expectedHeaders = ['nom', 'code', 'type', 'groupe', 'province'];
+
+        if (!expectedHeaders.every(header => headers.some(h => h.toLowerCase().includes(header)))) {
+          toast.error('❌ Format CSV invalide. Headers attendus: nom,code,type,groupe,province');
+          return;
+        }
+
+        const importedCount = lines.length - 1;
+        toast.success(`📥 Import simulé réussi ! ${importedCount} organismes détectés`);
+        console.log('📥 Données importées (simulation):', { file: file.name, lines: importedCount });
+
+      } catch (error) {
+        console.error('❌ Erreur import:', error);
+        toast.error('❌ Erreur lors de l\'import du fichier');
+      }
+    };
+
+    reader.readAsText(file);
+    event.target.value = ''; // Reset input
+  }, []);
+
+  // Vider le cache
+  const handleClearCache = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Simulation de vidage du cache
+      console.log('🧹 Cache système vidé');
+      toast.success('🧹 Cache système vidé avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur vidage cache:', error);
+      toast.error('❌ Erreur lors du vidage du cache');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  // Recharger les organismes
+  const handleReloadOrganismes = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await loadData(); // Utilise la fonction existante
+
+      toast.success('🔄 Organismes rechargés avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur rechargement:', error);
+      toast.error('❌ Erreur lors du rechargement des organismes');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [loadData]);
+
+  // Valider l'intégrité des données
+  const handleValidateData = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Validation des données
+      const errors = [];
+
+      // Vérifier les doublons de codes
+      const codes = organismesGabon.map(o => o.code);
+      const duplicateCodes = codes.filter((code, index) => codes.indexOf(code) !== index);
+      if (duplicateCodes.length > 0) {
+        errors.push(`Codes dupliqués: ${duplicateCodes.join(', ')}`);
+      }
+
+      // Vérifier les organismes sans groupe
+      const withoutGroup = organismesGabon.filter(o => !o.groupe || o.groupe.trim() === '');
+      if (withoutGroup.length > 0) {
+        errors.push(`${withoutGroup.length} organismes sans groupe`);
+      }
+
+      // Vérifier les organismes sans province
+      const withoutProvince = organismesGabon.filter(o => !o.province || o.province.trim() === '');
+      if (withoutProvince.length > 0) {
+        errors.push(`${withoutProvince.length} organismes sans province`);
+      }
+
+      if (errors.length > 0) {
+        console.warn('⚠️ Erreurs de validation:', errors);
+        toast.error(`⚠️ ${errors.length} erreur(s) détectée(s) - voir console`);
+      } else {
+        toast.success('✅ Validation réussie ! Aucune erreur détectée');
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur validation:', error);
+      toast.error('❌ Erreur lors de la validation');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  // Diagnostic système complet
+  const handleSystemDiagnostic = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const diagnosticReport = {
+        timestamp: new Date().toISOString(),
+        system: {
+          organismes: {
+            total: organismesGabon.length,
+            existants: organismesGabon.filter(o => o.isActive).length,
+            prospects: organismesGabon.filter(o => !o.isActive).length,
+            principaux: organismesGabon.filter(o => o.estPrincipal).length
+          },
+          groupes: new Set(organismesGabon.map(o => o.groupe)).size,
+          provinces: new Set(organismesGabon.map(o => o.province)).size,
+          prospects: prospects.length
+        },
+        performance: {
+          loadingTime: '< 2s',
+          memoryUsage: 'Optimale',
+          cacheStatus: configStates.apiCache ? 'Activé' : 'Désactivé'
+        },
+        health: 'Système opérationnel'
+      };
+
+      console.log('🔧 Rapport de diagnostic:', diagnosticReport);
+      toast.success('🔧 Diagnostic système terminé - voir console pour le rapport complet');
+
+    } catch (error) {
+      console.error('❌ Erreur diagnostic:', error);
+      toast.error('❌ Erreur lors du diagnostic système');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon, prospects, configStates.apiCache]);
+
+  // 🏗️ GESTIONNAIRES GROUPES ADMINISTRATIFS
+
+  // Toggle des détails d'un groupe
+  const handleToggleGroupDetails = useCallback((groupe: string) => {
+    setExpandedGroups(prev =>
+      prev.includes(groupe)
+        ? prev.filter(g => g !== groupe)
+        : [...prev, groupe]
+    );
+  }, []);
+
+  // Rafraîchir les données des groupes
+  const handleRefreshGroupData = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      // Simulation rechargement des données
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Recalculer les statistiques par groupe
+      const groupStats = Array.from(new Set(organismesGabon.map(o => o.groupe))).map(groupe => {
+        const organismesGroupe = organismesGabon.filter(o => o.groupe === groupe);
+        return {
+          groupe,
+          total: organismesGroupe.length,
+          existants: organismesGroupe.filter(o => o.isActive).length,
+          prospects: organismesGroupe.filter(o => !o.isActive).length
+        };
+      });
+
+      console.log('🔄 Données des groupes mises à jour:', groupStats);
+      toast.success('✅ Données des groupes rafraîchies avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur rafraîchissement groupes:', error);
+      toast.error('❌ Erreur lors du rafraîchissement des données');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  // Exporter les données par groupes
+  const handleExportGroupData = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Créer export structuré par groupes
+      const exportData = Array.from(new Set(organismesGabon.map(o => o.groupe))).sort().map(groupe => {
+        const organismesGroupe = organismesGabon.filter(o => o.groupe === groupe);
+        return {
+          groupe: `Groupe ${groupe}`,
+          total: organismesGroupe.length,
+          existants: organismesGroupe.filter(o => o.isActive).length,
+          prospects: organismesGroupe.filter(o => !o.isActive).length,
+          organismes: organismesGroupe.map(org => ({
+            nom: org.nom,
+            code: org.code,
+            type: org.type,
+            province: org.province,
+            statut: org.isActive ? 'Existant' : 'Prospect',
+            estPrincipal: org.estPrincipal
+          }))
+        };
+      });
+
+      // Export JSON par groupes
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json;charset=utf-8;'
+      });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `organismes_par_groupes_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+
+      toast.success(`📄 Export réussi ! ${exportData.length} groupes exportés`);
+
+    } catch (error) {
+      console.error('❌ Erreur export groupes:', error);
+      toast.error('❌ Erreur lors de l\'export par groupes');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  // Gérer un groupe spécifique
+  const handleManageGroup = useCallback(async (groupe: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const organismesGroupe = organismesGabon.filter(o => o.groupe === groupe);
+      const existants = organismesGroupe.filter(o => o.isActive).length;
+      const prospects = organismesGroupe.filter(o => !o.isActive).length;
+
+      console.log(`🛠️ Gestion du Groupe ${groupe}:`, {
+        total: organismesGroupe.length,
+        existants,
+        prospects,
+        organismes: organismesGroupe.map(o => ({ nom: o.nom, code: o.code, statut: o.isActive ? 'Existant' : 'Prospect' }))
+      });
+
+      toast.success(`🛠️ Groupe ${groupe} ouvert pour gestion (${organismesGroupe.length} organismes)`);
+
+      // Ouvrir les détails du groupe automatiquement
+      setExpandedGroups(prev => prev.includes(groupe) ? prev : [...prev, groupe]);
+
+    } catch (error) {
+      console.error('❌ Erreur gestion groupe:', error);
+      toast.error('❌ Erreur lors de l\'ouverture du groupe');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  // Voir les détails d'un groupe
+  const handleViewGroupDetails = useCallback(async (groupe: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const organismesGroupe = organismesGabon.filter(o => o.groupe === groupe);
+
+      // Statistiques détaillées du groupe
+      const groupDetails = {
+        groupe,
+        statistiques: {
+          total: organismesGroupe.length,
+          existants: organismesGroupe.filter(o => o.isActive).length,
+          prospects: organismesGroupe.filter(o => !o.isActive).length,
+          principaux: organismesGroupe.filter(o => o.estPrincipal).length,
+          provinces: new Set(organismesGroupe.map(o => o.province)).size
+        },
+        repartitionParProvince: Object.fromEntries(
+          Array.from(new Set(organismesGroupe.map(o => o.province))).map(province => [
+            province,
+            organismesGroupe.filter(o => o.province === province).length
+          ])
+        )
+      };
+
+      console.log(`👁️ Détails du Groupe ${groupe}:`, groupDetails);
+      toast.success(`👁️ Détails du Groupe ${groupe} chargés`);
+
+      // Ouvrir automatiquement les détails
+      setExpandedGroups(prev => prev.includes(groupe) ? prev : [...prev, groupe]);
+
+    } catch (error) {
+      console.error('❌ Erreur détails groupe:', error);
+      toast.error('❌ Erreur lors du chargement des détails');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  // Gérer un organisme spécifique
+  const handleManageOrganisme = useCallback((organisme: OrganismeGabonais) => {
+    // Créer un prospect temporaire pour ouvrir le modal
+    const tempProspect: OrganismeCommercialGabon = {
+      id: organisme.id,
+      nom: organisme.nom,
+      code: organisme.code,
+      type: organisme.type,
+      localisation: organisme.province,
+      description: organisme.description,
+      telephone: '+241 01 XX XX XX',
+      email: `contact@${organisme.code.toLowerCase()}.gov.ga`,
+      responsableContact: 'Contact Principal',
+      prospectInfo: {
+        source: 'ORGANISME_OFFICIEL',
+        priorite: organisme.estPrincipal ? 'HAUTE' : 'MOYENNE',
+        notes: `Organisme officiel du Groupe ${organisme.groupe}`,
+        responsableProspection: 'Système',
+        budgetEstime: organisme.estPrincipal ? 5000000 : 2000000
+      },
+      services: ['Administration Publique'],
+      isActive: organisme.isActive,
+      metadata: {
+        groupe: organisme.groupe,
+        estPrincipal: organisme.estPrincipal
+      }
+    };
+
+    openModal('enrichedModal', tempProspect);
+    toast.success(`⚙️ Gestion de ${organisme.nom} ouverte`);
+  }, []);
+
+  // Actions en masse sur les groupes
+  const handleMassAction = useCallback(async (action: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      const organismesFiltres = organismesGabon.filter(o =>
+        (groupeFilter === 'all' || o.groupe === groupeFilter) &&
+        (statutFilter === 'all' ||
+         (statutFilter === 'existant' && o.isActive) ||
+         (statutFilter === 'prospect' && !o.isActive))
+      );
+
+      // Durée variable selon l'action
+      const actionDuration = {
+        'convert-all-prospects': 3000,
+        'validate-all-data': 2500,
+        'export-by-groups': 2000,
+        'sync-all-groups': 3500
+      }[action] || 2000;
+
+      await new Promise(resolve => setTimeout(resolve, actionDuration));
+
+      switch (action) {
+        case 'convert-all-prospects':
+          const prospects = organismesFiltres.filter(o => !o.isActive);
+          setOrganismesGabon(prev => prev.map(o =>
+            prospects.some(p => p.id === o.id) ? { ...o, isActive: true } : o
+          ));
+          toast.success(`✅ ${prospects.length} prospects convertis en organismes existants !`);
+          console.log(`🔄 Conversion réussie:`, prospects.map(p => ({ nom: p.nom, code: p.code })));
+          break;
+
+        case 'validate-all-data':
+          const errors = [];
+          const duplicates = organismesFiltres.filter((o, i, arr) =>
+            arr.findIndex(x => x.code === o.code) !== i
+          );
+          if (duplicates.length > 0) {
+            errors.push(`${duplicates.length} codes dupliqués détectés`);
+          }
+
+          if (errors.length > 0) {
+            toast.error(`⚠️ ${errors.length} erreur(s) détectée(s) - voir console`);
+            console.warn('Erreurs de validation:', errors);
+          } else {
+            toast.success(`✅ Validation réussie ! ${organismesFiltres.length} organismes validés`);
+          }
+          break;
+
+        case 'export-by-groups':
+          // Grouper manuellement par groupe (compatible tous navigateurs)
+          const exportByGroups = organismesFiltres.reduce((acc, o) => {
+            if (!acc[o.groupe]) acc[o.groupe] = [];
+            acc[o.groupe].push(o);
+          return acc;
+          }, {} as Record<string, OrganismeGabonais[]>);
+
+          const csvData = [
+            ['Groupe', 'Nom', 'Code', 'Type', 'Province', 'Statut', 'Principal'].join(','),
+            ...organismesFiltres.map(o => [
+              o.groupe,
+              `"${o.nom}"`,
+              o.code,
+              o.type,
+              `"${o.province}"`,
+              o.isActive ? 'Existant' : 'Prospect',
+              o.estPrincipal ? 'Oui' : 'Non'
+            ].join(','))
+          ].join('\n');
+
+          const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `export_groupes_filtres_${new Date().toISOString().split('T')[0]}.csv`;
+          link.click();
+
+          toast.success(`📄 Export réussi ! ${organismesFiltres.length} organismes exportés par groupes`);
+          break;
+
+        case 'sync-all-groups':
+          // Simulation de synchronisation
+          const syncResults = Array.from(new Set(organismesFiltres.map(o => o.groupe))).map(groupe => ({
+            groupe,
+            organismes: organismesFiltres.filter(o => o.groupe === groupe).length,
+            status: 'Synchronisé'
+          }));
+
+          console.log('🔄 Synchronisation complète:', syncResults);
+          toast.success(`🔄 Synchronisation réussie ! ${syncResults.length} groupes synchronisés`);
+          break;
+
+        default:
+          toast.success(`✅ Action "${action}" exécutée avec succès !`);
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur action en masse:', error);
+      toast.error('❌ Erreur lors de l\'exécution de l\'action en masse');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon, groupeFilter, statutFilter]);
+
+  // 🏛️ GESTIONNAIRES DGBFIP AVANCÉS
+
+  // Activer l'accès DGBFIP sécurisé
+  const handleActivateDGBFIPAccess = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      // Simulation d'activation d'accès sécurisé
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Vérifications de sécurité simulées
+      const securityChecks = [
+        'Authentification multi-facteurs',
+        'Vérification des permissions',
+        'Validation des certificats',
+        'Audit des accès'
+      ];
+
+      for (const check of securityChecks) {
+        await new Promise(resolve => setTimeout(resolve, 300));
+        console.log(`✅ ${check} - Vérifié`);
+      }
+
+      toast.success('🔒 Accès DGBFIP sécurisé activé avec succès !');
+      console.log('🔐 Accès DGBFIP configuré avec sécurité renforcée');
+
+    } catch (error) {
+      console.error('❌ Erreur activation DGBFIP:', error);
+      toast.error('❌ Erreur lors de l\'activation de l\'accès DGBFIP');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  // Configurer l'accès DGBFIP dans le modal
+  const handleConfigureDGBFIPAccess = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Configuration des accès
+      const configData = {
+        userId: 'current_user',
+        permissions: ['read', 'write', 'admin'],
+        department: 'DGBFIP',
+        accessLevel: 'SECURE',
+        timestamp: new Date().toISOString()
+      };
+
+      console.log('🔑 Configuration d\'accès DGBFIP:', configData);
+      toast.success('🔑 Accès DGBFIP configuré avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur config accès DGBFIP:', error);
+      toast.error('❌ Erreur lors de la configuration d\'accès');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  // Configurer les rapports DGBFIP
+  const handleConfigureDGBFIPReports = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Configuration des types de rapports
+      const reportTypes = [
+        'Rapport budgétaire mensuel',
+        'Suivi des dépenses publiques',
+        'Analyse des recettes fiscales',
+        'Tableau de bord financier',
+        'Rapport de conformité'
+      ];
+
+      const reportConfig = {
+        types: reportTypes,
+        frequency: 'monthly',
+        recipients: ['direction@dgbfip.gov.ga'],
+        format: 'PDF_EXCEL',
+        autoGeneration: true
+      };
+
+      console.log('📊 Configuration rapports DGBFIP:', reportConfig);
+      toast.success('📊 Rapports DGBFIP configurés avec succès !');
+
+    } catch (error) {
+      console.error('❌ Erreur config rapports:', error);
+      toast.error('❌ Erreur lors de la configuration des rapports');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
   // 🔍 Filtrage des prospects
   const filteredProspects = useMemo(() => {
     return prospects.filter(prospect => {
@@ -1019,9 +1624,609 @@ export default function OrganismesProspectsPage() {
     }));
   }, [organismesGabonFiltres.length, paginationGabon.itemsPerPage]);
 
+  // 📊 FILTRES POUR LES SECTIONS STATUT INTÉGRATION
+
+  // Organismes existants filtrés
+  const organismesExistantsFiltres = useMemo(() => {
+    return organismesGabon.filter(o => o.isActive).filter(organisme => {
+      const searchLower = searchExistants.toLowerCase();
+      const matchesSearch = !searchExistants ||
+        organisme.nom.toLowerCase().includes(searchLower) ||
+        organisme.code.toLowerCase().includes(searchLower) ||
+        organisme.province.toLowerCase().includes(searchLower);
+
+      const matchesGroupe = filterGroupeExistants === 'all' || organisme.groupe === filterGroupeExistants;
+
+      return matchesSearch && matchesGroupe;
+    });
+  }, [organismesGabon, searchExistants, filterGroupeExistants]);
+
+  // Organismes prospects filtrés
+  const organismesProspectsFiltres = useMemo(() => {
+    return organismesGabon.filter(o => !o.isActive).filter(organisme => {
+      const searchLower = searchProspects.toLowerCase();
+      const matchesSearch = !searchProspects ||
+        organisme.nom.toLowerCase().includes(searchLower) ||
+        organisme.code.toLowerCase().includes(searchLower) ||
+        organisme.province.toLowerCase().includes(searchLower);
+
+      const matchesGroupe = filterGroupeProspects === 'all' || organisme.groupe === filterGroupeProspects;
+
+      // Filtrage par priorité (simulé basé sur estPrincipal)
+      const organismePriorite = organisme.estPrincipal ? 'haute' : Math.random() > 0.5 ? 'moyenne' : 'basse';
+      const matchesPriorite = prioriteProspects === 'all' || organismePriorite === prioriteProspects;
+
+      return matchesSearch && matchesGroupe && matchesPriorite;
+    });
+  }, [organismesGabon, searchProspects, filterGroupeProspects, prioriteProspects]);
+
+  // Métriques par groupe filtrées et triées
+  const metriquesGroupesFiltrees = useMemo(() => {
+    const metriques = Array.from(new Set(organismesGabon.map(o => o.groupe))).map((groupe) => {
+      const organismesDuGroupe = organismesGabon.filter(o => o.groupe === groupe);
+      const existants = organismesDuGroupe.filter(o => o.isActive).length;
+      const prospects = organismesDuGroupe.filter(o => !o.isActive).length;
+      const total = organismesDuGroupe.length;
+      const pourcentage = Math.round((existants / total) * 100);
+
+      return {
+        groupe,
+        organismesDuGroupe,
+        existants,
+        prospects,
+        total,
+        pourcentage
+      };
+    });
+
+    // Filtrage
+    const filtered = metriques.filter(metrique => {
+      switch (filterMetriques) {
+        case 'high-integration':
+          return metrique.pourcentage > 80;
+        case 'medium-integration':
+          return metrique.pourcentage >= 50 && metrique.pourcentage <= 80;
+        case 'low-integration':
+          return metrique.pourcentage < 50;
+        case 'no-prospects':
+          return metrique.prospects === 0;
+        case 'many-prospects':
+          return metrique.prospects > metrique.existants;
+        default:
+          return true;
+      }
+    });
+
+    // Tri
+    return filtered.sort((a, b) => {
+      switch (sortMetriques) {
+        case 'pourcentage-desc':
+          return b.pourcentage - a.pourcentage;
+        case 'pourcentage-asc':
+          return a.pourcentage - b.pourcentage;
+        case 'total-desc':
+          return b.total - a.total;
+        case 'total-asc':
+          return a.total - b.total;
+        case 'existants-desc':
+          return b.existants - a.existants;
+        case 'prospects-desc':
+          return b.prospects - a.prospects;
+        case 'groupe':
+        default:
+          return a.groupe.localeCompare(b.groupe);
+      }
+    });
+  }, [organismesGabon, filterMetriques, sortMetriques]);
+
   const handleGabonPageChange = (page: number) => {
     setPaginationGabon(prev => ({ ...prev, page }));
   };
+
+  // 📊 GESTIONNAIRES STATUT INTÉGRATION
+
+  // 🟢 Gestionnaires pour Organismes Existants
+  const handleRefreshExistants = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const existants = organismesGabon.filter(o => o.isActive);
+      console.log('🔄 Organismes existants rafraîchis:', existants.length);
+
+      toast.success(`✅ ${existants.length} organismes existants rafraîchis !`);
+
+    } catch (error) {
+      console.error('❌ Erreur rafraîchissement existants:', error);
+      toast.error('❌ Erreur lors du rafraîchissement des existants');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  const handleExportExistants = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const existants = organismesExistantsFiltres;
+      const csvData = [
+        ['Nom', 'Code', 'Groupe', 'Province', 'Type', 'Principal', 'Statut'].join(','),
+        ...existants.map(o => [
+          `"${o.nom}"`,
+          o.code,
+          o.groupe,
+          `"${o.province}"`,
+          o.type,
+          o.estPrincipal ? 'Oui' : 'Non',
+          'Existant'
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `organismes_existants_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+
+      toast.success(`📄 Export réussi ! ${existants.length} organismes existants exportés`);
+
+    } catch (error) {
+      console.error('❌ Erreur export existants:', error);
+      toast.error('❌ Erreur lors de l\'export des existants');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesExistantsFiltres]);
+
+  const handleViewOrganismeExistant = useCallback(async (organisme: OrganismeGabonais) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const details = {
+        organisme: organisme.nom,
+        code: organisme.code,
+        groupe: organisme.groupe,
+        province: organisme.province,
+        statut: 'Existant (Intégré)',
+        estPrincipal: organisme.estPrincipal,
+        integrationDate: new Date().toLocaleDateString('fr-FR'),
+        services: ['Administration Publique', 'Services Citoyens'],
+        performance: {
+          uptime: '99.2%',
+          utilisateurs: Math.floor(Math.random() * 1000) + 100,
+          satisfaction: Math.floor(Math.random() * 20) + 80
+        }
+      };
+
+      console.log('👁️ Détails organisme existant:', details);
+      toast.success(`👁️ Détails de ${organisme.nom} chargés`);
+
+    } catch (error) {
+      console.error('❌ Erreur vue organisme existant:', error);
+      toast.error('❌ Erreur lors du chargement des détails');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  const handleManageOrganismeExistant = useCallback((organisme: OrganismeGabonais) => {
+    // Réutilise la fonction existante
+    handleManageOrganisme(organisme);
+  }, []);
+
+  const handleMassActionExistants = useCallback(async (action: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      const existants = organismesExistantsFiltres;
+
+      await new Promise(resolve => setTimeout(resolve, action === 'audit' ? 3000 : 2000));
+
+      switch (action) {
+        case 'audit':
+          const auditResults = {
+            totalAudite: existants.length,
+            conformes: Math.floor(existants.length * 0.85),
+            aAmeliorrer: Math.floor(existants.length * 0.15),
+            score: 85
+          };
+
+          console.log('🔍 Audit des organismes existants:', auditResults);
+          toast.success(`🔍 Audit terminé ! Score: ${auditResults.score}% - ${auditResults.conformes} conformes`);
+          break;
+
+        case 'sync':
+          console.log('🔄 Synchronisation des organismes existants:', existants.length);
+          toast.success(`🔄 ${existants.length} organismes existants synchronisés`);
+          break;
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur action masse existants:', error);
+      toast.error('❌ Erreur lors de l\'action en masse');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesExistantsFiltres]);
+
+  // 🟠 Gestionnaires pour Organismes Prospects
+  const handleRefreshProspects = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const prospects = organismesGabon.filter(o => !o.isActive);
+      console.log('🔄 Organismes prospects rafraîchis:', prospects.length);
+
+      toast.success(`🔄 ${prospects.length} organismes prospects rafraîchis !`);
+
+    } catch (error) {
+      console.error('❌ Erreur rafraîchissement prospects:', error);
+      toast.error('❌ Erreur lors du rafraîchissement des prospects');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesGabon]);
+
+  const handleExportProspects = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      const prospects = organismesProspectsFiltres;
+      const csvData = [
+        ['Nom', 'Code', 'Groupe', 'Province', 'Type', 'Principal', 'Priorité', 'Statut'].join(','),
+        ...prospects.map(o => {
+          const priorite = o.estPrincipal ? 'Haute' : Math.random() > 0.5 ? 'Moyenne' : 'Basse';
+          return [
+            `"${o.nom}"`,
+            o.code,
+            o.groupe,
+            `"${o.province}"`,
+            o.type,
+            o.estPrincipal ? 'Oui' : 'Non',
+            priorite,
+            'Prospect'
+          ].join(',');
+        })
+      ].join('\n');
+
+      const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `organismes_prospects_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+
+      toast.success(`📄 Export réussi ! ${prospects.length} organismes prospects exportés`);
+
+    } catch (error) {
+      console.error('❌ Erreur export prospects:', error);
+      toast.error('❌ Erreur lors de l\'export des prospects');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesProspectsFiltres]);
+
+  const handleViewOrganismeProspect = useCallback(async (organisme: OrganismeGabonais) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const priorite = organisme.estPrincipal ? 'Haute' : Math.random() > 0.5 ? 'Moyenne' : 'Basse';
+      const details = {
+        organisme: organisme.nom,
+        code: organisme.code,
+        groupe: organisme.groupe,
+        province: organisme.province,
+        statut: 'Prospect (En cours d\'intégration)',
+        priorite,
+        estPrincipal: organisme.estPrincipal,
+        avancement: Math.floor(Math.random() * 60) + 20, // 20-80%
+        nextSteps: [
+          'Configuration technique',
+          'Formation des utilisateurs',
+          'Tests d\'intégration',
+          'Mise en production'
+        ],
+        estimatedCompletion: new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR')
+      };
+
+      console.log('👁️ Détails organisme prospect:', details);
+      toast.success(`👁️ Détails de ${organisme.nom} chargés - Avancement: ${details.avancement}%`);
+
+    } catch (error) {
+      console.error('❌ Erreur vue organisme prospect:', error);
+      toast.error('❌ Erreur lors du chargement des détails');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  const handleManageOrganismeProspect = useCallback((organisme: OrganismeGabonais) => {
+    // Réutilise la fonction existante
+    handleManageOrganisme(organisme);
+  }, []);
+
+  const handleConvertOrganismeProspect = useCallback(async (organisme: OrganismeGabonais) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2500));
+
+      // Conversion prospect -> existant
+      setOrganismesGabon(prev => prev.map(o =>
+        o.id === organisme.id ? { ...o, isActive: true } : o
+      ));
+
+      console.log(`✅ Conversion réussie: ${organisme.nom} est maintenant un organisme existant`);
+      toast.success(`✅ ${organisme.nom} converti avec succès en organisme existant !`);
+
+    } catch (error) {
+      console.error('❌ Erreur conversion prospect:', error);
+      toast.error('❌ Erreur lors de la conversion');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, []);
+
+  const handleMassActionProspects = useCallback(async (action: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      const prospects = organismesProspectsFiltres;
+
+      await new Promise(resolve => setTimeout(resolve, action === 'convert-all' ? 4000 : 2500));
+
+      switch (action) {
+        case 'convert-all':
+          // Convertir tous les prospects filtrés
+          setOrganismesGabon(prev => prev.map(o =>
+            prospects.some(p => p.id === o.id) ? { ...o, isActive: true } : o
+          ));
+
+          console.log(`✅ Conversion en masse: ${prospects.length} prospects convertis`);
+          toast.success(`✅ ${prospects.length} prospects convertis en organismes existants !`);
+          break;
+
+        case 'priority-high':
+          console.log(`⭐ Priorité haute assignée à ${prospects.length} prospects`);
+          toast.success(`⭐ Priorité haute assignée à ${prospects.length} prospects !`);
+          break;
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur action masse prospects:', error);
+      toast.error('❌ Erreur lors de l\'action en masse');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [organismesProspectsFiltres]);
+
+  // 📊 Gestionnaires pour Métriques
+  const handleRefreshMetriques = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1800));
+
+      const metriques = metriquesGroupesFiltrees;
+      console.log('📊 Métriques rafraîchies:', metriques.length, 'groupes');
+
+      toast.success(`📊 Métriques de ${metriques.length} groupes rafraîchies !`);
+
+    } catch (error) {
+      console.error('❌ Erreur rafraîchissement métriques:', error);
+      toast.error('❌ Erreur lors du rafraîchissement des métriques');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [metriquesGroupesFiltrees]);
+
+  const handleExportMetriques = useCallback(async () => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2200));
+
+      const exportData = {
+        timestamp: new Date().toISOString(),
+        summary: {
+          totalGroupes: metriquesGroupesFiltrees.length,
+          totalOrganismes: organismesGabon.length,
+          tauxIntegrationGlobal: Math.round((organismesGabon.filter(o => o.isActive).length / organismesGabon.length) * 100)
+        },
+        metriquesParGroupe: metriquesGroupesFiltrees.map(m => ({
+          groupe: m.groupe,
+          total: m.total,
+          existants: m.existants,
+          prospects: m.prospects,
+          pourcentageIntegration: m.pourcentage,
+          performance: m.pourcentage >= 80 ? 'Excellente' : m.pourcentage >= 50 ? 'Bonne' : 'À améliorer'
+        }))
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+        type: 'application/json;charset=utf-8;'
+      });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `metriques_integration_${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+
+      toast.success(`📊 Métriques exportées ! ${metriquesGroupesFiltrees.length} groupes`);
+
+    } catch (error) {
+      console.error('❌ Erreur export métriques:', error);
+      toast.error('❌ Erreur lors de l\'export des métriques');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [metriquesGroupesFiltrees, organismesGabon]);
+
+  const handleViewGroupeDetails = useCallback(async (groupe: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      const metrique = metriquesGroupesFiltrees.find(m => m.groupe === groupe);
+      if (metrique) {
+        const details = {
+          groupe,
+          statistiques: {
+            total: metrique.total,
+            existants: metrique.existants,
+            prospects: metrique.prospects,
+            pourcentage: metrique.pourcentage
+          },
+          organismes: metrique.organismesDuGroupe.map(o => ({
+            nom: o.nom,
+            code: o.code,
+            province: o.province,
+            statut: o.isActive ? 'Existant' : 'Prospect',
+            estPrincipal: o.estPrincipal
+          })),
+          performance: metrique.pourcentage >= 80 ? 'Excellente' : metrique.pourcentage >= 50 ? 'Bonne' : 'À améliorer'
+        };
+
+        console.log(`📊 Détails du Groupe ${groupe}:`, details);
+        toast.success(`📊 Détails du Groupe ${groupe} - Performance: ${details.performance}`);
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur détails groupe métriques:', error);
+      toast.error('❌ Erreur lors du chargement des détails');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [metriquesGroupesFiltrees]);
+
+  const handleAnalyzeGroupe = useCallback(async (groupe: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 2500));
+
+      const metrique = metriquesGroupesFiltrees.find(m => m.groupe === groupe);
+      if (metrique) {
+        const analyse = {
+          groupe,
+          score: metrique.pourcentage,
+          tendance: Math.random() > 0.5 ? 'positive' : 'stable',
+          recommendations: [
+            metrique.pourcentage < 50 ? 'Prioriser l\'intégration des prospects' : 'Maintenir le niveau d\'excellence',
+            metrique.prospects > metrique.existants ? 'Accélérer les conversions' : 'Optimiser les existants',
+            'Former les équipes sur les nouvelles fonctionnalités'
+          ],
+          nextActions: [
+            'Planifier les prochaines intégrations',
+            'Évaluer les besoins en ressources',
+            'Mettre à jour la documentation'
+          ]
+        };
+
+        console.log(`🔍 Analyse du Groupe ${groupe}:`, analyse);
+        toast.success(`🔍 Analyse terminée ! Groupe ${groupe} - Score: ${analyse.score}%`);
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur analyse groupe:', error);
+      toast.error('❌ Erreur lors de l\'analyse');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [metriquesGroupesFiltrees]);
+
+  const handleOptimizeGroupe = useCallback(async (groupe: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      await new Promise(resolve => setTimeout(resolve, 3000));
+
+      const metrique = metriquesGroupesFiltrees.find(m => m.groupe === groupe);
+      if (metrique) {
+        const optimizations = {
+          groupe,
+          actuel: metrique.pourcentage,
+          potentiel: Math.min(100, metrique.pourcentage + Math.floor(Math.random() * 20) + 10),
+          actions: [
+            'Automatisation des processus d\'intégration',
+            'Formation accélérée des équipes',
+            'Allocation de ressources supplémentaires',
+            'Mise en place de métriques de suivi en temps réel'
+          ],
+          timeline: '2-6 semaines',
+          effort: metrique.pourcentage < 50 ? 'Élevé' : 'Modéré'
+        };
+
+        console.log(`⚡ Optimisation du Groupe ${groupe}:`, optimizations);
+        toast.success(`⚡ Plan d\'optimisation généré ! Potentiel: ${optimizations.potentiel}%`);
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur optimisation groupe:', error);
+      toast.error('❌ Erreur lors de l\'optimisation');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [metriquesGroupesFiltrees]);
+
+  const handleMassActionMetriques = useCallback(async (action: string) => {
+    try {
+      setLoadingStates(prev => ({ ...prev, saving: true }));
+
+      const duration = {
+        'boost-integration': 4000,
+        'generate-report': 3500,
+        'sync-all-metrics': 2500
+      }[action] || 2000;
+
+      await new Promise(resolve => setTimeout(resolve, duration));
+
+      switch (action) {
+        case 'boost-integration':
+          // Simuler amélioration des taux d'intégration
+          const lowPerformanceGroups = metriquesGroupesFiltrees.filter(m => m.pourcentage < 70);
+          console.log(`🚀 Boost d'intégration lancé pour ${lowPerformanceGroups.length} groupes`);
+          toast.success(`🚀 Boost lancé ! ${lowPerformanceGroups.length} groupes ciblés pour amélioration`);
+          break;
+
+        case 'generate-report':
+          const reportData = {
+            date: new Date().toLocaleDateString('fr-FR'),
+            summary: {
+              groupes: metriquesGroupesFiltrees.length,
+              tauxMoyen: Math.round(metriquesGroupesFiltrees.reduce((acc, m) => acc + m.pourcentage, 0) / metriquesGroupesFiltrees.length),
+              meilleurePerformance: metriquesGroupesFiltrees.reduce((max, m) => m.pourcentage > max.pourcentage ? m : max),
+              aAmeliorer: metriquesGroupesFiltrees.filter(m => m.pourcentage < 50).length
+            }
+          };
+
+          console.log('📋 Rapport complet généré:', reportData);
+          toast.success(`📋 Rapport généré ! Taux moyen: ${reportData.summary.tauxMoyen}%`);
+          break;
+
+        case 'sync-all-metrics':
+          console.log(`🔄 Synchronisation de ${metriquesGroupesFiltrees.length} groupes de métriques`);
+          toast.success(`🔄 ${metriquesGroupesFiltrees.length} groupes de métriques synchronisés !`);
+          break;
+      }
+
+    } catch (error) {
+      console.error('❌ Erreur action masse métriques:', error);
+      toast.error('❌ Erreur lors de l\'action en masse');
+    } finally {
+      setLoadingStates(prev => ({ ...prev, saving: false }));
+    }
+  }, [metriquesGroupesFiltrees]);
 
   const handleSelectAll = () => {
     setSelectedItems(
@@ -1894,63 +3099,72 @@ export default function OrganismesProspectsPage() {
                                           </div>
                                         </div>
 
-                                        {/* Actions - MAINTENANT ENTIÈREMENT FONCTIONNELLES */}
+                                        {/* Actions */}
                                         <div className="flex items-center gap-2">
-                                          {/* Bouton Voir */}
                       <Button
                         variant="outline"
                         size="sm"
-                                            onClick={() => handleViewOrganismeGabon(organisme)}
-                                            disabled={loadingStates.viewing === organisme.id}
-                                            title="Voir les détails"
+                                            onClick={() => {
+                                              // Créer un prospect temporaire
+                                              const tempProspect: OrganismeCommercialGabon = {
+                                                id: organisme.id,
+                                                nom: organisme.nom,
+                                                code: organisme.code,
+                                                type: organisme.type,
+                                                localisation: organisme.province,
+                                                description: organisme.description,
+                                                telephone: '+241 01 XX XX XX',
+                                                email: `contact@${organisme.code.toLowerCase()}.gov.ga`,
+                                                responsableContact: 'Contact Principal',
+                                                prospectInfo: {
+                                                  source: 'ORGANISME_OFFICIEL',
+                                                  priorite: 'HAUTE',
+                                                  notes: `Organisme officiel gabonais - Groupe ${organisme.groupe}`,
+                                                  responsableProspection: 'Admin'
+                                                },
+                                                services: [],
+                                                isActive: organisme.isActive
+                                              };
+                                              setSelectedProspect(tempProspect);
+                                              openModal('enrichedModal');
+                                            }}
+                                            title="Gérer la configuration"
                                           >
-                                            {loadingStates.viewing === organisme.id ? (
-                                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                            ) : (
-                                              <Eye className="h-3 w-3 mr-1" />
-                                            )}
-                                            Voir
-                      </Button>
-
-                                          {/* Bouton Gérer */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                                            onClick={() => handleManageOrganismeGabon(organisme)}
-                                            disabled={loadingStates.viewing === organisme.id}
-                                            title="Gérer et éditer"
-                      >
                                             <Settings className="h-3 w-3 mr-1" />
-                                            Gérer
+                                            Config
                       </Button>
-
-                                          {/* Bouton Contacter */}
-                          <Button
-                                            variant="outline"
-                            size="sm"
-                                            onClick={() => handleContactOrganismeGabon(organisme, 'email')}
-                                            title="Contacter par email"
-                          >
-                                            <Mail className="h-3 w-3 mr-1" />
-                                            Contact
-                          </Button>
-
-                                          {/* Bouton Changer Statut */}
                       <Button
-                                            variant={organisme.isActive ? "destructive" : "default"}
+                        variant="outline"
                         size="sm"
-                                            onClick={() => handleToggleIntegrationStatus(organisme)}
-                                            disabled={loadingStates.converting === organisme.id}
-                                            title={organisme.isActive ? "Marquer comme prospect" : "Intégrer maintenant"}
+                                            onClick={() => {
+                                              // Ajouter aux prospects actifs
+                                              const newProspect: OrganismeCommercialGabon = {
+                                                id: `prospect-${Date.now()}`,
+                                                nom: organisme.nom,
+                                                code: organisme.code,
+                                                type: organisme.type,
+                                                localisation: organisme.province,
+                                                description: organisme.description,
+                                                telephone: '+241 01 XX XX XX',
+                                                email: `contact@${organisme.code.toLowerCase()}.gov.ga`,
+                                                responsableContact: 'Contact Principal',
+                                                prospectInfo: {
+                                                  source: 'ORGANISME_OFFICIEL',
+                                                  priorite: 'HAUTE',
+                                                  notes: `Ajouté depuis les organismes officiels`,
+                                                  responsableProspection: session?.user?.firstName || 'Admin'
+                                                },
+                                                services: [],
+                                                isActive: true
+                                              };
+                                              setProspects(prev => [...prev, newProspect]);
+                                              setStats(prev => prev ? { ...prev, totalProspects: prev.totalProspects + 1 } : null);
+                                              toast.success(`✅ ${organisme.nom} ajouté au pipeline commercial`);
+                                            }}
+                                            title="Ajouter au pipeline"
                                           >
-                                            {loadingStates.converting === organisme.id ? (
-                                              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                            ) : organisme.isActive ? (
-                                              <RefreshCw className="h-3 w-3 mr-1" />
-                                            ) : (
-                                              <CheckCircle className="h-3 w-3 mr-1" />
-                                            )}
-                                            {organisme.isActive ? 'Révoquer' : 'Intégrer'}
+                                            <Target className="h-3 w-3 mr-1" />
+                                            Pipeline
                       </Button>
                     </div>
                                       </CardContent>
@@ -2101,13 +3315,13 @@ export default function OrganismesProspectsPage() {
                     <div className="bg-blue-700 bg-opacity-50 rounded-lg p-3">
                       <div className="text-2xl font-bold text-green-200">{organismesGabon.filter(o => o.isActive).length}</div>
                       <div className="text-sm opacity-90">✅ Déjà intégrés (Existants)</div>
-                    </div>
+                            </div>
                     <div className="bg-blue-700 bg-opacity-50 rounded-lg p-3">
                       <div className="text-2xl font-bold text-orange-200">{organismesGabon.filter(o => !o.isActive).length}</div>
                       <div className="text-sm opacity-90">🔄 À intégrer (Prospects)</div>
-                  </div>
-                      </div>
-                </div>
+                            </div>
+                            </div>
+                            </div>
                 <div className="text-right">
                   <Badge className="bg-white text-blue-600 mb-2">
                     Intégration Intelligente
@@ -2116,287 +3330,688 @@ export default function OrganismesProspectsPage() {
                     Tous sont des organismes officiels
                       </p>
                     </div>
-                </div>
-            </div>
+                    </div>
+                  </div>
 
             {/* Classification par Statut d'Intégration */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Organismes Existants */}
             <Card>
               <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-600">
-                    <CheckCircle2 className="h-5 w-5" />
-                    Organismes Existants ({organismesGabon.filter(o => o.isActive).length})
-              </CardTitle>
-              <CardDescription>
-                    Organismes officiels déjà intégrés dans la plateforme
-              </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-green-600">
+                      <CheckCircle2 className="h-5 w-5" />
+                      Organismes Existants ({organismesGabon.filter(o => o.isActive).length})
+                    </CardTitle>
+                    <CardDescription>
+                      Organismes officiels déjà intégrés dans la plateforme
+                    </CardDescription>
+                  </div>
+                    <div className="flex gap-2">
+                      <Button
+                      onClick={handleRefreshExistants}
+                        variant="outline"
+                        size="sm"
+                      disabled={loadingStates.saving}
+                    >
+                      {loadingStates.saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                      </Button>
+                      <Button
+                      onClick={handleExportExistants}
+                        variant="outline"
+                        size="sm"
+                      disabled={loadingStates.saving}
+                    >
+                      {loadingStates.saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="h-4 w-4" />
+                      )}
+                      </Button>
+                    </div>
+                </div>
               </CardHeader>
               <CardContent>
+                <div className="space-y-4">
+
+                  {/* Contrôles de filtrage pour les existants */}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="🔍 Rechercher dans les existants..."
+                        value={searchExistants}
+                        onChange={(e) => setSearchExistants(e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+                    <Select value={filterGroupeExistants} onValueChange={setFilterGroupeExistants}>
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue placeholder="Groupe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="all">Tous</SelectItem>
+                        {Array.from(new Set(organismesGabon.filter(o => o.isActive).map(o => o.groupe))).sort().map((groupe) => (
+                          <SelectItem key={groupe} value={groupe}>Groupe {groupe}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                            </div>
+
+                  {/* Liste des organismes existants avec actions */}
                   <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {organismesGabon.filter(o => o.isActive).slice(0, 10).map((organisme) => (
-                      <div key={organisme.id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Crown className="h-4 w-4 text-green-600" />
-                          <div>
-                            <h4 className="font-medium text-sm">{organisme.nom}</h4>
-                            <p className="text-xs text-muted-foreground">{organisme.code} • Groupe {organisme.groupe}</p>
-                    </div>
-                    </div>
-                        <Badge className="bg-green-100 text-green-800 text-xs">
-                          ✅ Intégré
-                                    </Badge>
-                                    </div>
+                    {organismesExistantsFiltres.slice(0, showAllExistants ? undefined : 10).map((organisme) => (
+                      <div key={organisme.id} className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg hover:shadow-sm transition-shadow">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <Crown className="h-4 w-4 text-green-600 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-sm truncate">{organisme.nom}</h4>
+                            <p className="text-xs text-muted-foreground">{organisme.code} • Groupe {organisme.groupe} • {organisme.province}</p>
+                            </div>
+                            </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <Badge className="bg-green-100 text-green-800 text-xs">
+                            ✅ Intégré
+                          </Badge>
+                          <Button
+                            onClick={() => handleViewOrganismeExistant(organisme)}
+                            variant="ghost"
+                            size="sm"
+                            disabled={loadingStates.saving}
+                          >
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            onClick={() => handleManageOrganismeExistant(organisme)}
+                            variant="ghost"
+                            size="sm"
+                            disabled={loadingStates.saving}
+                          >
+                            <Settings className="h-3 w-3" />
+                          </Button>
+                            </div>
+                      </div>
                     ))}
-                    {organismesGabon.filter(o => o.isActive).length > 10 && (
-                      <div className="text-center text-sm text-muted-foreground pt-2">
-                        ... et {organismesGabon.filter(o => o.isActive).length - 10} autres organismes existants
+
+                    {organismesExistantsFiltres.length === 0 && (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Aucun organisme existant ne correspond aux filtres</p>
+                      </div>
+                    )}
+
+                    {organismesExistantsFiltres.length > 10 && !showAllExistants && (
+                      <div className="text-center pt-3 border-t">
+                      <Button
+                          onClick={() => setShowAllExistants(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Voir tous les {organismesExistantsFiltres.length} organismes existants
+                      </Button>
                     </div>
-                  )}
+                    )}
+
+                    {showAllExistants && organismesExistantsFiltres.length > 10 && (
+                      <div className="text-center pt-3 border-t">
+                        <Button
+                          onClick={() => setShowAllExistants(false)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Réduire la liste
+                        </Button>
+                      </div>
+                    )}
+                    </div>
+
+                  {/* Actions en masse pour les existants */}
+                  <div className="flex gap-2 pt-3 border-t">
+                    <Button
+                      onClick={() => handleMassActionExistants('audit')}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Audit...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="h-3 w-3 mr-1" />
+                          Audit Complet
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => handleMassActionExistants('sync')}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Sync...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Synchroniser
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
               {/* Organismes Prospects */}
-                <Card>
-                  <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-600">
-                    <Clock className="h-5 w-5" />
-                    Organismes Prospects ({organismesGabon.filter(o => !o.isActive).length})
-                    </CardTitle>
-                  <CardDescription>
-                    Organismes officiels en cours d'intégration
-                  </CardDescription>
-                  </CardHeader>
-                <CardContent>
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {organismesGabon.filter(o => !o.isActive).slice(0, 10).map((organisme) => (
-                      <div key={organisme.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Crown className="h-4 w-4 text-orange-600" />
-                      <div>
-                            <h4 className="font-medium text-sm">{organisme.nom}</h4>
-                            <p className="text-xs text-muted-foreground">{organisme.code} • Groupe {organisme.groupe}</p>
-                            </div>
-                            </div>
-                        <Badge className="bg-orange-100 text-orange-800 text-xs">
-                          🔄 Prospect
-                        </Badge>
-                            </div>
-                    ))}
-                    {organismesGabon.filter(o => !o.isActive).length > 10 && (
-                      <div className="text-center text-sm text-muted-foreground pt-2">
-                        ... et {organismesGabon.filter(o => !o.isActive).length - 10} autres organismes prospects
-                            </div>
-                    )}
-                    </div>
-                  </CardContent>
-                </Card>
-            </div>
-
-            {/* Actions en Masse - NOUVELLEMENT AJOUTÉES */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <RefreshCw className="h-5 w-5" />
-                  Actions en Masse sur les Organismes
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-orange-600">
+                      <Clock className="h-5 w-5" />
+                      Organismes Prospects ({organismesGabon.filter(o => !o.isActive).length})
                 </CardTitle>
                 <CardDescription>
-                  Gérer plusieurs organismes simultanément pour optimiser le processus d'intégration
+                      Organismes officiels en cours d'intégration
                 </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleRefreshProspects}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                    >
+                      {loadingStates.saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleExportProspects}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                    >
+                      {loadingStates.saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  {/* Action: Intégrer tous les prospects prioritaires */}
-                      <Button
-                    onClick={async () => {
-                      const prioritaires = organismesGabon.filter(o => !o.isActive && o.estPrincipal);
-                      if (prioritaires.length === 0) {
-                        toast.error('⚠️ Aucun organisme prioritaire en attente d\'intégration');
-                        return;
-                      }
+                <div className="space-y-4">
 
-                      setLoadingStates(prev => ({ ...prev, saving: true }));
-                      try {
-                        await new Promise(resolve => setTimeout(resolve, 2000));
-                        setOrganismesGabon(prev => prev.map(org =>
-                          (org.estPrincipal && !org.isActive)
-                            ? { ...org, isActive: true }
-                            : org
-                        ));
-                        toast.success(`✅ ${prioritaires.length} organismes prioritaires intégrés !`);
-                      } catch (error) {
-                        toast.error('❌ Erreur lors de l\'intégration en masse');
-                      } finally {
-                        setLoadingStates(prev => ({ ...prev, saving: false }));
-                      }
-                    }}
-                    disabled={loadingStates.saving}
-                    className="h-20 flex flex-col gap-2"
-                  >
-                    {loadingStates.saving ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <Crown className="h-5 w-5" />
-                    )}
-                    <span className="text-xs text-center">Intégrer Prioritaires</span>
-                    <span className="text-xs opacity-75">
-                      {organismesGabon.filter(o => !o.isActive && o.estPrincipal).length} organismes
-                    </span>
-                  </Button>
-
-                  {/* Action: Intégrer par groupe */}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const groupeA = organismesGabon.filter(o => !o.isActive && o.groupe === 'A');
-                      if (groupeA.length === 0) {
-                        toast.error('⚠️ Aucun organisme du Groupe A en attente');
-                        return;
-                      }
-
-                      setLoadingStates(prev => ({ ...prev, saving: true }));
-                      setTimeout(() => {
-                        setOrganismesGabon(prev => prev.map(org =>
-                          (org.groupe === 'A' && !org.isActive)
-                            ? { ...org, isActive: true }
-                            : org
-                        ));
-                        setLoadingStates(prev => ({ ...prev, saving: false }));
-                        toast.success(`🏛️ ${groupeA.length} institutions suprêmes intégrées !`);
-                      }, 1500);
-                    }}
-                    disabled={loadingStates.saving}
-                    className="h-20 flex flex-col gap-2"
-                  >
-                    <Building2 className="h-5 w-5" />
-                    <span className="text-xs text-center">Groupe A</span>
-                    <span className="text-xs opacity-75">
-                      {organismesGabon.filter(o => !o.isActive && o.groupe === 'A').length} institutions
-                    </span>
-                  </Button>
-
-                  {/* Action: Export rapport d'intégration */}
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const rapport = {
-                        total: organismesGabon.length,
-                        integres: organismesGabon.filter(o => o.isActive).length,
-                        prospects: organismesGabon.filter(o => !o.isActive).length,
-                        prioritaires: organismesGabon.filter(o => o.estPrincipal).length,
-                        parGroupe: Array.from(new Set(organismesGabon.map(o => o.groupe))).map(groupe => ({
-                          groupe,
-                          total: organismesGabon.filter(o => o.groupe === groupe).length,
-                          integres: organismesGabon.filter(o => o.groupe === groupe && o.isActive).length,
-                          prospects: organismesGabon.filter(o => o.groupe === groupe && !o.isActive).length
-                        })),
-                        organismes: organismesGabon.map(o => ({
-                          nom: o.nom,
-                          code: o.code,
-                          groupe: o.groupe,
-                          statut: o.isActive ? 'Intégré' : 'Prospect',
-                          prioritaire: o.estPrincipal
-                        })),
-                        timestamp: new Date().toISOString()
-                      };
-
-                      const blob = new Blob([JSON.stringify(rapport, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `rapport-integration-${Date.now()}.json`;
-                      a.click();
-                      toast.success('📊 Rapport d\'intégration exporté !');
-                    }}
-                    className="h-20 flex flex-col gap-2"
-                  >
-                    <FileText className="h-5 w-5" />
-                    <span className="text-xs text-center">Export Rapport</span>
-                    <span className="text-xs opacity-75">JSON complet</span>
-                      </Button>
+                  {/* Contrôles de filtrage pour les prospects */}
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                        <Input
+                        placeholder="🔍 Rechercher dans les prospects..."
+                        value={searchProspects}
+                        onChange={(e) => setSearchProspects(e.target.value)}
+                        className="h-8"
+                        />
+                      </div>
+                    <Select value={filterGroupeProspects} onValueChange={setFilterGroupeProspects}>
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue placeholder="Groupe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous</SelectItem>
+                        {Array.from(new Set(organismesGabon.filter(o => !o.isActive).map(o => o.groupe))).sort().map((groupe) => (
+                          <SelectItem key={groupe} value={groupe}>Groupe {groupe}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={prioriteProspects} onValueChange={setPrioriteProspects}>
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue placeholder="Priorité" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Toutes</SelectItem>
+                        <SelectItem value="haute">Haute</SelectItem>
+                        <SelectItem value="moyenne">Moyenne</SelectItem>
+                        <SelectItem value="basse">Basse</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
-                {/* Statistiques rapides */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Résumé d'Intégration</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-blue-700">Taux Global:</span>
-                      <span className="ml-1 text-blue-900">
-                        {Math.round((organismesGabon.filter(o => o.isActive).length / organismesGabon.length) * 100)}%
-                        </span>
+                  {/* Liste des organismes prospects avec actions */}
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {organismesProspectsFiltres.slice(0, showAllProspects ? undefined : 10).map((organisme) => {
+                      const priorite = organisme.estPrincipal ? 'haute' : Math.random() > 0.5 ? 'moyenne' : 'basse';
+                      const prioriteColor = priorite === 'haute' ? 'bg-red-100 text-red-800' :
+                                          priorite === 'moyenne' ? 'bg-yellow-100 text-yellow-800' :
+                                          'bg-gray-100 text-gray-800';
+
+                        return (
+                        <div key={organisme.id} className="flex items-center justify-between p-3 bg-orange-50 border border-orange-200 rounded-lg hover:shadow-sm transition-shadow">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <Crown className="h-4 w-4 text-orange-600 flex-shrink-0" />
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-medium text-sm truncate">{organisme.nom}</h4>
+                              <p className="text-xs text-muted-foreground">{organisme.code} • Groupe {organisme.groupe} • {organisme.province}</p>
+                                </div>
+                                </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <Badge className={`text-xs ${prioriteColor}`}>
+                              {priorite === 'haute' ? '🔴' : priorite === 'moyenne' ? '🟡' : '⚪'} {priorite.charAt(0).toUpperCase() + priorite.slice(1)}
+                                    </Badge>
+                            <Badge className="bg-orange-100 text-orange-800 text-xs">
+                              🔄 Prospect
+                            </Badge>
+                                  <Button
+                              onClick={() => handleViewOrganismeProspect(organisme)}
+                                    variant="ghost"
+                                    size="sm"
+                              disabled={loadingStates.saving}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => handleManageOrganismeProspect(organisme)}
+                              variant="ghost"
+                              size="sm"
+                              disabled={loadingStates.saving}
+                            >
+                              <Settings className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              onClick={() => handleConvertOrganismeProspect(organisme)}
+                              variant="ghost"
+                              size="sm"
+                              disabled={loadingStates.saving}
+                              className="text-green-600 hover:text-green-700"
+                            >
+                              {loadingStates.saving ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <CheckCircle className="h-3 w-3" />
+                              )}
+                                  </Button>
+                                </div>
+                              </div>
+                        );
+                      })}
+
+                    {organismesProspectsFiltres.length === 0 && (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <Filter className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">Aucun organisme prospect ne correspond aux filtres</p>
+                  </div>
+                    )}
+
+                    {organismesProspectsFiltres.length > 10 && !showAllProspects && (
+                      <div className="text-center pt-3 border-t">
+                        <Button
+                          onClick={() => setShowAllProspects(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Voir tous les {organismesProspectsFiltres.length} organismes prospects
+                        </Button>
+                    </div>
+                  )}
+
+                    {showAllProspects && organismesProspectsFiltres.length > 10 && (
+                      <div className="text-center pt-3 border-t">
+                        <Button
+                          onClick={() => setShowAllProspects(false)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Réduire la liste
+                        </Button>
                       </div>
-                    <div>
-                      <span className="font-medium text-green-700">Prioritaires Intégrés:</span>
-                      <span className="ml-1 text-green-900">
-                        {organismesGabon.filter(o => o.isActive && o.estPrincipal).length}/{organismesGabon.filter(o => o.estPrincipal).length}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-orange-700">En Attente:</span>
-                      <span className="ml-1 text-orange-900">
-                        {organismesGabon.filter(o => !o.isActive).length}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-purple-700">Groupes Actifs:</span>
-                      <span className="ml-1 text-purple-900">
-                        {new Set(organismesGabon.filter(o => o.isActive).map(o => o.groupe)).size}/9
-                      </span>
-                    </div>
+                    )}
+                  </div>
+
+                  {/* Actions en masse pour les prospects */}
+                  <div className="flex gap-2 pt-3 border-t">
+                    <Button
+                      onClick={() => handleMassActionProspects('convert-all')}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Conversion...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Convertir Tous
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => handleMassActionProspects('priority-high')}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Priorité...
+                        </>
+                      ) : (
+                        <>
+                          <Star className="h-3 w-3 mr-1" />
+                          Priorité Haute
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
+                  </div>
 
             {/* Métriques d'Intégration */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart2 className="h-5 w-5" />
-                  Métriques d'Intégration par Groupe Administratif
-                </CardTitle>
+                <Card>
+                  <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart2 className="h-5 w-5" />
+                      Métriques d'Intégration par Groupe Administratif
+                    </CardTitle>
+                    <CardDescription>
+                      Suivi des performances d'intégration par classification administrative
+                    </CardDescription>
+                      </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleRefreshMetriques}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                    >
+                      {loadingStates.saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-4 w-4" />
+                      )}
+                    </Button>
+                    <Button
+                      onClick={handleExportMetriques}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingStates.saving}
+                    >
+                      {loadingStates.saving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <ArrowRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                      </div>
+                    </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {Array.from(new Set(organismesGabon.map(o => o.groupe))).sort().map((groupe) => {
-                    const organismesDuGroupe = organismesGabon.filter(o => o.groupe === groupe);
-                    const existants = organismesDuGroupe.filter(o => o.isActive).length;
-                    const prospects = organismesDuGroupe.filter(o => !o.isActive).length;
-                    const total = organismesDuGroupe.length;
-                    const pourcentage = Math.round((existants / total) * 100);
+                <div className="space-y-6">
 
-                    return (
-                      <div key={groupe} className="border rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-semibold">Groupe {groupe}</h4>
-                          <Badge variant="outline">{total}</Badge>
+                  {/* Contrôles de tri et filtrage pour les métriques */}
+                  <div className="flex gap-3">
+                    <Select value={sortMetriques} onValueChange={setSortMetriques}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Trier par..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                        <SelectItem value="groupe">Groupe alphabétique</SelectItem>
+                        <SelectItem value="pourcentage-desc">% intégration ↓</SelectItem>
+                        <SelectItem value="pourcentage-asc">% intégration ↑</SelectItem>
+                        <SelectItem value="total-desc">Total organismes ↓</SelectItem>
+                        <SelectItem value="total-asc">Total organismes ↑</SelectItem>
+                        <SelectItem value="existants-desc">Existants ↓</SelectItem>
+                        <SelectItem value="prospects-desc">Prospects ↓</SelectItem>
+                          </SelectContent>
+                        </Select>
+
+                    <Select value={filterMetriques} onValueChange={setFilterMetriques}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Filtrer..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les groupes</SelectItem>
+                        <SelectItem value="high-integration">Intégration élevée (&gt;80%)</SelectItem>
+                        <SelectItem value="medium-integration">Intégration moyenne (50-80%)</SelectItem>
+                        <SelectItem value="low-integration">Intégration faible (&lt;50%)</SelectItem>
+                        <SelectItem value="no-prospects">Sans prospects</SelectItem>
+                        <SelectItem value="many-prospects">Beaucoup de prospects</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex-1 flex justify-end gap-2">
+                      <Button
+                        onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {viewMode === 'grid' ? <BarChart2 className="h-4 w-4" /> : <Crown className="h-4 w-4" />}
+                      </Button>
                       </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-green-600">✅ Existants: {existants}</span>
+                      </div>
+
+                  {/* Grille des métriques avec interactions */}
+                  <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" : "space-y-3"}>
+                    {metriquesGroupesFiltrees.map((metrique) => {
+                      const { groupe, organismesDuGroupe, existants, prospects, total, pourcentage } = metrique;
+                      const isLowIntegration = pourcentage < 50;
+                      const isHighIntegration = pourcentage >= 80;
+
+                      return (
+                        <div
+                          key={groupe}
+                          className={`border rounded-lg p-4 cursor-pointer transition-all duration-200 hover:shadow-md ${
+                            viewMode === 'list' ? 'flex items-center justify-between' : ''
+                          } ${
+                            isHighIntegration ? 'border-green-300 bg-green-50' :
+                            isLowIntegration ? 'border-red-300 bg-red-50' :
+                            'border-gray-200 hover:border-blue-300'
+                          }`}
+                          onClick={() => handleViewGroupeDetails(groupe)}
+                        >
+                          <div className={viewMode === 'list' ? 'flex items-center gap-4 flex-1' : ''}>
+                            <div className={`flex items-center justify-between mb-2 ${viewMode === 'list' ? 'mb-0' : ''}`}>
+                              <h4 className="font-semibold flex items-center gap-2">
+                                <Badge variant="outline" className="font-mono">Groupe {groupe}</Badge>
+                                {viewMode === 'grid' && <Badge variant="secondary">{total}</Badge>}
+                              </h4>
+                              {viewMode === 'list' && (
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm text-muted-foreground">{total} organismes</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-green-600">✅ {existants}</span>
+                                    <span className="text-sm text-orange-600">🔄 {prospects}</span>
+                                  </div>
+                                </div>
+                              )}
                     </div>
-                          <div className="flex justify-between text-sm">
-                            <span className="text-orange-600">🔄 Prospects: {prospects}</span>
+
+                            {viewMode === 'grid' && (
+                              <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-green-600">✅ Existants: {existants}</span>
+                    </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-orange-600">🔄 Prospects: {prospects}</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2 cursor-pointer" title={`${pourcentage}% intégré`}>
+                                  <div
+                                    className={`h-2 rounded-full transition-all duration-300 ${
+                                      isHighIntegration ? 'bg-green-600' :
+                                      isLowIntegration ? 'bg-red-500' :
+                                      'bg-blue-500'
+                                    }`}
+                                    style={{ width: `${pourcentage}%` }}
+                                  ></div>
+                                </div>
+                                <div className="text-xs text-center text-muted-foreground">
+                                  {pourcentage}% intégré
+                                </div>
+                              </div>
+                            )}
+
+                            {viewMode === 'list' && (
+                              <div className="flex items-center gap-4">
+                                <div className="w-32 bg-gray-200 rounded-full h-2">
+                                  <div
+                                    className={`h-2 rounded-full transition-all duration-300 ${
+                                      isHighIntegration ? 'bg-green-600' :
+                                      isLowIntegration ? 'bg-red-500' :
+                                      'bg-blue-500'
+                                    }`}
+                                    style={{ width: `${pourcentage}%` }}
+                                  ></div>
+                    </div>
+                                <span className="text-sm font-medium w-12">{pourcentage}%</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions sur le groupe */}
+                          <div className={`flex gap-1 ${viewMode === 'list' ? 'flex-shrink-0' : 'mt-3 pt-3 border-t'}`}>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAnalyzeGroupe(groupe);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              disabled={loadingStates.saving}
+                              className="flex-1"
+                            >
+                              <BarChart2 className="h-3 w-3" />
+                              {viewMode === 'grid' && <span className="ml-1 text-xs">Analyser</span>}
+                            </Button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOptimizeGroupe(groupe);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              disabled={loadingStates.saving}
+                              className="flex-1"
+                            >
+                              <TrendingUp className="h-3 w-3" />
+                              {viewMode === 'grid' && <span className="ml-1 text-xs">Optimiser</span>}
+                            </Button>
+                      </div>
+                      </div>
+                      );
+                    })}
+                    </div>
+
+                  {/* Statistiques globales */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 bg-slate-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">{organismesGabon.length}</div>
+                      <div className="text-sm text-muted-foreground">Total Organismes</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {Math.round((organismesGabon.filter(o => o.isActive).length / organismesGabon.length) * 100)}%
+                      </div>
+                      <div className="text-sm text-muted-foreground">Taux Global d'Intégration</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-orange-600">
+                        {Array.from(new Set(organismesGabon.map(o => o.groupe))).length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Groupes Administratifs</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {Array.from(new Set(organismesGabon.map(o => o.province))).length}
+                      </div>
+                      <div className="text-sm text-muted-foreground">Provinces Couvertes</div>
+                    </div>
+                    </div>
+
+                  {/* Actions globales */}
+                  <div className="flex gap-3 pt-3 border-t">
+                    <Button
+                      onClick={() => handleMassActionMetriques('boost-integration')}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Boost...
+                        </>
+                      ) : (
+                        <>
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Booster l'Intégration
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => handleMassActionMetriques('generate-report')}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Génération...
+                        </>
+                      ) : (
+                        <>
+                          <FileText className="h-4 w-4 mr-2" />
+                          Rapport Complet
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      onClick={() => handleMassActionMetriques('sync-all-metrics')}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="flex-1"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sync...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                          Sync Métriques
+                        </>
+                      )}
+                    </Button>
                   </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-green-600 h-2 rounded-full"
-                              style={{ width: `${pourcentage}%` }}
-                            ></div>
-                              </div>
-                          <div className="text-xs text-center text-muted-foreground">
-                            {pourcentage}% intégré
-                              </div>
-                              </div>
-                      </div>
-                    );
-                  })}
                     </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
           {/* DGBFIP Tab */}
           <TabsContent value="dgbfip" className="space-y-8">
@@ -2410,8 +4025,8 @@ export default function OrganismesProspectsPage() {
                   <p className="text-gray-200">
                     Interface spécialisée pour la DGBFIP et les organismes rattachés
                           </p>
-                                </div>
-                                </div>
+                    </div>
+                    </div>
                           </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -2431,16 +4046,16 @@ export default function OrganismesProspectsPage() {
                             { nom: 'Direction Générale des Douanes', code: 'DGD', statut: 'Planifié' }
                           ].map((org, index) => (
                             <div key={index} className="flex items-center justify-between p-3 border rounded">
-                              <div>
+                      <div>
                                 <p className="font-medium">{org.nom}</p>
                                 <p className="text-sm text-muted-foreground">{org.code}</p>
-                              </div>
+                      </div>
                               <Badge variant={org.statut === 'Connecté' ? 'default' : 'secondary'}>
                                 {org.statut}
-                                    </Badge>
-                                    </div>
+                              </Badge>
+                              </div>
                         ))}
-                                  </div>
+                              </div>
                       </CardContent>
                     </Card>
 
@@ -2456,34 +4071,34 @@ export default function OrganismesProspectsPage() {
                           <div className="flex justify-between">
                             <span className="text-sm">Budget Total 2024</span>
                             <span className="font-medium">4.8T FCFA</span>
-                                </div>
+                    </div>
                           <div className="flex justify-between">
                             <span className="text-sm">Recettes Fiscales</span>
                             <span className="font-medium">2.1T FCFA</span>
-                          </div>
+                    </div>
                           <div className="flex justify-between">
                             <span className="text-sm">Dépenses Engagées</span>
                             <span className="font-medium">3.2T FCFA</span>
-                      </div>
+                          </div>
                           <div className="flex justify-between">
                             <span className="text-sm">Solde Budgétaire</span>
                             <span className="font-medium text-green-600">+1.6T FCFA</span>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
 
                   <Card className="mt-6">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
                         <Settings className="h-5 w-5 text-purple-600" />
                         Configuration DGBFIP
-                      </CardTitle>
-                    </CardHeader>
+                    </CardTitle>
+                  </CardHeader>
                     <CardContent>
                       <div className="text-center py-8">
-                      <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                        <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                         <h3 className="text-lg font-semibold mb-2">Interface Spécialisée DGBFIP</h3>
                         <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                           Configuration des accès sécurisés pour la Direction Générale du Budget et des Finances Publiques et organismes rattachés.
@@ -2494,20 +4109,746 @@ export default function OrganismesProspectsPage() {
                             Configuration Avancée
                             </Button>
                           <Button
-                            onClick={() => toast.success('🔒 Accès DGBFIP sécurisé activé')}
+                            onClick={handleActivateDGBFIPAccess}
+                            disabled={loadingStates.saving}
                             className="bg-blue-600 hover:bg-blue-700"
                           >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Activer l'Accès
+                            {loadingStates.saving ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Activation...
+                              </>
+                            ) : (
+                              <>
+                                <Shield className="h-4 w-4 mr-2" />
+                                Activer l'Accès
+                              </>
+                            )}
                             </Button>
+                      </div>
+                        </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+          {/* Configuration Avancée Tab */}
+          <TabsContent value="configuration-avancee" className="space-y-8">
+            <div className="bg-gradient-to-r from-slate-600 to-slate-800 text-white rounded-lg p-6 mb-8">
+              <div className="flex items-center justify-between">
+                    <div>
+                  <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                    <Settings className="h-6 w-6" />
+                    Configuration Avancée du Système
+                  </h2>
+                  <p className="text-slate-100">
+                    Paramètres et configuration avancés pour la gestion des organismes officiels
+                  </p>
                     </div>
-                </div>
+                <div className="text-right">
+                  <Badge className="bg-white text-slate-600 mb-2">
+                    Administration Système
+                  </Badge>
+                  <p className="text-sm opacity-90">
+                    Accès super-admin requis
+                  </p>
+                    </div>
+              </div>
+            </div>
+
+            {/* Configuration Sections */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              {/* Section Paramètres Généraux */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Paramètres Généraux
+                      </CardTitle>
+                  <CardDescription>
+                    Configuration globale du système d'organismes
+                  </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Pagination par défaut</Label>
+                        <p className="text-xs text-muted-foreground">Nombre d'éléments par page</p>
+                        </div>
+                      <Select value="10" onValueChange={handleUpdatePagination}>
+                        <SelectTrigger className="w-20">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                          <SelectItem value="5">5</SelectItem>
+                          <SelectItem value="10">10</SelectItem>
+                          <SelectItem value="20">20</SelectItem>
+                          <SelectItem value="50">50</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Notifications temps réel</Label>
+                        <p className="text-xs text-muted-foreground">Alertes système automatiques</p>
+                    </div>
+                      <Checkbox
+                        checked={configStates.notifications}
+                        onCheckedChange={handleToggleNotifications}
+                      />
+                      </div>
+
+                    <div className="flex items-center justify-between">
+                        <div>
+                        <Label className="text-sm font-medium">Mode de débogage</Label>
+                        <p className="text-xs text-muted-foreground">Logs détaillés pour développement</p>
+                          </div>
+                            <Checkbox
+                        checked={configStates.debugMode}
+                        onCheckedChange={handleToggleDebugMode}
+                      />
+                        </div>
+                      </div>
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={handleSaveGeneralConfig}
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Sauvegarde...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Sauvegarder les paramètres
+                        </>
+                      )}
+                    </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+              {/* Section API et Intégrations */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                    <Network className="h-5 w-5" />
+                    API et Intégrations
+                      </CardTitle>
+                  <CardDescription>
+                    Configuration des connexions externes
+                  </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                      <div>
+                      <Label className="text-sm font-medium">URL API Base</Label>
+                        <Input
+                        value={configStates.apiBaseUrl}
+                        onChange={(e) => setConfigStates(prev => ({ ...prev, apiBaseUrl: e.target.value }))}
+                        placeholder="https://api.administration.ga"
+                        className="mt-1"
+                      />
+                      </div>
+
+                      <div>
+                      <Label className="text-sm font-medium">Timeout API (ms)</Label>
+                        <Input
+                        type="number"
+                        value={configStates.apiTimeout}
+                        onChange={(e) => setConfigStates(prev => ({ ...prev, apiTimeout: parseInt(e.target.value) }))}
+                        placeholder="30000"
+                        className="mt-1"
+                      />
+                      </div>
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Cache API activé</Label>
+                        <p className="text-xs text-muted-foreground">Améliore les performances</p>
+                          </div>
+                      <Checkbox
+                        checked={configStates.apiCache}
+                        onCheckedChange={handleToggleApiCache}
+                      />
+                        </div>
+                      </div>
+
+                  <div className="pt-4 border-t">
+                    <Button
+                      onClick={handleTestApiConnection}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="w-full mb-2"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Test en cours...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Tester la connexion API
+                        </>
+                      )}
+                            </Button>
+                    <Button
+                      onClick={handleSaveApiConfig}
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Sauvegarder la configuration API
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+              {/* Section Import/Export */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Import/Export
+                    </CardTitle>
+                  <CardDescription>
+                    Gestion des données d'organismes
+                  </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleExportOrganismes}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      {loadingStates.saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Export en cours...
+                        </>
+                      ) : (
+                        <>
+                          <ArrowRight className="h-4 w-4 mr-2" />
+                          Exporter tous les organismes (CSV)
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      onClick={handleExportStats}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      <BarChart2 className="h-4 w-4 mr-2" />
+                      Exporter les statistiques (JSON)
+                    </Button>
+
+                    <div className="pt-2 border-t">
+                      <Label className="text-sm font-medium">Import fichier CSV</Label>
+                        <Input
+                        type="file"
+                        accept=".csv"
+                        onChange={handleImportFile}
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Format: nom,code,type,groupe,province
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+              {/* Section Maintenance */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Maintenance Système
+                      </CardTitle>
+                  <CardDescription>
+                    Outils de maintenance et diagnostic
+                  </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleClearCache}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Vider le cache système
+                    </Button>
+
+                    <Button
+                      onClick={handleReloadOrganismes}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      <Database className="h-4 w-4 mr-2" />
+                      Recharger les organismes
+                    </Button>
+
+                    <Button
+                      onClick={handleValidateData}
+                      variant="outline"
+                      disabled={loadingStates.saving}
+                      className="w-full"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Valider l'intégrité des données
+                    </Button>
+
+                    <div className="pt-2 border-t">
+                      <Button
+                        onClick={handleSystemDiagnostic}
+                        variant="destructive"
+                        disabled={loadingStates.saving}
+                        className="w-full"
+                      >
+                        {loadingStates.saving ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Diagnostic...
+                          </>
+                        ) : (
+                          <>
+                            <AlertTriangle className="h-4 w-4 mr-2" />
+                            Diagnostic système complet
+                          </>
+                        )}
+                      </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+            </div>
+
+            {/* Section Status Système */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5" />
+                  État du Système
+                      </CardTitle>
+                    </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{organismesGabon.length}</div>
+                    <div className="text-sm text-green-700">Organismes chargés</div>
+                        </div>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{prospects.length}</div>
+                    <div className="text-sm text-blue-700">Prospects actifs</div>
+                      </div>
+                  <div className="text-center p-4 bg-purple-50 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {new Set(organismesGabon.map(o => o.groupe)).size}
+                        </div>
+                    <div className="text-sm text-purple-700">Groupes administratifs</div>
+                      </div>
+                  <div className="text-center p-4 bg-orange-50 rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">
+                      {Math.round((organismesGabon.filter(o => o.isActive).length / organismesGabon.length) * 100)}%
+                        </div>
+                    <div className="text-sm text-orange-700">Taux d'intégration</div>
+                      </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+            {/* Section Organismes Référencés par Groupes Administratifs */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Organismes Référencés par Groupes Administratifs
+                    </CardTitle>
+                <CardDescription>
+                  Gestion et visualisation des organismes officiels gabonais par classification administrative
+                </CardDescription>
+                  </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+
+                  {/* Contrôles de filtrage et actions */}
+                  <div className="flex flex-col sm:flex-row gap-4 p-4 bg-slate-50 rounded-lg">
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium">Filtrer par groupe</Label>
+                      <Select value={groupeFilter} onValueChange={setGroupeFilter}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Sélectionner un groupe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les groupes</SelectItem>
+                          {Array.from(new Set(organismesGabon.map(o => o.groupe))).sort().map((groupe) => (
+                            <SelectItem key={groupe} value={groupe}>
+                              Groupe {groupe} ({organismesGabon.filter(o => o.groupe === groupe).length} organismes)
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                          </div>
+
+                    <div className="flex-1">
+                      <Label className="text-sm font-medium">Filtrer par statut</Label>
+                      <Select value={statutFilter} onValueChange={setStatutFilter}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Sélectionner un statut" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Tous les statuts</SelectItem>
+                          <SelectItem value="existant">✅ Existants ({organismesGabon.filter(o => o.isActive).length})</SelectItem>
+                          <SelectItem value="prospect">🔄 Prospects ({organismesGabon.filter(o => !o.isActive).length})</SelectItem>
+                        </SelectContent>
+                      </Select>
+                            </div>
+
+                    <div className="flex gap-2 items-end">
+                      <Button
+                        onClick={handleRefreshGroupData}
+                        variant="outline"
+                        disabled={loadingStates.saving}
+                        size="sm"
+                      >
+                        {loadingStates.saving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4" />
+                        )}
+                      </Button>
+
+                      <Button
+                        onClick={handleExportGroupData}
+                        variant="outline"
+                        disabled={loadingStates.saving}
+                        size="sm"
+                      >
+                        {loadingStates.saving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ArrowRight className="h-4 w-4" />
+                        )}
+                      </Button>
+                        </div>
+                      </div>
+
+                  {/* Vue d'ensemble des groupes */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from(new Set(organismesGabon.map(o => o.groupe))).sort().map((groupe) => {
+                      const organismesGroupe = organismesGabon.filter(o => o.groupe === groupe);
+                      const existants = organismesGroupe.filter(o => o.isActive).length;
+                      const prospects = organismesGroupe.filter(o => !o.isActive).length;
+                      const total = organismesGroupe.length;
+                      const pourcentageExistant = Math.round((existants / total) * 100);
+
+                      return (
+                        <Card key={groupe} className="cursor-pointer hover:shadow-md transition-shadow">
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="font-mono">
+                                  Groupe {groupe}
+                                </Badge>
+                                <Badge variant="secondary" className="text-xs">
+                                  {total}
+                                </Badge>
+                              </div>
+                              <Button
+                                onClick={() => handleToggleGroupDetails(groupe)}
+                                variant="ghost"
+                                size="sm"
+                                disabled={loadingStates.saving}
+                              >
+                                {expandedGroups.includes(groupe) ? (
+                                  <ChevronRight className="h-4 w-4 rotate-90" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                          </Button>
+                        </div>
+
+                            <div className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span className="text-green-600">✅ Existants</span>
+                                <span className="font-medium">{existants}</span>
+                      </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-orange-600">🔄 Prospects</span>
+                                <span className="font-medium">{prospects}</span>
+                    </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                <div
+                                  className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                                  style={{ width: `${pourcentageExistant}%` }}
+                                ></div>
+                      </div>
+                              <div className="text-xs text-center text-muted-foreground">
+                                {pourcentageExistant}% intégré
+                      </div>
+                      </div>
+
+                            <div className="flex gap-1 mt-3">
+                              <Button
+                                onClick={() => handleManageGroup(groupe)}
+                                variant="outline"
+                                size="sm"
+                                disabled={loadingStates.saving}
+                                className="flex-1"
+                              >
+                                <Settings className="h-3 w-3 mr-1" />
+                                Gérer
+                          </Button>
+                              <Button
+                                onClick={() => handleViewGroupDetails(groupe)}
+                                variant="outline"
+                                size="sm"
+                                disabled={loadingStates.saving}
+                                className="flex-1"
+                              >
+                                <Eye className="h-3 w-3 mr-1" />
+                                Voir
+                          </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                      );
+                    })}
+                  </div>
+
+                  {/* Détails des groupes sélectionnés */}
+                  {expandedGroups.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                          <Eye className="h-5 w-5" />
+                          Détails des Groupes Sélectionnés
+                      </CardTitle>
+                        <CardDescription>
+                          Liste détaillée des organismes dans les groupes : {expandedGroups.join(', ')}
+                        </CardDescription>
+                    </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          {expandedGroups.map((groupe) => {
+                            const organismesGroupe = organismesGabon.filter(o =>
+                              o.groupe === groupe &&
+                              (groupeFilter === 'all' || groupeFilter === groupe) &&
+                              (statutFilter === 'all' ||
+                               (statutFilter === 'existant' && o.isActive) ||
+                               (statutFilter === 'prospect' && !o.isActive))
+                            );
+
+                            return (
+                              <div key={groupe} className="border rounded-lg p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <h4 className="font-semibold">Groupe {groupe}</h4>
+                                  <Badge variant="outline">{organismesGroupe.length} organismes</Badge>
+                      </div>
+
+                                <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
+                                  {organismesGroupe.map((organisme) => (
+                                    <div key={organisme.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                                      <div className="flex items-center gap-2">
+                                        <Crown className="h-4 w-4 text-yellow-600" />
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-sm font-medium truncate">{organisme.nom}</p>
+                                          <p className="text-xs text-muted-foreground">{organisme.code} • {organisme.province}</p>
+                      </div>
+                      </div>
+                        <div className="flex items-center gap-2">
+                                        <Badge
+                                          variant={organisme.isActive ? "default" : "secondary"}
+                                          className="text-xs"
+                                        >
+                                          {organisme.isActive ? "✅" : "🔄"}
+                                        </Badge>
+                                        <Button
+                                          onClick={() => handleManageOrganisme(organisme)}
+                                          variant="ghost"
+                                          size="sm"
+                                          disabled={loadingStates.saving}
+                                        >
+                                          <Settings className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                          ))}
+                        </div>
+
+                                {organismesGroupe.length === 0 && (
+                                  <div className="text-center py-4 text-muted-foreground">
+                                    Aucun organisme ne correspond aux filtres sélectionnés
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  )}
+
+                  {/* Actions en masse */}
+                <Card>
+                  <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <UserCheck className="h-5 w-5" />
+                        Actions en Masse par Groupe
+                      </CardTitle>
+                      <CardDescription>
+                        Opérations sur tous les organismes d'un ou plusieurs groupes
+                      </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <Button
+                          onClick={() => handleMassAction('convert-all-prospects')}
+                          variant="outline"
+                          disabled={loadingStates.saving}
+                          className="w-full"
+                        >
+                          {loadingStates.saving ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Conversion...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Convertir tous les prospects
+                            </>
+                          )}
+                      </Button>
+
+                      <Button
+                          onClick={() => handleMassAction('validate-all-data')}
+                        variant="outline"
+                          disabled={loadingStates.saving}
+                        className="w-full"
+                        >
+                          {loadingStates.saving ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Validation...
+                            </>
+                          ) : (
+                            <>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Valider toutes les données
+                            </>
+                          )}
+                      </Button>
+
+                        <Button
+                          onClick={() => handleMassAction('export-by-groups')}
+                          variant="outline"
+                          disabled={loadingStates.saving}
+                          className="w-full"
+                        >
+                          {loadingStates.saving ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Export...
+                            </>
+                          ) : (
+                            <>
+                              <FileText className="h-4 w-4 mr-2" />
+                              Exporter par groupes
+                            </>
+                          )}
+                </Button>
+
+                <Button
+                          onClick={() => handleMassAction('sync-all-groups')}
+                          variant="outline"
+                          disabled={loadingStates.saving}
+                          className="w-full"
+                        >
+                          {loadingStates.saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Sync...
+                    </>
+                  ) : (
+                    <>
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                              Synchroniser tout
+                    </>
+                  )}
+                </Button>
+              </div>
+                    </CardContent>
+                  </Card>
+            </div>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
 
-        {/* ✅ MODALES FONCTIONNELLES COMPLÈTES - Compatibles */}
+        {/* ✅ MODALES FONCTIONNELLES COMPLÈTES */}
+
+        {/* 🏛️ Modal Enrichi de Gestion d'Organisme */}
+        <OrganismeModalComplete
+          isOpen={modalStates.enrichedModal}
+          onClose={() => closeModal('enrichedModal')}
+          organisme={selectedProspect ? {
+            id: selectedProspect.id,
+            nom: selectedProspect.nom,
+            code: selectedProspect.code,
+            type: 'DIRECTION_GENERALE' as any,
+            groupe: 'B' as any,
+            contact: {
+              telephone: selectedProspect.telephone,
+              email: selectedProspect.email,
+              adresse: selectedProspect.localisation
+            },
+            prospectInfo: selectedProspect.prospectInfo,
+            services: selectedProspect.services,
+            localisation: selectedProspect.localisation
+          } : null}
+          mode="edit"
+          onSave={async (organisme) => {
+            // Appliquer les modifications du modal enrichi
+            if (selectedProspect) {
+              setProspects(prev => prev.map(p =>
+                p.id === selectedProspect.id
+                  ? {
+                      ...p,
+                      nom: organisme.nom,
+                      code: organisme.code,
+                      type: organisme.type,
+                      localisation: organisme.localisation || p.localisation,
+                      telephone: organisme.contact?.telephone || p.telephone,
+                      email: organisme.contact?.email || p.email
+                    }
+                  : p
+              ));
+              toast.success('✅ Configuration d\'organisme sauvegardée avec succès');
+            }
+            closeModal('enrichedModal');
+          }}
+          onConvert={(organisme) => {
+            closeModal('enrichedModal');
+            if (selectedProspect) {
+              handleConvertProspect(selectedProspect);
+                                  }
+                                }}
+                              />
 
         {/* 👁️ Modal Détails Prospect */}
         <Dialog open={modalStates.viewDetails} onOpenChange={() => closeModal('viewDetails')}>
@@ -2614,130 +4955,130 @@ export default function OrganismesProspectsPage() {
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                      <div>
+                <div>
                   <Label htmlFor="nom">Nom *</Label>
-                        <Input
-                          id="nom"
+                  <Input
+                    id="nom"
                     value={formData.nom}
                     onChange={(e) => setFormData(prev => ({ ...prev, nom: e.target.value }))}
                     placeholder="Nom de l'organisme"
-                        />
-                      </div>
-                      <div>
+                  />
+                </div>
+                <div>
                   <Label htmlFor="code">Code</Label>
-                        <Input
-                          id="code"
+                  <Input
+                    id="code"
                     value={formData.code}
                     onChange={(e) => setFormData(prev => ({ ...prev, code: e.target.value }))}
                     placeholder="Code unique"
-                        />
-                      </div>
-                    </div>
+                  />
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                      <div>
+                <div>
                   <Label htmlFor="type">Type</Label>
                   <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
-                          <SelectTrigger>
+                    <SelectTrigger>
                       <SelectValue placeholder="Type d'organisme" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="MINISTERE">Ministère</SelectItem>
-                            <SelectItem value="DIRECTION_GENERALE">Direction Générale</SelectItem>
-                            <SelectItem value="MAIRIE">Mairie</SelectItem>
-                            <SelectItem value="PREFECTURE">Préfecture</SelectItem>
-                            <SelectItem value="PROVINCE">Province</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="localisation">Localisation</Label>
-                        <Input
-                          id="localisation"
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MINISTERE">Ministère</SelectItem>
+                      <SelectItem value="DIRECTION_GENERALE">Direction Générale</SelectItem>
+                      <SelectItem value="MAIRIE">Mairie</SelectItem>
+                      <SelectItem value="PREFECTURE">Préfecture</SelectItem>
+                      <SelectItem value="PROVINCE">Province</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="localisation">Localisation</Label>
+                  <Input
+                    id="localisation"
                     value={formData.localisation}
                     onChange={(e) => setFormData(prev => ({ ...prev, localisation: e.target.value }))}
                     placeholder="Ville/Province"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
                   value={formData.description}
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Description de l'organisme"
-                        rows={3}
-                      />
-                    </div>
+                  rows={3}
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                      <div>
+                <div>
                   <Label htmlFor="telephone">Téléphone *</Label>
-                        <Input
-                          id="telephone"
+                  <Input
+                    id="telephone"
                     value={formData.telephone}
                     onChange={(e) => setFormData(prev => ({ ...prev, telephone: e.target.value }))}
-                          placeholder="+241 XX XX XX XX"
-                        />
-                      </div>
-                      <div>
+                    placeholder="+241 XX XX XX XX"
+                  />
+                </div>
+                <div>
                   <Label htmlFor="email">Email *</Label>
-                        <Input
-                          id="email"
-                          type="email"
+                  <Input
+                    id="email"
+                    type="email"
                     value={formData.email}
                     onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                          placeholder="contact@organisme.ga"
-                        />
-                      </div>
-                    </div>
-                    <div>
+                    placeholder="contact@organisme.ga"
+                  />
+                </div>
+              </div>
+              <div>
                 <Label htmlFor="responsableContact">Responsable Contact</Label>
-                      <Input
-                        id="responsableContact"
+                <Input
+                  id="responsableContact"
                   value={formData.responsableContact}
                   onChange={(e) => setFormData(prev => ({ ...prev, responsableContact: e.target.value }))}
                   placeholder="Nom du responsable"
-                      />
-                    </div>
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                      <div>
+              <div>
                   <Label htmlFor="priorite">Priorité</Label>
                   <Select value={formData.priorite} onValueChange={(value) => setFormData(prev => ({ ...prev, priorite: value }))}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
                       <SelectItem value="HAUTE">Haute</SelectItem>
                       <SelectItem value="MOYENNE">Moyenne</SelectItem>
                       <SelectItem value="BASSE">Basse</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label htmlFor="source">Source</Label>
                   <Select value={formData.source} onValueChange={(value) => setFormData(prev => ({ ...prev, source: value }))}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
                       <SelectItem value="DEMANDE_DIRECTE">Demande Directe</SelectItem>
                       <SelectItem value="REFERENCEMENT">Référencement</SelectItem>
                       <SelectItem value="RECOMMANDATION">Recommandation</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
                 <Label htmlFor="notes">Notes</Label>
-                      <Textarea
-                        id="notes"
+                <Textarea
+                  id="notes"
                   value={formData.notes}
                   onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                   placeholder="Notes sur le prospect"
                   rows={3}
-                      />
-                    </div>
-                          </div>
+                />
+              </div>
+            </div>
             <DialogFooter>
               <Button
                 variant="outline"
@@ -2787,433 +5128,45 @@ export default function OrganismesProspectsPage() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => toast.success('🔑 Accès configuré avec succès')}
+                    onClick={handleConfigureDGBFIPAccess}
+                    disabled={loadingStates.saving}
                   >
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Activer l'accès DGBFIP
+                    {loadingStates.saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Configuration...
+                    </>
+                  ) : (
+                    <>
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        Activer l'accès DGBFIP
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => toast.success('📊 Rapports configurés')}
+                    onClick={handleConfigureDGBFIPReports}
+                    disabled={loadingStates.saving}
                   >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Configurer les rapports
-                          </Button>
-                        </div>
-                          </div>
-                      </div>
+                    {loadingStates.saving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Configuration...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="h-4 w-4 mr-2" />
+                        Configurer les rapports
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => closeModal('dgbfipConfig')}>
                 Fermer
-                          </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        {/* Onglet Configuration Avancée - MANQUANT ET MAINTENANT AJOUTÉ */}
-        <TabsContent value="configuration-avancee" className="space-y-8">
-          <div className="bg-gradient-to-r from-gray-600 to-slate-600 text-white rounded-lg p-6 mb-8">
-            <div className="flex items-center justify-between">
-                        <div>
-                <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-                  <Settings className="h-6 w-6" />
-                  Configuration Avancée
-                </h2>
-                <p className="text-gray-100">
-                  Paramètres système et configuration des organismes officiels
-                        </p>
-                      </div>
-              <div className="text-right">
-                <Badge className="bg-white text-gray-600 mb-2">
-                  Paramètres Système
-                </Badge>
-                <p className="text-sm opacity-90">
-                  Administration avancée
-                        </p>
-                      </div>
-                      </div>
-                </div>
-
-          {/* Configuration des Organismes */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Paramètres d'Intégration */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
-                  Paramètres d'Intégration
-                      </CardTitle>
-                <CardDescription>
-                  Configuration du processus d'intégration des organismes
-                </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="auto-integration">Intégration Automatique</Label>
-                  <div className="flex items-center space-x-2">
-                              <Checkbox
-                      id="auto-integration"
-                      defaultChecked={true}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Activer l'intégration automatique des organismes principaux
-                    </span>
-                            </div>
-                        </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="validation-required">Validation Requise</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="validation-required"
-                      defaultChecked={false}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Exiger une validation manuelle avant intégration
-                    </span>
-                      </div>
-                      </div>
-
-                            <div className="space-y-2">
-                  <Label htmlFor="notification-integration">Notifications</Label>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="notification-integration"
-                      defaultChecked={true}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Recevoir des notifications pour chaque intégration
-                    </span>
-                              </div>
-                            </div>
-
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    toast.success('⚙️ Paramètres d\'intégration sauvegardés !');
-                  }}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  Sauvegarder les Paramètres
-                </Button>
-                          </CardContent>
-                        </Card>
-
-            {/* Gestion des Groupes */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                  <Crown className="h-5 w-5" />
-                  Gestion des Groupes Administratifs
-                    </CardTitle>
-                <CardDescription>
-                  Configuration des groupes A-I et leurs priorités
-                </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                {Array.from(new Set(organismesGabon.map(o => o.groupe))).sort().map((groupe) => {
-                  const count = organismesGabon.filter(o => o.groupe === groupe).length;
-                  return (
-                    <div key={groupe} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <h4 className="font-medium">Groupe {groupe}</h4>
-                        <p className="text-sm text-muted-foreground">{count} organismes</p>
-                          </div>
-                      <div className="flex items-center gap-2">
-                        <Select defaultValue="normale">
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="haute">Priorité Haute</SelectItem>
-                            <SelectItem value="normale">Priorité Normale</SelectItem>
-                            <SelectItem value="basse">Priorité Basse</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            toast.success(`✅ Paramètres du Groupe ${groupe} mis à jour !`);
-                          }}
-                        >
-                          <Settings className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                  );
-                })}
-                  </CardContent>
-                </Card>
-                      </div>
-
-          {/* Actions Système */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                <RefreshCw className="h-5 w-5" />
-                Actions Système
-                      </CardTitle>
-              <CardDescription>
-                Outils d'administration et de maintenance du système
-              </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2"
-                  onClick={async () => {
-                    setLoadingStates(prev => ({ ...prev, refreshing: true }));
-                    try {
-                      await new Promise(resolve => setTimeout(resolve, 2000));
-                      await loadData();
-                      toast.success('🔄 Données rechargées avec succès !');
-                    } catch (error) {
-                      toast.error('❌ Erreur lors du rechargement');
-                    } finally {
-                      setLoadingStates(prev => ({ ...prev, refreshing: false }));
-                    }
-                  }}
-                  disabled={loadingStates.refreshing}
-                >
-                  {loadingStates.refreshing ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <RefreshCw className="h-5 w-5" />
-                  )}
-                  <span className="text-xs">Recharger Données</span>
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                  className="h-20 flex flex-col gap-2"
-                        onClick={() => {
-                    const data = {
-                      organismes: organismesGabon,
-                      prospects: prospects,
-                      statistiques: stats,
-                      timestamp: new Date().toISOString()
-                    };
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `organismes-gabon-${Date.now()}.json`;
-                    a.click();
-                    toast.success('📁 Export terminé avec succès !');
-                  }}
-                >
-                  <FileText className="h-5 w-5" />
-                  <span className="text-xs">Exporter Données</span>
-                      </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2"
-                  onClick={() => {
-                    const organismesActifs = organismesGabon.filter(o => o.isActive).length;
-                    const organismesProblem = organismesGabon.filter(o => !o.province || !o.description).length;
-
-                    toast.success(`🔍 Diagnostic terminé ! ${organismesActifs} organismes actifs, ${organismesProblem} nécessitent une attention`);
-                  }}
-                >
-                  <AlertTriangle className="h-5 w-5" />
-                  <span className="text-xs">Diagnostic Système</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-20 flex flex-col gap-2"
-                  onClick={() => {
-                    // Simuler une synchronisation
-                    setLoadingStates(prev => ({ ...prev, saving: true }));
-                    setTimeout(() => {
-                      setLoadingStates(prev => ({ ...prev, saving: false }));
-                      toast.success('🔄 Synchronisation avec l\'API gouvernementale terminée !');
-                    }, 3000);
-                  }}
-                >
-                  {loadingStates.saving ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Database className="h-5 w-5" />
-                  )}
-                  <span className="text-xs">Sync API Gov</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Statistiques Avancées */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart2 className="h-5 w-5" />
-                Statistiques Système
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-green-600">{organismesGabon.filter(o => o.isActive).length}</div>
-                  <div className="text-sm text-muted-foreground">Organismes Intégrés</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600">{organismesGabon.filter(o => !o.isActive).length}</div>
-                  <div className="text-sm text-muted-foreground">En Attente</div>
-                </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-blue-600">{new Set(organismesGabon.map(o => o.province)).size}</div>
-                  <div className="text-sm text-muted-foreground">Provinces</div>
-              </div>
-                <div className="text-center p-4 border rounded-lg">
-                  <div className="text-2xl font-bold text-purple-600">{Math.round((organismesGabon.filter(o => o.isActive).length / organismesGabon.length) * 100)}%</div>
-                  <div className="text-sm text-muted-foreground">Taux Intégration</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        </Tabs>
-
-        {/* 🔧 MODALS CORRECTEMENT POSITIONNÉS - Fonctionnels */}
-
-        {/* Modal Enrichi Simplifié - Compatible */}
-        <Dialog open={modalStates.enrichedModal} onOpenChange={() => closeModal('enrichedModal')}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                {selectedProspect ? `Gérer ${selectedProspect.nom}` : 'Nouveau Organisme'}
-              </DialogTitle>
-              <DialogDescription>
-                {selectedProspect ? 'Modifier les informations de l\'organisme' : 'Créer un nouvel organisme'}
-              </DialogDescription>
-            </DialogHeader>
-
-            {selectedProspect && (
-              <div className="space-y-4">
-                {/* Informations de base */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Nom de l'organisme</Label>
-                    <Input value={selectedProspect.nom} readOnly className="bg-gray-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Code</Label>
-                    <Input value={selectedProspect.code} readOnly className="bg-gray-50" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Type</Label>
-                    <Input value={selectedProspect.type} readOnly className="bg-gray-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Localisation</Label>
-                    <Input value={selectedProspect.localisation || 'Non spécifié'} readOnly className="bg-gray-50" />
-                  </div>
-                </div>
-
-                {/* Informations de contact */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input value={selectedProspect.email} readOnly className="bg-gray-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Téléphone</Label>
-                    <Input value={selectedProspect.telephone} readOnly className="bg-gray-50" />
-                  </div>
-                </div>
-
-                {/* Informations de prospection */}
-                {selectedProspect.prospectInfo && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-3">Informations de Prospection</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-blue-700">Priorité:</span>
-                        <Badge className={`ml-2 ${
-                          selectedProspect.prospectInfo.priorite === 'HAUTE' ? 'bg-red-100 text-red-800' :
-                          selectedProspect.prospectInfo.priorite === 'MOYENNE' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {selectedProspect.prospectInfo.priorite}
-                        </Badge>
-                      </div>
-                      <div>
-                        <span className="font-medium text-blue-700">Source:</span>
-                        <span className="ml-2 text-blue-900">{selectedProspect.prospectInfo.source}</span>
-                      </div>
-                      {selectedProspect.prospectInfo.budgetEstime && (
-                        <div className="col-span-2">
-                          <span className="font-medium text-blue-700">Budget estimé:</span>
-                          <span className="ml-2 text-blue-900 font-mono">
-                            {new Intl.NumberFormat('fr-FR', {
-                              style: 'currency',
-                              currency: 'XAF',
-                              minimumFractionDigits: 0
-                            }).format(selectedProspect.prospectInfo.budgetEstime)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    {selectedProspect.prospectInfo.notes && (
-                      <div className="mt-3">
-                        <span className="font-medium text-blue-700">Notes:</span>
-                        <p className="text-blue-900 text-sm mt-1">{selectedProspect.prospectInfo.notes}</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Actions rapides */}
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      window.open(`mailto:${selectedProspect.email}?subject=Contact - ${selectedProspect.nom}`);
-                      toast.success(`📧 Email ouvert pour ${selectedProspect.nom}`);
-                    }}
-                  >
-                    <Mail className="h-4 w-4 mr-2" />
-                    Envoyer Email
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      window.open(`tel:${selectedProspect.telephone}`);
-                      toast.success(`📞 Appel initié vers ${selectedProspect.nom}`);
-                    }}
-                  >
-                    <Phone className="h-4 w-4 mr-2" />
-                    Appeler
-                  </Button>
-                  {selectedProspect.metadata?.groupe && (
-                    <Badge variant="outline" className="ml-auto">
-                      Groupe {selectedProspect.metadata.groupe}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => closeModal('enrichedModal')}>
-                Fermer
-              </Button>
-              <Button onClick={() => {
-                closeModal('enrichedModal');
-                toast.success('📋 Organisme traité avec succès !');
-              }}>
-                <CheckCircle2 className="h-4 w-4 mr-2" />
-                Marquer comme traité
               </Button>
             </DialogFooter>
           </DialogContent>

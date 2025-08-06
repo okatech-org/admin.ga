@@ -77,7 +77,8 @@ export default function OrganismesVueEnsemblePage() {
   const [showPrincipalOnly, setShowPrincipalOnly] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [allExpanded, setAllExpanded] = useState(true);
-  // État de la modale supprimé - on utilise maintenant expandedGroups pour le déploiement
+  const [exportLoading, setExportLoading] = useState(false);
+  const [selectedOrganisme, setSelectedOrganisme] = useState<OrganismeVueEnsemble | null>(null);
 
   // Charger les organismes
   useEffect(() => {
@@ -88,7 +89,7 @@ export default function OrganismesVueEnsemblePage() {
       try {
         const parsedState = JSON.parse(savedExpandedState);
         setExpandedGroups(parsedState);
-      } catch (error) {
+    } catch (error) {
         console.error('Erreur lors du chargement de l\'état des groupes:', error);
       }
     }
@@ -187,8 +188,6 @@ export default function OrganismesVueEnsemblePage() {
     }));
   };
 
-  // Fonctions de modale supprimées - maintenant on utilise le déploiement in-place
-
   const toggleAllGroups = () => {
     const newExpandedState = !allExpanded;
     const newExpandedGroups: Record<string, boolean> = {};
@@ -199,6 +198,69 @@ export default function OrganismesVueEnsemblePage() {
 
     setExpandedGroups(newExpandedGroups);
     setAllExpanded(newExpandedState);
+  };
+
+  // Fonction d'export des données
+  const handleExportData = async () => {
+    try {
+      setExportLoading(true);
+
+      const exportData = {
+        date: new Date().toISOString(),
+        source: 'ADMINISTRATION.GA - Vue d\'ensemble des Organismes',
+        statistiques: stats,
+        organismes: filteredOrganismes,
+        groupes: organismesParGroupe,
+        metadata: {
+          total: organismes.length,
+          filtres: {
+            searchTerm,
+            selectedGroup,
+            selectedType,
+            showPrincipalOnly
+          }
+        }
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `organismes-gabon-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success('✅ Export réussi !');
+    } catch (err) {
+      console.error('Erreur export:', err);
+      toast.error('❌ Erreur lors de l\'export');
+    } finally {
+      setExportLoading(false);
+    }
+  };
+
+  // Gestionnaires pour les actions sur les organismes
+  const handleViewOrganisme = (organisme: OrganismeVueEnsemble) => {
+    setSelectedOrganisme(organisme);
+    toast.info(`📋 Consultation de ${organisme.name}`);
+  };
+
+  const handleEditOrganisme = async (organisme: OrganismeVueEnsemble) => {
+    try {
+      toast.info(`✏️ Édition de ${organisme.name} (fonctionnalité à venir)`);
+      // TODO: Implémenter la logique d'édition
+    } catch (err) {
+      console.error('Erreur édition:', err);
+      toast.error('❌ Erreur lors de l\'édition');
+    }
+  };
+
+  const handleConfigureOrganisme = (organisme: OrganismeVueEnsemble) => {
+    toast.info(`⚙️ Configuration de ${organisme.name} (fonctionnalité à venir)`);
+    // TODO: Implémenter la logique de configuration
   };
 
   // Icônes pour les groupes
@@ -243,8 +305,8 @@ export default function OrganismesVueEnsemblePage() {
               <p className="text-muted-foreground mb-4">{error}</p>
               <Button onClick={loadOrganismes}>
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Réessayer
-              </Button>
+                    Réessayer
+                  </Button>
             </CardContent>
           </Card>
         </div>
@@ -256,25 +318,25 @@ export default function OrganismesVueEnsemblePage() {
     <AuthenticatedLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+          <div className="flex items-center justify-between">
+            <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Globe className="h-8 w-8 text-green-500" />
               Vue d'ensemble des Organismes Gabonais
-            </h1>
+              </h1>
             <p className="text-muted-foreground">
               Administration et gestion des {filteredOrganismes.length} organismes gabonais référencés
-            </p>
-          </div>
-          <div className="flex gap-2">
+              </p>
+            </div>
+            <div className="flex gap-2">
             <Button variant="outline" onClick={loadOrganismes}>
               <TrendingUp className="h-4 w-4 mr-2" />
-              Actualiser
-            </Button>
-            <Button>
+                Actualiser
+              </Button>
+                          <Button onClick={handleExportData}>
               <BarChart3 className="h-4 w-4 mr-2" />
-              Exporter
-            </Button>
+                Exporter
+              </Button>
           </div>
         </div>
 
@@ -331,7 +393,7 @@ export default function OrganismesVueEnsemblePage() {
 
         {/* Filtres */}
         <Card>
-          <CardContent className="p-6">
+            <CardContent className="p-6">
             <div className="flex gap-4 items-end flex-wrap">
               <div className="flex-1 min-w-64">
                 <label className="text-sm font-medium mb-2 block">Recherche</label>
@@ -343,10 +405,10 @@ export default function OrganismesVueEnsemblePage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
                   />
-                </div>
+                  </div>
               </div>
 
-              <div>
+                  <div>
                 <label className="text-sm font-medium mb-2 block">Groupe Administratif</label>
                 <Select value={selectedGroup} onValueChange={setSelectedGroup}>
                   <SelectTrigger className="w-56">
@@ -361,7 +423,7 @@ export default function OrganismesVueEnsemblePage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+                    </div>
 
               <div>
                 <label className="text-sm font-medium mb-2 block">Type d'Organisme</label>
@@ -378,7 +440,7 @@ export default function OrganismesVueEnsemblePage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+                  </div>
 
               <div className="flex items-center gap-2">
                 <input
@@ -391,14 +453,14 @@ export default function OrganismesVueEnsemblePage() {
                 <label htmlFor="principalOnly" className="text-sm font-medium">
                   Organismes principaux uniquement
                 </label>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
         {/* Organismes groupés */}
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">
               Organismes par Groupes Administratifs ({filteredOrganismes.length})
             </h2>
@@ -423,8 +485,8 @@ export default function OrganismesVueEnsemblePage() {
               <Badge variant="outline" className="bg-blue-50 text-blue-700">
                 {Object.keys(organismesParGroupe).length} groupes
               </Badge>
-            </div>
-          </div>
+                  </div>
+                    </div>
 
           {Object.keys(organismesParGroupe).length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -464,7 +526,7 @@ export default function OrganismesVueEnsemblePage() {
                           <div className={`relative p-2.5 rounded-lg ${colors.bg} shadow-md`}>
                             <GroupIcon className={`h-8 w-8 ${colors.text}`} />
                             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
-                          </div>
+                  </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-lg text-gray-900 leading-tight truncate">
                               {(group as any)?.name || 'Autre'}
@@ -476,16 +538,16 @@ export default function OrganismesVueEnsemblePage() {
                               <span className="text-xs font-medium text-gray-500 uppercase">
                                 GROUPE {groupKey} - NIVEAU {groupKey === 'A' ? '1' : groupKey === 'B' ? '2' : '3'}
                               </span>
-                            </div>
-                          </div>
-                        </div>
+                </div>
+              </div>
+        </div>
 
                         {/* Description avec informations compactes */}
                         <div className="mb-3">
                           <p className="text-sm text-gray-600 mb-2 line-clamp-1">
                             Code: GRP-{groupKey} • {(group as any)?.description || 'Groupe d\'organismes de l\'administration gabonaise'}
                           </p>
-                        </div>
+                  </div>
 
                         {/* Dashboard compact des métriques - Layout optimisé */}
                         <div className="bg-gradient-to-br from-gray-50 via-white to-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
@@ -494,49 +556,49 @@ export default function OrganismesVueEnsemblePage() {
                             <div className="text-center">
                               <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-1.5 mx-auto">
                                 <Building2 className="h-5 w-5 text-blue-600" />
-                              </div>
+                  </div>
                               <p className="text-xs font-medium text-gray-600">Total</p>
                               <p className="text-lg font-bold text-blue-600">{groupOrganismes.length}</p>
-                            </div>
+                </div>
 
                             {/* Métrique 2: Actifs */}
                             <div className="text-center">
                               <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-1.5 mx-auto">
                                 <CheckCircle className="h-5 w-5 text-green-600" />
-                              </div>
+                  </div>
                               <p className="text-xs font-medium text-gray-600">Actifs</p>
                               <p className="text-lg font-bold text-green-600">
                                 {groupOrganismes.filter(org => org.isActive).length}
                               </p>
-                            </div>
+                </div>
 
                             {/* Métrique 3: Principaux */}
                             <div className="text-center">
                               <div className={`w-10 h-10 rounded-lg ${colors.bg} flex items-center justify-center mb-1.5 mx-auto`}>
                                 <Crown className={`h-5 w-5 ${colors.text}`} />
-                              </div>
+                  </div>
                               <p className="text-xs font-medium text-gray-600">VIP</p>
                               <p className={`text-lg font-bold ${colors.text}`}>
                                 {groupOrganismes.filter(org => isOrganismePrincipal(org.type)).length}
                               </p>
-                            </div>
+                </div>
 
                             {/* Métrique 4: Types */}
                             <div className="text-center">
                               <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-1.5 mx-auto">
                                 <Network className="h-5 w-5 text-orange-600" />
-                              </div>
+                  </div>
                               <p className="text-xs font-medium text-gray-600">Cat.</p>
                               <p className="text-lg font-bold text-orange-600">
                                 {Array.from(new Set(groupOrganismes.map(org => org.type))).length}
                               </p>
-                            </div>
+                </div>
 
                             {/* Métrique 5: Agents */}
                             <div className="text-center">
                               <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center mb-1.5 mx-auto">
                                 <Users className="h-5 w-5 text-purple-600" />
-                              </div>
+              </div>
                               <p className="text-xs font-medium text-gray-600">Staff</p>
                               <p className="text-lg font-bold text-purple-600">
                                 {groupOrganismes.reduce((total, org) => total + (org.userCount || 0), 0)}
@@ -547,15 +609,15 @@ export default function OrganismesVueEnsemblePage() {
                             <div className="text-center">
                               <div className="w-10 h-10 rounded-lg bg-teal-100 flex items-center justify-center mb-1.5 mx-auto">
                                 <MapPin className="h-5 w-5 text-teal-600" />
-                              </div>
+                  </div>
                               <p className="text-xs font-medium text-gray-600">Zones</p>
                               <p className="text-lg font-bold text-teal-600">
                                 {Array.from(new Set(groupOrganismes.map(org => org.city).filter(Boolean))).length || 1}
                               </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+              </div>
+        </div>
+                </div>
+              </div>
 
                       {/* Section déployable des organismes */}
                   <div className={`transition-all duration-300 ease-in-out overflow-hidden ${
@@ -579,31 +641,61 @@ export default function OrganismesVueEnsemblePage() {
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    toast.info(`📊 Statistiques de ${(group as any)?.name || 'Groupe'}`);
+                                    // TODO: Implémenter modal de statistiques détaillées
+                                  }}
+                                >
                                   <BarChart2 className="h-4 w-4 mr-2" />
                                   Statistiques
-                                </Button>
-                                <Button variant="outline" size="sm">
+              </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      const exportData = {
+                                        groupe: (group as any)?.name || 'Groupe',
+                                        organismes: groupOrganismes,
+                                        date: new Date().toISOString()
+                                      };
+                                      const dataStr = JSON.stringify(exportData, null, 2);
+                                      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                                      const url = URL.createObjectURL(dataBlob);
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = `groupe-${groupKey}-${new Date().toISOString().split('T')[0]}.json`;
+                                      link.click();
+                                      URL.revokeObjectURL(url);
+                                      toast.success(`✅ Export du groupe ${groupKey} réussi`);
+                                    } catch (err) {
+                                      toast.error('❌ Erreur lors de l\'export');
+                                    }
+                                  }}
+                                >
                                   <FileText className="h-4 w-4 mr-2" />
                                   Exporter
-                                </Button>
-                              </div>
-                            </div>
+                </Button>
+              </div>
+            </div>
 
                             {/* Grille des organismes directement */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {groupOrganismes.map((org, index) => {
                                 const TypeIcon = getGroupIcon(groupKey);
 
-                                return (
+            return (
                                   <Card key={org.id} className={`${colors.border} border-l-4 hover:shadow-lg transition-all duration-200 bg-white`}>
-                                    <CardContent className="p-6">
+                <CardContent className="p-6">
                                       {/* En-tête avec icône et titre */}
                                       <div className="flex items-center gap-3 mb-4">
                                         <div className={`p-3 rounded-lg ${colors.bg}`}>
                                           <TypeIcon className={`h-8 w-8 ${colors.text}`} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
+                    </div>
+                    <div className="flex-1 min-w-0">
                                           <h3 className="font-bold text-lg leading-tight text-gray-900 truncate">{org.name}</h3>
                                           <p className="text-sm text-gray-600 uppercase font-medium">
                                             {getOrganizationTypeLabel(org.type)} - Groupe {groupKey}
@@ -620,52 +712,72 @@ export default function OrganismesVueEnsemblePage() {
                                               groupKey === 'I' ? 'Institutions Indépendantes' :
                                               'Autre'
                                             }
-                                          </p>
-                                        </div>
-                                      </div>
+                      </p>
+                    </div>
+                  </div>
 
                                       {/* Badge de statut */}
                                       <div className="flex items-center gap-2 mb-4">
                                         <Badge className={org.isActive ? 'bg-green-100 text-green-800 border-green-200' : 'bg-red-100 text-red-800 border-red-200'}>
                                           {org.isActive ? 'ACTIF' : 'INACTIF'}
-                                        </Badge>
+                    </Badge>
                                         <Badge variant="outline" className="text-xs">
                                           {org.userCount || 0} agents
-                                        </Badge>
+                      </Badge>
                                         {isOrganismePrincipal(org.type) && (
                                           <Crown className="h-4 w-4 text-yellow-500" />
-                                        )}
-                                      </div>
+                    )}
+                  </div>
 
                                       {/* Informations de contact */}
                                       <div className="space-y-2 mb-4 text-sm">
                                         <div className="flex items-center gap-2">
                                           <Users className="h-4 w-4 text-gray-400" />
                                           <span className="text-gray-600">Responsable non spécifié</span>
-                                        </div>
+                    </div>
                                         <div className="flex items-center gap-2">
                                           <Mail className="h-4 w-4 text-gray-400" />
                                           <span className="text-gray-600">{org.code.toLowerCase()}@{org.type.toLowerCase()}.ga</span>
-                                        </div>
+                    </div>
                                         <div className="flex items-center gap-2">
                                           <Phone className="h-4 w-4 text-gray-400" />
                                           <span className="text-gray-600">+241 01 XX XX XX</span>
-                                        </div>
-                                      </div>
+                      </div>
+                  </div>
 
-                                      {/* Actions */}
+                                    {/* Actions */}
                                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                                         <div className="flex items-center gap-2">
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                            <Eye className="h-4 w-4" />
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => handleViewOrganisme(org)}
+                                            title="Voir les détails"
+                                          >
+                          <Eye className="h-4 w-4" />
                                           </Button>
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => {
+                                              toast.info(`🔗 Relations de ${org.name} (fonctionnalité à venir)`);
+                                            }}
+                                            title="Voir les relations"
+                                          >
                                             <Network className="h-4 w-4" />
                                           </Button>
-                                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-8 w-8 p-0"
+                                            onClick={() => handleConfigureOrganisme(org)}
+                                            title="Configurer"
+                                          >
                                             <Settings className="h-4 w-4" />
-                                          </Button>
-                                        </div>
+                      </Button>
+                    </div>
                                         <div className="text-xs text-gray-500">
                                           {org.city || 'Libreville'}
                                 </div>
@@ -683,22 +795,38 @@ export default function OrganismesVueEnsemblePage() {
                       {!isExpanded && (
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                           <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                toast.info(`⚙️ Configuration du groupe ${groupKey} (fonctionnalité à venir)`);
+                              }}
+                              title="Configurer le groupe"
+                            >
                               <Settings className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => {
+                                toast.info(`📊 Statistiques du groupe ${groupKey}`);
+                              }}
+                              title="Statistiques du groupe"
+                            >
                               <BarChart2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                      </Button>
+                    </div>
                           <div className="text-xs text-gray-500">
                             {groupOrganismes.filter(org => org.isActive).length}/{groupOrganismes.length}
-                          </div>
+                  </div>
                         </div>
                       )}
-                    </CardContent>
-                </Card>
-              );
-              })}
+                </CardContent>
+              </Card>
+            );
+          })}
             </div>
           ) : (
             <Card>
@@ -715,15 +843,15 @@ export default function OrganismesVueEnsemblePage() {
                   setShowPrincipalOnly(false);
                 }}>
                   <Filter className="h-4 w-4 mr-2" />
-                  Réinitialiser les filtres
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                Réinitialiser les filtres
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
         {/* Ancienne modale supprimée - Les organismes s'affichent maintenant directement dans les cartes déployées */}
-      </div>
+        </div>
     </AuthenticatedLayout>
   );
 }

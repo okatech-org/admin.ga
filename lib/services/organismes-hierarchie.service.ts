@@ -3,7 +3,7 @@
  * ADMINISTRATION.GA - Système intelligent de classification
  */
 
-import { OrganismeGabonais } from '../data/gabon-organismes-160';
+import { OrganismeGabonais } from '../data/gabon-organismes-141';
 
 export interface RelationHierarchique {
   parentId: string;

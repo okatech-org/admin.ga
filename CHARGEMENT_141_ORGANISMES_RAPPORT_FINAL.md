@@ -12,8 +12,8 @@ J'ai **parfaitement intégré** les **141 organismes officiels gabonais** dans l
 
 #### **📂 Source de Données :**
 ```typescript
-// Import depuis /lib/data/gabon-organismes-160.ts
-const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-160');
+// Import depuis /lib/data/gabon-organismes-141.ts
+const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-141');
 const organismesComplets = getOrganismesComplets(); // Retourne les 141 organismes
 ```
 
@@ -156,7 +156,7 @@ const loadData = useCallback(async () => {
     const [prospectsResponse, organisationsResponse, commerciauxResponse] = await Promise.all([...]);
     
     // 2. 🏛️ CHARGEMENT COMPLET DES 141 ORGANISMES OFFICIELS
-    const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-160');
+    const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-141');
     const organismesComplets = getOrganismesComplets();
     
     // 3. Conversion intelligente avec statut d'intégration
@@ -262,7 +262,7 @@ console.log(`   📊 ${existants} existants (déjà intégrés)`);
 console.log(`   🔄 ${prospects} prospects (à intégrer)`);
 ```
 
-#### **🎯 Éléments Visuels de Statut :**
+#### **🎯 Interface Utilisateur :**
 - **Badges de statut** : ✅ Existant / 🔄 Prospect
 - **Couleurs cohérentes** : Vert pour existants, Orange pour prospects
 - **Icônes explicites** : Crown pour organismes officiels

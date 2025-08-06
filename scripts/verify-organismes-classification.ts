@@ -4,7 +4,7 @@
  * Compare la classification demandée avec l'implémentation actuelle
  */
 
-import { getOrganismesComplets } from '../lib/data/gabon-organismes-160';
+import { getOrganismesComplets } from '../lib/data/gabon-organismes-141';
 
 // Classification demandée par l'utilisateur
 const CLASSIFICATION_DEMANDEE = {
@@ -219,7 +219,7 @@ function verifierClassification() {
   // Suggestions d'action
   console.log('\n💡 ACTIONS RECOMMANDÉES:');
   if (totalManquant > 0) {
-    console.log('   1. Créer les organismes manquants dans gabon-organismes-160.ts');
+    console.log('   1. Créer les organismes manquants dans gabon-organismes-141.ts');
     console.log('   2. Mettre à jour la fonction getOrganismesComplets() pour inclure tous les groupes');
     console.log('   3. Vérifier que tous les organismes sont en statut "prospect"');
   } else {

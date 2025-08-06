@@ -25,7 +25,12 @@ import {
   ArrowRight,
   BarChart3,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Zap,
+  Gauge
 } from 'lucide-react';
 import { SUPER_ADMIN_SECTIONS, QUICK_ACTIONS } from '@/lib/config/super-admin-navigation';
 import Link from 'next/link';
@@ -34,6 +39,7 @@ export default function SuperAdminHomePage() {
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showDetailedStats, setShowDetailedStats] = useState(false);
 
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Bonjour' : currentHour < 18 ? 'Bon après-midi' : 'Bonsoir';
@@ -215,473 +221,395 @@ export default function SuperAdminHomePage() {
   return (
     <SuperAdminLayout
       title={`${greeting} ! 👋`}
-      description="Votre tableau de bord personnalisé pour administrer ADMIN.GA efficacement"
+      description="Tableau de bord moderne et simplifié pour ADMIN.GA"
     >
-            <div className="space-y-8">
-        {/* Alerte d'erreur si problème de chargement */}
+      <div className="space-y-6">
+        {/* Header moderne avec statut et actions */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${error ? 'bg-red-500' : 'bg-green-500'}`} />
+              <span className="text-sm font-medium text-gray-700">
+                {error ? 'Données hors ligne' : 'Système opérationnel'}
+              </span>
+            </div>
+            {dashboardData?.lastUpdated && (
+              <span className="text-xs text-gray-500">
+                Mis à jour: {new Date(dashboardData.lastUpdated).toLocaleTimeString('fr-FR')}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={loadDashboardData}
+              disabled={loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              {loading ? 'Actualisation...' : 'Actualiser'}
+            </Button>
+            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Zap className="w-3 h-3 mr-1" />
+              Temps réel
+            </Badge>
+          </div>
+        </div>
+
+        {/* Alerte d'erreur compacte */}
         {error && (
-          <Alert className="border-red-200 bg-red-50">
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
-              <div className="flex items-center justify-between">
-                <span>
-                  <strong>Données indisponibles :</strong> {error}. Les données affichées peuvent ne pas être à jour.
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={loadDashboardData}
-                  className="border-red-300 text-red-700 hover:bg-red-100"
-                >
-                  Réessayer
-                </Button>
-              </div>
+          <Alert className="border-amber-200 bg-amber-50">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              <strong>Attention :</strong> {error}. Affichage des dernières données disponibles.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Alerte de bienvenue pour nouveaux utilisateurs */}
-        {!error && (
-          <Alert className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <Sparkles className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-800">
-              <div className="flex items-center justify-between">
-                <span>
-                  <strong>Interface moderne :</strong> Données en temps réel mises à jour automatiquement.
-                  {dashboardData?.lastUpdated && (
-                    <span className="text-xs block mt-1">
-                      Dernière mise à jour: {new Date(dashboardData.lastUpdated).toLocaleTimeString('fr-FR')}
-                    </span>
-                  )}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={loadDashboardData}
-                    disabled={loading}
-                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                  >
-                    <CheckCircle2 className="w-4 h-4 mr-1" />
-                    {loading ? 'Actualisation...' : 'Actualiser'}
-                  </Button>
-                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                    Temps réel
-                  </Badge>
-                </div>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Statistiques détaillées des utilisateurs */}
-        {dashboardData?.userStats && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-blue-600" />
-                Répartition Détaillée des Utilisateurs
-              </CardTitle>
-              <CardDescription>
-                Analyse en temps réel de vos {dashboardData.userStats?.totalUsers || 0} utilisateurs
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Répartition par rôle */}
-              <div>
-                <h4 className="font-semibold mb-3 text-gray-700">Par Rôle</h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {dashboardData.userStats?.roleDistribution?.map((role: any) => (
-                    <div key={role.role} className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-lg font-bold text-gray-900">{role.count}</div>
-                      <div className="text-sm text-gray-600">{role.role}</div>
-                      <div className="text-xs text-gray-500">
-                        {((role.count / (dashboardData.userStats?.totalUsers || 1)) * 100).toFixed(1)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Statut et organisation */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3 text-gray-700">Organisation</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Avec organisation</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {dashboardData.userStats?.organizationDistribution?.withOrganization || 0}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Sans organisation</span>
-                      <Badge variant="outline" className="bg-orange-50 text-orange-700">
-                        {dashboardData.userStats?.organizationDistribution?.withoutOrganization || 0}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3 text-gray-700">Top Domaines Email</h4>
-                  <div className="space-y-1">
-                    {dashboardData.userStats?.emailDomains?.slice(0, 3).map((domain: any) => (
-                      <div key={domain.domain} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{domain.domain}</span>
-                        <span className="font-medium">{domain.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Statistiques détaillées des organismes */}
-        {dashboardData?.orgStats && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-green-600" />
-                Répartition Détaillée des Organismes
-              </CardTitle>
-              <CardDescription>
-                Analyse en temps réel de vos {dashboardData.orgStats?.totalOrganizations || 0} organismes gabonais
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Répartition par type */}
-              <div>
-                <h4 className="font-semibold mb-3 text-gray-700">Par Type</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {dashboardData.orgStats?.typeDistribution?.slice(0, 6).map((type: any) => (
-                    <div key={type.type} className="bg-gray-50 p-3 rounded-lg">
-                      <div className="text-lg font-bold text-gray-900">{type.count}</div>
-                      <div className="text-sm text-gray-600">{type.type.replace('_', ' ')}</div>
-                      <div className="text-xs text-gray-500">
-                        {((type.count / (dashboardData.orgStats?.totalOrganizations || 1)) * 100).toFixed(1)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Statut et villes */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-3 text-gray-700">Statut d'Activité</h4>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-sm">Organismes actifs</span>
-                      <Badge variant="outline" className="bg-green-50 text-green-700">
-                        {dashboardData.orgStats?.statusDistribution?.active || 0}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm">Organismes inactifs</span>
-                      <Badge variant="outline" className="bg-red-50 text-red-700">
-                        {dashboardData.orgStats?.statusDistribution?.inactive || 0}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-3 text-gray-700">Top Villes</h4>
-                  <div className="space-y-1">
-                    {dashboardData.orgStats?.cityDistribution?.slice(0, 3).map((city: any) => (
-                      <div key={city.city} className="flex justify-between text-sm">
-                        <span className="text-gray-600">{city.city}</span>
-                        <span className="font-medium">{city.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Métriques du jour */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Métriques principales compactes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {loading ? (
-            // Indicateurs de chargement
             [...Array(4)].map((_, index) => (
               <Card key={index} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="h-4 bg-gray-200 rounded w-24" />
-                    <div className="w-8 h-8 bg-gray-200 rounded-lg" />
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="h-4 bg-gray-200 rounded w-16" />
+                    <div className="w-6 h-6 bg-gray-200 rounded" />
                   </div>
-                  <div className="h-8 bg-gray-200 rounded w-16 mb-2" />
-                  <div className="h-3 bg-gray-200 rounded w-32" />
+                  <div className="h-6 bg-gray-200 rounded w-12 mb-1" />
+                  <div className="h-3 bg-gray-200 rounded w-20" />
                 </CardContent>
               </Card>
             ))
           ) : (
             todayMetrics.map((metric, index) => (
-              <DashboardWidget
-                key={index}
-                title={metric.title}
-                value={metric.value}
-                trend={metric.trend}
-                icon={metric.icon}
-                color={metric.color}
-                description={metric.description}
-                actionLabel={metric.actionLabel}
-                actionHref={metric.actionHref}
-                showTrend={true}
-                isLoading={loading}
-              />
+              <Link key={index} href={metric.actionHref} className="group">
+                <Card className="transition-all duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer border-0 bg-gradient-to-br from-white to-gray-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-medium text-gray-600">{metric.title}</span>
+                      <metric.icon className={`w-5 h-5 text-white rounded-lg p-1 ${metric.color}`} />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-2xl font-bold text-gray-900">{metric.value}</div>
+                      <div className="text-xs text-gray-500">{metric.description}</div>
+                    </div>
+                    <div className="mt-3 flex items-center text-xs text-gray-400 group-hover:text-blue-600 transition-colors">
+                      <span>{metric.actionLabel}</span>
+                      <ArrowRight className="w-3 h-3 ml-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))
           )}
         </div>
 
-        {/* Contenu principal en grille */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Navigation principale */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="w-5 h-5" />
-                  Navigation Simplifiée
-                </CardTitle>
-                <CardDescription>
-                  6 sections principales pour organiser toutes vos tâches administratives
-                </CardDescription>
+        {/* Statistiques détaillées (collapsibles) */}
+        {dashboardData && (
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-gray-900">
+                    Analyse Détaillée
+                  </CardTitle>
+                  <CardDescription className="text-sm text-gray-600">
+                    Répartition complète des {(dashboardData.userStats?.totalUsers || 0) + (dashboardData.orgStats?.totalOrganizations || 0)} entités
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDetailedStats(!showDetailedStats)}
+                  className="flex items-center gap-2"
+                >
+                  {showDetailedStats ? (
+                    <>
+                      <ChevronUp className="w-4 h-4" />
+                      Masquer
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="w-4 h-4" />
+                      Afficher
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardHeader>
+
+            {showDetailedStats && (
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Utilisateurs */}
+                  {dashboardData?.userStats && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-blue-600" />
+                        Utilisateurs ({dashboardData.userStats.totalUsers})
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {dashboardData.userStats?.roleDistribution?.slice(0, 4).map((role: any) => (
+                          <div key={role.role} className="bg-blue-50 p-3 rounded-lg">
+                            <div className="text-lg font-bold text-blue-900">{role.count}</div>
+                            <div className="text-xs text-blue-700">{role.role}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Organismes */}
+                  {dashboardData?.orgStats && (
+                    <div className="space-y-4">
+                      <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                        <Building2 className="w-4 h-4 text-green-600" />
+                        Organismes ({dashboardData.orgStats.totalOrganizations})
+                      </h3>
+                      <div className="grid grid-cols-2 gap-3">
+                        {dashboardData.orgStats?.typeDistribution?.slice(0, 4).map((type: any) => (
+                          <div key={type.type} className="bg-green-50 p-3 rounded-lg">
+                            <div className="text-lg font-bold text-green-900">{type.count}</div>
+                            <div className="text-xs text-green-700">{type.type.replace('_', ' ')}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
+
+
+        {/* Layout principal moderne */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Navigation principale (3 colonnes) */}
+          <div className="lg:col-span-3">
+            <Card className="border-0 shadow-sm bg-white">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+                      <Gauge className="w-5 h-5 text-blue-600" />
+                      Centre de Contrôle
+                    </CardTitle>
+                    <CardDescription className="text-gray-600 mt-1">
+                      Accès direct aux fonctionnalités principales
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 border-blue-200">
+                    6 Sections
+                  </Badge>
+                </div>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" data-tour="navigation-grid">
+              <CardContent className="p-6 pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                   {SUPER_ADMIN_SECTIONS.slice(0, 6).map((section) => (
-                    <NavigationCard
+                    <Link
                       key={section.id}
-                      title={section.title}
-                      description={section.description}
-                      icon={section.icon}
                       href={section.items[0]?.href || '#'}
-                      gradient={section.gradient}
-                      badge={section.badge}
-                      frequency={section.items.some(item => item.isFrequent) ? 'high' : 'medium'}
-                      size="sm"
-                      showSubItems={false}
-                    />
+                      className="group block"
+                    >
+                      <div className="p-4 rounded-xl border border-gray-100 hover:border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] cursor-pointer">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${section.gradient || 'bg-blue-500'} group-hover:scale-110 transition-transform`}>
+                            <section.icon className="w-5 h-5 text-white" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                              {section.title}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                              {section.description}
+                            </p>
+                            {section.badge && (
+                              <Badge variant={section.badge.variant as any || "outline"} className="mt-2 text-xs">
+                                {section.badge.text}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Actions rapides */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  Actions Prioritaires
-                </CardTitle>
-                <CardDescription>
-                  Tâches importantes qui nécessitent votre attention
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                                    {priorityTasks.map((task) => {
-                    // Gérer différents types d'icônes (string ou component)
-                    const IconComponent = typeof task.icon === 'string' ?
-                      (task.icon === 'Users' ? Users :
-                       task.icon === 'Building2' ? Building2 :
-                       task.icon === 'BarChart3' ? BarChart3 : Users) :
-                      task.icon;
+            {/* Actions prioritaires compactes */}
+            {priorityTasks.length > 0 && priorityTasks[0].title !== 'Chargement des tâches...' && (
+              <Card className="border-0 shadow-sm bg-gradient-to-r from-orange-50 to-red-50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Star className="w-5 h-5 text-orange-500" />
+                    Tâches Prioritaires
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className="space-y-2">
+                    {priorityTasks.slice(0, 3).map((task) => {
+                      const IconComponent = typeof task.icon === 'string' ?
+                        (task.icon === 'Users' ? Users :
+                         task.icon === 'Building2' ? Building2 :
+                         task.icon === 'BarChart3' ? BarChart3 : Users) :
+                        task.icon;
 
-                    return (
-                      <Link
-                        key={task.id}
-                        href={task.href}
-                        className="block p-4 rounded-lg border hover:border-blue-300 hover:bg-blue-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      return (
+                        <Link
+                          key={task.id}
+                          href={task.href}
+                          className="flex items-center gap-3 p-3 rounded-lg bg-white hover:bg-gray-50 transition-colors border border-gray-100 group"
+                        >
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                             task.urgency === 'high' ? 'bg-red-100 text-red-600' :
                             task.urgency === 'medium' ? 'bg-yellow-100 text-yellow-600' :
                             'bg-gray-100 text-gray-600'
                           }`}>
-                            <IconComponent className="w-5 h-5" />
+                            <IconComponent className="w-4 h-4" />
                           </div>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{task.title}</span>
-                              <Badge
-                                variant={task.urgency === 'high' ? 'destructive' :
-                                        task.urgency === 'medium' ? 'default' : 'secondary'}
-                                className="text-xs"
-                              >
-                                {task.urgency === 'high' ? 'Urgent' :
-                                 task.urgency === 'medium' ? 'Important' : 'Normal'}
-                              </Badge>
-                              {task.count && task.count > 0 && (
-                                <Badge variant="outline" className="text-xs">
-                                  {task.count}
-                                </Badge>
-                              )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-gray-900 text-sm group-hover:text-blue-600 transition-colors">
+                              {task.title}
                             </div>
-                            <p className="text-sm text-gray-600">Échéance: {task.timeLeft}</p>
+                            <div className="text-xs text-gray-500">{task.timeLeft}</div>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-gray-400" />
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                          {task.count && task.count > 0 && (
+                            <Badge variant="outline" className="text-xs">
+                              {task.count}
+                            </Badge>
+                          )}
+                          <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
-          {/* Sidebar avec infos contextuelles */}
-          <div className="space-y-6">
+          {/* Sidebar moderne et compacte */}
+          <div className="space-y-4">
             {/* Actions rapides */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="w-5 h-5" />
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-blue-600" />
                   Actions Rapides
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3" data-tour="quick-actions">
-                  {QUICK_ACTIONS.slice(0, 4).map((action) => (
-                    <QuickActionCard
+              <CardContent className="p-6 pt-0">
+                <div className="space-y-2">
+                  {QUICK_ACTIONS.slice(0, 3).map((action) => (
+                    <Link
                       key={action.href}
-                      title={action.title}
-                      description={action.description}
-                      icon={action.icon}
                       href={action.href}
-                      color={action.color}
-                      priority={action.priority}
-                    />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Mises à jour et actualités */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" />
-                  Actualités
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {recentUpdates.map((update, index) => (
-                    <div key={index} className="border-l-4 border-blue-200 pl-4">
-                      <div className="flex items-start gap-2">
-                        <div className="w-2 h-2 rounded-full mt-2 bg-blue-500" />
-                        <div className="flex-1">
-                          <h4 className="font-medium text-sm">{update.action}</h4>
-                          <p className="text-xs text-gray-600 mt-1">Par: {update.user}</p>
-                          <span className="text-xs text-gray-500">{update.time}</span>
+                      className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors group border border-transparent hover:border-gray-200"
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${action.color || 'bg-blue-500'} group-hover:scale-110 transition-transform`}>
+                        <action.icon className="w-4 h-4 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm text-gray-900 group-hover:text-blue-600 transition-colors">
+                          {action.title}
+                        </div>
+                        <div className="text-xs text-gray-500 truncate">
+                          {action.description}
                         </div>
                       </div>
-                    </div>
+                      <ArrowRight className="w-3 h-3 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                    </Link>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Conseils pour novices */}
-            <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-purple-800">
-                  <Lightbulb className="w-5 h-5" />
-                  Conseil du Jour
+            {/* Activité récente compacte */}
+            {recentUpdates.length > 0 && recentUpdates[0].action !== 'Chargement des activités...' && (
+              <Card className="border-0 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Bell className="w-4 h-4 text-green-600" />
+                    Activité Récente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className="space-y-3">
+                    {recentUpdates.slice(0, 3).map((update, index) => (
+                      <div key={index} className="flex items-start gap-3">
+                        <div className="w-2 h-2 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-gray-900 truncate">
+                            {update.action}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {update.user} • {update.time}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Conseil moderne */}
+            <Card className="border-0 shadow-sm bg-gradient-to-br from-indigo-50 to-blue-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold text-indigo-900 flex items-center gap-2">
+                  <Lightbulb className="w-4 h-4 text-indigo-600" />
+                  Astuce
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <p className="text-sm text-purple-700">
-                    💡 <strong>Navigation intuitive :</strong> Chaque section est organisée logiquement.
-                    Commencez par "Vue d'Ensemble" pour une introduction complète.
-                  </p>
-                  <p className="text-xs text-purple-600">
-                    ⌨️ Astuce : Utilisez <kbd className="px-1 py-0.5 bg-purple-200 rounded text-xs">Ctrl+K</kbd>
-                    pour rechercher n'importe quelle fonctionnalité instantanément.
-                  </p>
-                  <Button variant="outline" size="sm" className="w-full border-purple-300 text-purple-700 hover:bg-purple-100">
-                    Voir plus de conseils
-                  </Button>
+              <CardContent className="p-6 pt-0">
+                <p className="text-sm text-indigo-800 leading-relaxed">
+                  💡 Utilisez le <strong>Centre de Contrôle</strong> pour naviguer rapidement entre les sections.
+                </p>
+                <div className="mt-3 flex items-center gap-1 text-xs text-indigo-600">
+                  <kbd className="px-2 py-1 bg-indigo-200 rounded text-xs font-mono">Ctrl+K</kbd>
+                  <span>pour rechercher</span>
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
 
-        {/* Footer avec liens rapides */}
-        <Card className="bg-gray-50 border-gray-200">
+        {/* Footer moderne et compact */}
+        <Card className="border-0 bg-gradient-to-r from-gray-50 to-blue-50">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  Système
-                </h4>
-                <div className="space-y-2">
-                  <Link href="/super-admin/base-donnees" className="block text-sm text-gray-600 hover:text-blue-600">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">ADMIN.GA</span>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <Link href="/super-admin/base-donnees" className="hover:text-blue-600 transition-colors">
                     Base de données
                   </Link>
-                  <Link href="/super-admin/systeme" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Maintenance
+                  <Link href="/super-admin/analytics" className="hover:text-blue-600 transition-colors">
+                    Analytics
                   </Link>
-                  <Link href="/super-admin/logs" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Logs système
-                  </Link>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Analytics
-                </h4>
-                <div className="space-y-2">
-                  <Link href="/super-admin/analytics" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Rapports détaillés
-                  </Link>
-                  <Link href="/super-admin/metrics-advanced" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Métriques avancées
+                  <Link href="/super-admin/logs" className="hover:text-blue-600 transition-colors">
+                    Logs
                   </Link>
                 </div>
               </div>
 
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Utilisateurs
-                </h4>
-                <div className="space-y-2">
-                  <Link href="/super-admin/utilisateurs" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Gestion comptes
-                  </Link>
-                  <Link href="/super-admin/fonctionnaires-attente" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Validations en attente
-                  </Link>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Organismes
-                </h4>
-                <div className="space-y-2">
-                  <Link href="/super-admin/organismes-vue-ensemble" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Vue d'ensemble
-                  </Link>
-                  <Link href="/super-admin/structure-administrative" className="block text-sm text-gray-600 hover:text-blue-600">
-                    Structure officielle
-                  </Link>
-                </div>
+              <div className="flex items-center gap-4">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <div className="w-2 h-2 rounded-full bg-green-500 mr-2" />
+                  Opérationnel
+                </Badge>
+                <span className="text-xs text-gray-500">
+                  Interface moderne v2.0
+                </span>
               </div>
             </div>
           </CardContent>

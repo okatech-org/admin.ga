@@ -59,7 +59,7 @@
 
 ## 🔧 **MODIFICATIONS TECHNIQUES**
 
-### **1. Fichier de données** : `lib/data/gabon-organismes-160.ts`
+### **1. Fichier de données** : `lib/data/gabon-organismes-141.ts`
 - ✅ Ajout de 20 nouvelles directions générales
 - ✅ Mise à jour des statistiques (`total: 60`)
 - ✅ Chaque DG avec secteurs de services spécifiques

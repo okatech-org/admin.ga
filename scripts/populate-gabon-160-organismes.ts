@@ -13,7 +13,7 @@ import {
   STATISTIQUES_ORGANISMES,
   TYPES_DIRECTIONS_CENTRALES,
   OrganismeGabonais
-} from '../lib/data/gabon-organismes-160';
+} from '../lib/data/gabon-organismes-141';
 import { TOUS_MINISTERES } from '../lib/config/ministeres-gabon-2025';
 import { getAllOrganismesProspects } from '../lib/data/organismes-prospects-complete';
 

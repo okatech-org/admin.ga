@@ -4,7 +4,7 @@
  * sont bien présents dans la page prospects
  */
 
-import { getOrganismesComplets } from '../lib/data/gabon-organismes-160';
+import { getOrganismesComplets } from '../lib/data/gabon-organismes-141';
 import { getAllOrganismesProspects } from '../lib/data/organismes-prospects-complete';
 
 // Classification demandée complète (reprise du script de vérification)

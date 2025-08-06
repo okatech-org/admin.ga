@@ -3,7 +3,7 @@
  * Test final après correction : Distinction organismes autonomes vs postes internes
  */
 
-import { getOrganismesComplets, STATISTIQUES_ORGANISMES } from '../lib/data/gabon-organismes-160';
+import { getOrganismesComplets, STATISTIQUES_ORGANISMES } from '../lib/data/gabon-organismes-141';
 import { getAllOrganismesProspects, STATISTIQUES_PROSPECTS } from '../lib/data/organismes-prospects-complete';
 import { genererPostesInternes, STATISTIQUES_POSTES_INTERNES } from '../lib/data/postes-internes-ministeres';
 

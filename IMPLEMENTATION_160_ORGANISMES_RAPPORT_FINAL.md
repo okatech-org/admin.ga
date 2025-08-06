@@ -32,7 +32,7 @@ L'implémentation intelligente de la liste complète des organismes publics gabo
 ```
 
 ### **2. Structure de Données Intelligente**
-- **Fichier principal** : `lib/data/gabon-organismes-160.ts`
+- **Fichier principal** : `lib/data/gabon-organismes-141.ts`
 - **Interface unifiée** : `OrganismeGabonais`
 - **Classification par groupes** : A, B, C, D, E, F, G, L, I
 - **Hiérarchie multiniveau** : 1-4 niveaux hiérarchiques
@@ -92,7 +92,7 @@ DCC:  Direction Centrale de la Communication
 ## 🔧 COMPOSANTS TECHNIQUES CRÉÉS
 
 ### **1. Fichiers de Données**
-- `lib/data/gabon-organismes-160.ts` - Structure complète des organismes
+- `lib/data/gabon-organismes-141.ts` - Structure complète des organismes
 - `lib/services/organismes-hierarchie.service.ts` - Service de gestion hiérarchique
 
 ### **2. Scripts d'Implémentation**
@@ -183,7 +183,7 @@ ADMINISTRATION.GA/
 ├── types/auth.ts (✅ étendu)
 ├── lib/
 │   ├── data/
-│   │   └── gabon-organismes-160.ts (🆕 créé)
+│   │   └── gabon-organismes-141.ts (🆕 créé)
 │   └── services/
 │       └── organismes-hierarchie.service.ts (🆕 créé)
 └── scripts/

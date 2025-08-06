@@ -92,7 +92,7 @@ import {
 import { organismeCommercialService } from '@/lib/services/organisme-commercial.service';
 import { OrganismeCommercial, OrganismeCommercialGabon, ConversionProspectData, TypeContrat } from '@/lib/types/organisme';
 import DGBFIPUsersManagement from '@/components/dgbfip/dgbfip-users-management';
-import { getOrganismesComplets, STATISTIQUES_ORGANISMES, OrganismeGabonais } from '@/lib/data/gabon-organismes-160';
+import { getOrganismesComplets, STATISTIQUES_ORGANISMES, OrganismeGabonais } from '@/lib/data/gabon-organismes-141';
 import { getAllOrganismesProspects, STATISTIQUES_PROSPECTS } from '@/lib/data/organismes-prospects-complete';
 import { STATISTIQUES_POSTES_INTERNES } from '@/lib/data/postes-internes-ministeres';
 import { OrganismeModalComplete } from '@/components/organismes/organisme-modal-complete';

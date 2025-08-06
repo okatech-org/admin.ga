@@ -4,7 +4,7 @@
  * Les directions centrales ne doivent plus être comptées comme des organismes
  */
 
-import { getOrganismesComplets, STATISTIQUES_ORGANISMES } from '../lib/data/gabon-organismes-160';
+import { getOrganismesComplets, STATISTIQUES_ORGANISMES } from '../lib/data/gabon-organismes-141';
 import { getAllOrganismesProspects } from '../lib/data/organismes-prospects-complete';
 import { genererPostesInternes, STATISTIQUES_POSTES_INTERNES } from '../lib/data/postes-internes-ministeres';
 

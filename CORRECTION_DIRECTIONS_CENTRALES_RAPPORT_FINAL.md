@@ -130,7 +130,7 @@ STATISTIQUES_ORGANISMES = {
 - ✅ `scripts/test-final-correction.ts` - Validation finale
 
 ### **📝 Fichiers Mis à Jour**
-- ✅ `lib/data/gabon-organismes-160.ts`
+- ✅ `lib/data/gabon-organismes-141.ts`
   - Retrait des directions centrales de `getOrganismesComplets()`
   - Statistiques corrigées (102 au lieu de 252)
   - Commentaires explicatifs ajoutés

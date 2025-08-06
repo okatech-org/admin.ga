@@ -3,7 +3,7 @@
  * Tous les organismes gabonais en statut PROSPECT selon la classification officielle
  */
 
-import { OrganismeGabonais } from './gabon-organismes-160';
+import { OrganismeGabonais } from './gabon-organismes-141';
 
 // GROUPE B - MINISTÈRES SECTORIELS (30) - COMPLETS
 export const MINISTERES_PROSPECTS: OrganismeGabonais[] = [
