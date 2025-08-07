@@ -72,7 +72,7 @@ const navigationStructure = [
         description: 'Relations inter-organismes'
       },
       {
-        title: 'Clients ADMIN.GA',
+        title: 'Clients ADMINISTRATION.GA',
         href: '/super-admin/clients',
         icon: Star,
         badge: { type: 'new', text: 'PRO' },
@@ -335,7 +335,7 @@ export function SidebarModern() {
               <Shield className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">ADMIN.GA</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">ADMINISTRATION.GA</h2>
               <div className="flex items-center gap-2">
                 <p className="text-xs text-gray-600 dark:text-gray-400">Super Admin</p>
                 <StatusIndicator status={systemStatus} />
@@ -440,7 +440,7 @@ export function SidebarModern() {
                 {session?.user?.firstName || 'Super Admin'}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
-                {session?.user?.email || 'admin@admin.ga'}
+                {session?.user?.email || 'admin@administration.ga'}
               </p>
             </div>
           </div>

@@ -32,7 +32,8 @@ model User {
   phone                 String?
   firstName             String
   lastName              String
-  role                  String        @default("USER")
+  roleId                String?
+  role                  Role?         @relation(fields: [roleId], references: [id])
   isActive              Boolean       @default(true)
   isVerified            Boolean       @default(false)
   jobTitle              String?
@@ -43,4 +44,32 @@ model User {
   primaryOrganization   Organization? @relation(fields: [primaryOrganizationId], references: [id])
 
   @@map("users")
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  users       User[]
+  permissions RolesOnPermissions[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id    String @id @default(cuid())
+  name  String @unique // e.g., 'create:user', 'read:report'
+  roles RolesOnPermissions[]
+
+  @@map("permissions")
+}
+
+model RolesOnPermissions {
+  role       Role       @relation(fields: [roleId], references: [id])
+  roleId     String
+  permission Permission @relation(fields: [permissionId], references: [id])
+  permissionId String
+
+  @@id([roleId, permissionId])
+  @@map("roles_on_permissions")
 }

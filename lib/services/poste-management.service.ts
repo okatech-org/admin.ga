@@ -125,7 +125,7 @@ class PosteManagementService {
     };
 
     // Sauvegarde en base
-    console.log('✅ Nouveau poste créé:', nouveauPoste.intitule);
+    console.log('✅ Nouveau poste créé:', nouveauPoste.titre);
 
     // Mise à jour des statistiques de l'organisme
     this.updateStatistiquesPostes(nouveauPoste.organisme_id);
@@ -148,7 +148,7 @@ class PosteManagementService {
     poste.statut = 'SUPPRIMÉ';
     poste.date_mise_a_jour = new Date().toISOString();
 
-    console.log(`🗑️ Poste supprimé: ${poste.intitule} - Raison: ${raison}`);
+    console.log(`🗑️ Poste supprimé: ${poste.titre} - Raison: ${raison}`);
 
     this.updateStatistiquesPostes(poste.organisme_id);
   }
@@ -264,7 +264,7 @@ class PosteManagementService {
     poste.historique_affectations.push(nouvelleAffectation.id);
     poste.statut = 'OCCUPÉ';
 
-    console.log(`✅ Affectation réalisée: ${personne.nom} → ${poste.intitule}`);
+    console.log(`✅ Affectation réalisée: ${personne.nom} → ${poste.titre}`);
 
     // Mise à jour des statistiques
     this.updateStatistiquesPostes(poste.organisme_id);
@@ -370,7 +370,7 @@ class PosteManagementService {
 
     poste.compte_fonctionnel_id = compte.id;
 
-    console.log(`🔐 Compte fonctionnel créé pour le poste: ${poste.intitule}`);
+    console.log(`🔐 Compte fonctionnel créé pour le poste: ${poste.titre}`);
 
     return compte;
   }
@@ -394,7 +394,7 @@ class PosteManagementService {
       id: `OPP_${Date.now()}`,
       poste_id: posteId,
       organisme_id: poste.organisme_id,
-      titre: `${poste.intitule} - ${this.getOrganismeById(poste.organisme_id)?.nom}`,
+      titre: `${poste.titre} - ${this.getOrganismeById(poste.organisme_id)?.nom}`,
       description_détaillée: this.genererDescriptionOpportunite(poste),
       type_opportunite: 'NOUVEAU_POSTE',
       type_processus: typeProcessus,
@@ -648,7 +648,7 @@ class PosteManagementService {
 
   private genererDescriptionOpportunite(poste: Poste): string {
     return `
-Poste: ${poste.intitule}
+        Poste: ${poste.titre}
 Niveau: ${poste.niveau_hierarchique}
 ${poste.est_strategique ? 'POSTE STRATÉGIQUE' : ''}
 

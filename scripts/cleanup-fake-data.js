@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-console.log('🧹 NETTOYAGE DES DONNÉES FICTIVES - ADMIN.GA');
+console.log('🧹 NETTOYAGE DES DONNÉES FICTIVES - ADMINISTRATION.GA');
 console.log('============================================\n');
 
 // Patterns de données fictives à détecter

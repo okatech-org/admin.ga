@@ -380,7 +380,7 @@ Pour toute question ou problème :
 - **100%** de couverture admin/réception
 - **3.1** utilisateurs moyens par organisme
 
-### Répartition des 141 organismes:
+### Répartition des 141 organismes
 - 6 Institutions Suprêmes
 - 30 Ministères officiels
 - 51 Directions Centrales importantes

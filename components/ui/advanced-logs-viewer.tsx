@@ -90,7 +90,7 @@ export function AdvancedLogsViewer({
       message,
       category,
       details: {
-        userAgent: 'ADMIN.GA/1.0',
+        userAgent: 'ADMINISTRATION.GA/1.0',
         ip: `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`,
         duration: Math.floor(Math.random() * 1000) + 'ms'
       }

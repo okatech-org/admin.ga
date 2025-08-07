@@ -103,7 +103,7 @@ if (['ADMIN', 'MANAGER', 'AGENT'].includes(userRole)) {
 
 ### ⚫ SYSTÈME
 
-- `superadmin@admin.ga` / `SuperAdmin2024!` (Super Admin)
+- `superadmin@administration.ga` / `SuperAdmin2024!` (Super Admin)
 
 ## 🧪 Validation
 
@@ -118,7 +118,7 @@ if (['ADMIN', 'MANAGER', 'AGENT'].includes(userRole)) {
 
 1. Aller à `/demarche`
 2. Vérifier accès à tous les services
-3. Confirmer aucune référence à ADMIN.GA
+3. Confirmer aucune référence à ADMINISTRATION.GA
 4. Tester recherche globale dans services
 
 ### Test 3 : Super Admin

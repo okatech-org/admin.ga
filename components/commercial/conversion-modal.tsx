@@ -180,7 +180,7 @@ export function ConversionModal({ organisme, isOpen, onClose, onSuccess }: Conve
             Convertir en Client - {organisme.nom}
           </DialogTitle>
           <DialogDescription>
-            Transformez ce prospect en client avec un contrat ADMIN.GA
+            Transformez ce prospect en client avec un contrat ADMINISTRATION.GA
           </DialogDescription>
         </DialogHeader>
 

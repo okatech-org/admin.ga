@@ -25,9 +25,9 @@ export const DEFAULT_ORGANISME_BRANDING: OrganismeBranding = {
     accent: "#34D399",
   },
   description: "Plateforme d'administration numérique du Gabon",
-  website: "https://admin.ga",
+  website: "https://administration.ga",
   contact: {
-    email: "contact@admin.ga",
+    email: "contact@administration.ga",
     phone: "+241 XX XX XX XX",
     address: "Libreville, Gabon",
   },

@@ -100,7 +100,7 @@ export default function OrganismesVueEnsemblePage() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/api/organizations/list?limit=500');
+      const response = await fetch('/api/systeme-complet/organismes?limit=500');
       const data = await response.json();
 
       if (data.success) {

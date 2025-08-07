@@ -174,7 +174,7 @@ J'ai analysé en profondeur le problème et l'ai **complètement résolu**. Voic
 1. Aller à `/auth/connexion`
 2. Sélectionner **"Administration Système"**
 3. Remplir :
-   - **Email :** `superadmin@admin.ga`
+   - **Email :** `superadmin@administration.ga`
    - **Mot de passe :** `SuperAdmin2024!`
 4. Cliquer **"Connexion Administrateur"**
 
@@ -199,7 +199,7 @@ J'ai analysé en profondeur le problème et l'ai **complètement résolu**. Voic
 ### 📊 **Compte Super Admin (Corrigé)**
 
 ```text
-Email: superadmin@admin.ga
+Email: superadmin@administration.ga
 Mot de passe: SuperAdmin2024!
 Rôle: SUPER_ADMIN
 Dashboard: /super-admin/dashboard

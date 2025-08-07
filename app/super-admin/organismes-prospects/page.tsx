@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { OrganismeModalComplete } from '@/components/organismes/organisme-modal-complete';
+import { getOrganismesComplets, STATISTIQUES_ORGANISMES } from '@/lib/data/gabon-organismes-141';
 import {
   Target,
   Users,
@@ -297,8 +298,7 @@ export default function OrganismesProspectsPage() {
       let mockProspects: OrganismeCommercialGabon[] = [];
 
       try {
-        // Import des 141 organismes officiels du Gabon
-        const { getOrganismesComplets, STATISTIQUES_ORGANISMES } = await import('@/lib/data/gabon-organismes-141');
+        // Utilisation des 141 organismes officiels du Gabon
         const organismesComplets = getOrganismesComplets();
 
         console.log(`🏛️ Chargement de ${organismesComplets.length} organismes gabonais comme prospects...`);
@@ -395,7 +395,7 @@ export default function OrganismesProspectsPage() {
 
       try {
         // Import des 141 organismes officiels du Gabon (même source que les prospects)
-        const { getOrganismesComplets } = await import('@/lib/data/gabon-organismes-141');
+
         const organismesComplets = getOrganismesComplets();
 
         console.log(`🏛️ Chargement de ${organismesComplets.length} organismes officiels gabonais...`);

@@ -1,11 +1,11 @@
-# 🏗️ Architecture Séparée : DEMARCHE.GA vs ADMIN.GA
+# 🏗️ Architecture Séparée : DEMARCHE.GA vs ADMINISTRATION.GA
 
 ## 🎯 Vision d'Architecture
 
 ### **Principe Fondamental**
-Bien que le système backend soit unifié sur **ADMIN.GA**, l'expérience utilisateur est complètement séparée :
+Bien que le système backend soit unifié sur **ADMINISTRATION.GA**, l'expérience utilisateur est complètement séparée :
 - **DEMARCHE.GA** : Interface citoyenne autonome
-- **ADMIN.GA** : Interface administrative
+- **ADMINISTRATION.GA** : Interface administrative
 
 ## 🔄 Flux de Séparation
 
@@ -13,13 +13,13 @@ Bien que le système backend soit unifié sur **ADMIN.GA**, l'expérience utilis
 ```typescript
 // Redirection automatique selon le rôle
 USER (citoyens) → Interface DEMARCHE.GA
-ADMIN/MANAGER/AGENT → Interface ADMIN.GA
-SUPER_ADMIN → Interface ADMIN.GA (niveau système)
+ADMIN/MANAGER/AGENT → Interface ADMINISTRATION.GA
+SUPER_ADMIN → Interface ADMINISTRATION.GA (niveau système)
 ```
 
 ### **2. Layouts Séparés**
 - **DemarcheLayout** : Layout citoyen avec identité DEMARCHE.GA
-- **AuthenticatedLayout** : Layout admin avec identité ADMIN.GA
+- **AuthenticatedLayout** : Layout admin avec identité ADMINISTRATION.GA
 - **Détection automatique** : Selon le rôle utilisateur
 
 ### **3. Navigation Contextuelle**
@@ -35,7 +35,7 @@ navigation = [
 ];
 ```
 
-#### **ADMIN.GA (Administrateurs)**
+#### **ADMINISTRATION.GA (Administrateurs)**
 ```typescript
 navigation = [
   { name: 'Dashboard', href: '/admin/dashboard' },
@@ -54,9 +54,9 @@ navigation = [
 - **Ton** : Accessible, chaleureux, orienté service
 - **Slogan** : "Services administratifs du Gabon"
 
-### **ADMIN.GA**
+### **ADMINISTRATION.GA**
 - **Couleurs** : Tons administratifs (gris, bleu foncé)
-- **Logo** : Flag avec "ADMIN.GA"
+- **Logo** : Flag avec "ADMINISTRATION.GA"
 - **Ton** : Professionnel, efficace, orienté gestion
 - **Slogan** : "Administration numérique"
 
@@ -68,7 +68,7 @@ navigation = [
 if (session.user.role === 'USER') {
   return <DemarcheLayout>{children}</DemarcheLayout>;
 }
-// Interface ADMIN.GA pour les autres rôles
+// Interface ADMINISTRATION.GA pour les autres rôles
 return <AdminLayout>{children}</AdminLayout>;
 ```
 
@@ -98,7 +98,7 @@ const dashboardRoutes = {
 4. **Actions** : Nouvelle démarche, RDV, profil, documents
 5. **Support** : Centre d'aide intégré, chat, contact
 
-### **Pour les Admins (ADMIN.GA)**
+### **Pour les Admins (ADMINISTRATION.GA)**
 1. **Connexion** : Interface classique administrative
 2. **Interface** : Couleurs neutres, navigation structurée
 3. **Terminologie** : "Gestion", "Administration", "Monitoring"
@@ -119,7 +119,7 @@ const dashboardRoutes = {
 ```
 1. /auth/connexion → Connexion directe
 2. Authentification → Session ADMIN/AGENT/MANAGER
-3. Redirection → /admin/dashboard (ADMIN.GA)
+3. Redirection → /admin/dashboard (ADMINISTRATION.GA)
 ```
 
 ## 🛡️ Sécurité et Séparation

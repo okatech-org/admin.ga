@@ -42,8 +42,8 @@ export class TenantMiddleware {
       };
     }
 
-    // 3. Vérifier sous-domaine (exemple.admin.ga)
-    const sousDomaineMatch = hostname.match(/^([a-z0-9-]+)\.admin\.ga$/);
+    // 3. Vérifier sous-domaine (exemple.administration.ga)
+    const sousDomaineMatch = hostname.match(/^([a-z0-9-]+)\.administration\.ga$/);
     if (sousDomaineMatch) {
       const slug = sousDomaineMatch[1];
       const organismeParSlug = await this.getOrganismeParSlug(slug);
@@ -57,9 +57,9 @@ export class TenantMiddleware {
       }
     }
 
-    // 4. Vérifier chemin URL (admin.ga/org/exemple)
+    // 4. Vérifier chemin URL (administration.ga/org/exemple)
     const cheminMatch = pathname.match(/^\/org\/([a-z0-9-]+)/);
-    if (cheminMatch && hostname === 'admin.ga') {
+    if (cheminMatch && hostname === 'administration.ga') {
       const slug = cheminMatch[1];
       const organismeParSlug = await this.getOrganismeParSlug(slug);
       if (organismeParSlug) {
@@ -313,7 +313,7 @@ export class TenantMiddleware {
             L'organisme que vous cherchez n'existe pas ou n'est pas encore configuré.
           </p>
           <p>
-            <a href="https://admin.ga" class="link">Retourner à l'accueil</a>
+            <a href="https://administration.ga" class="link">Retourner à l'accueil</a>
           </p>
         </div>
       </body>

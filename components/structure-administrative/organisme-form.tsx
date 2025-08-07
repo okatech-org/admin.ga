@@ -253,14 +253,14 @@ export default function OrganismeForm({
             <div>
               <Label htmlFor="parent">Organisme parent</Label>
               <Select
-                value={formData.parentId || ''}
-                onValueChange={(value) => setFormData({ ...formData, parentId: value || undefined })}
+                value={formData.parentId || 'none'}
+                onValueChange={(value) => setFormData({ ...formData, parentId: value === 'none' ? undefined : value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Sélectionner un organisme parent" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Aucun</SelectItem>
+                  <SelectItem value="none">Aucun</SelectItem>
                   {parentOptions.map(org => (
                     <SelectItem key={org.id} value={org.id}>
                       {org.nom} (Niveau {org.niveau})

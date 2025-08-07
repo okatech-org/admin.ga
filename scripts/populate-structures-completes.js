@@ -631,7 +631,7 @@ async function main() {
     });
 
     console.log('\n✅ IMPLÉMENTATION COMPLÈTE TERMINÉE AVEC SUCCÈS!');
-    console.log('🇬🇦 Structure gouvernementale gabonaise totalement intégrée dans ADMIN.GA');
+    console.log('🇬🇦 Structure gouvernementale gabonaise totalement intégrée dans ADMINISTRATION.GA');
 
   } catch (error) {
     console.error('❌ Erreur lors du peuplement complet:', error);

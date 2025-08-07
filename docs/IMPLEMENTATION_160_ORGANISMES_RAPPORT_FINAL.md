@@ -182,7 +182,7 @@ RELATIONS_GENEREES: 1,117 relations
 
 **MISSION ACCOMPLIE !** 🎉
 
-Le projet ADMIN.GA affiche maintenant de manière **cohérente et uniforme** dans toutes ses interfaces:
+Le projet ADMINISTRATION.GA affiche maintenant de manière **cohérente et uniforme** dans toutes ses interfaces:
 
 ```
 📊 160 organismes (vs objectif 144) ✅

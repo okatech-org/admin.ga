@@ -1,50 +1,147 @@
-/* @ts-nocheck */
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// Base de données complètement vidée - aucune organisation ni utilisateur
-const baseOrganizations: any[] = [];
-const baseUsers: any[] = [];
-
-async function seedOrganizations() {
-  console.log('🏢 Nettoyage des organisations...');
-
-  // Supprimer tous les utilisateurs existants d'abord (à cause de la foreign key)
-  await prisma.user.deleteMany({});
-  console.log('👤 Tous les utilisateurs supprimés');
-
-  // Supprimer toutes les organisations existantes
-  await prisma.organization.deleteMany({});
-  console.log('🏢 Toutes les organisations supprimées');
-
-  console.log('✅ Base de données complètement vidée - 0 organismes, 0 utilisateurs');
-}
-
-async function seedUsers() {
-  console.log('👤 Aucun utilisateur à créer...');
-  console.log('✅ Base d\'utilisateurs vide maintenue');
-}
-
 async function main() {
-  console.log('🧹 NETTOYAGE DRASTIQUE DE LA BASE DE DONNÉES');
-  console.log('================================================');
+  console.log('🌱 Start seeding...');
 
-  try {
-    await seedOrganizations();
-    await seedUsers();
+  // 1. Create Permissions
+  const permissions = [
+    // User Management
+    'manage:users',
+    'read:users',
+    'create:users',
+    'update:users',
+    'delete:users',
 
-    console.log('🎉 NETTOYAGE COMPLET TERMINÉ !');
-    console.log('📊 État final :');
-    console.log('   - Organismes : 0');
-    console.log('   - Utilisateurs : 0');
-    console.log('   - Relations : 0');
-    console.log('   - Services : 0');
+    // Organization Management
+    'manage:organizations',
+    'read:organizations',
+    'create:organizations',
+    'update:organizations',
+    'delete:organizations',
 
-  } catch (error) {
-    console.error('❌ Erreur lors du nettoyage:', error);
-    throw error;
+    // System Configuration
+    'manage:system',
+    'read:configuration',
+    'update:configuration',
+
+    // Reporting and Analytics
+    'read:reports',
+    'read:analytics',
+    'export:data',
+  ];
+
+  for (const name of permissions) {
+    await prisma.permission.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
   }
+  console.log('✅ Permissions created');
+
+  // 2. Create Roles
+  const superAdminRole = await prisma.role.upsert({
+    where: { name: 'SUPER_ADMIN' },
+    update: {},
+    create: {
+      name: 'SUPER_ADMIN',
+      description: 'Full access to all system features',
+    },
+  });
+
+  const adminRole = await prisma.role.upsert({
+    where: { name: 'ADMIN' },
+    update: {},
+    create: {
+      name: 'ADMIN',
+      description: 'Administrative access to most features',
+    },
+  });
+
+  const userRole = await prisma.role.upsert({
+    where: { name: 'USER' },
+    update: {},
+    create: {
+      name: 'USER',
+      description: 'Standard user access',
+    },
+  });
+  console.log('✅ Roles created');
+
+  // 3. Assign Permissions to Roles
+  const allPermissions = await prisma.permission.findMany();
+
+  // Super Admin gets all permissions
+  for (const permission of allPermissions) {
+    await prisma.rolesOnPermissions.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: superAdminRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: superAdminRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // Admin gets most permissions (except system management)
+  const adminPermissions = allPermissions.filter(p => !p.name.startsWith('manage:system'));
+  for (const permission of adminPermissions) {
+    await prisma.rolesOnPermissions.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: adminRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: adminRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // User gets read-only permissions
+  const userPermissions = allPermissions.filter(p => p.name.startsWith('read:'));
+  for (const permission of userPermissions) {
+    await prisma.rolesOnPermissions.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: userRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: userRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+  console.log('✅ Permissions assigned to roles');
+
+  // 4. Create a default Super Admin user
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: 'superadmin@administration.ga' },
+    update: {},
+    create: {
+      email: 'superadmin@administration.ga',
+      firstName: 'Super',
+      lastName: 'Admin',
+      roleId: superAdminRole.id,
+      isVerified: true,
+    },
+  });
+  console.log('✅ Super Admin user created:', superAdminUser.email);
+
+  console.log('🌱 Seeding finished.');
 }
 
 main()

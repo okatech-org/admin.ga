@@ -8,7 +8,7 @@
 const fs = require('fs');
 const { exec } = require('child_process');
 
-console.log('🔍 VALIDATION DU NETTOYAGE - ADMIN.GA');
+console.log('🔍 VALIDATION DU NETTOYAGE - ADMINISTRATION.GA');
 console.log('=====================================\n');
 
 // Tests de validation

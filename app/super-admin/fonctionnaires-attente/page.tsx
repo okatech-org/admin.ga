@@ -192,7 +192,7 @@ export default function FonctionnairesAttentePage() {
         ...(searchTerm && { recherche: searchTerm })
       });
 
-      const response = await fetch(`/api/fonctionnaires/en-attente?${params}`);
+      const response = await fetch(`/api/rh/fonctionnaires-attente?${params}`);
 
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
@@ -229,6 +229,8 @@ export default function FonctionnairesAttentePage() {
       // En cas d'erreur, on peut garder les données précédentes ou vider
       setFonctionnaires([]);
       setStats(null);
+      // Garder la pagination par défaut en cas d'erreur
+      setPagination({ page: 1, limit: 20, total: 0, pages: 0 });
     } finally {
       setLoadingStates(prev => ({ ...prev, loading: false }));
     }
@@ -243,12 +245,12 @@ export default function FonctionnairesAttentePage() {
   useEffect(() => {
     if (searchTerm) {
       const timeoutId = setTimeout(() => {
-        loadData();
+        setPage(1); // Remettre à la page 1 lors de la recherche
       }, 500); // Attendre 500ms après la dernière frappe
 
       return () => clearTimeout(timeoutId);
     }
-  }, [searchTerm, loadData]);
+  }, [searchTerm]);
 
   // Gestionnaires d'événements
   const handleRefreshData = useCallback(async () => {
@@ -266,7 +268,7 @@ export default function FonctionnairesAttentePage() {
     try {
       setLoadingStates(prev => ({ ...prev, affecting: selectedFonctionnaire.id }));
 
-      const response = await fetch('/api/fonctionnaires/affecter', {
+      const response = await fetch('/api/rh/affecter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -657,7 +659,7 @@ export default function FonctionnairesAttentePage() {
 
         {/* Liste des fonctionnaires */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {fonctionnaires.map((fonctionnaire) => (
+          {fonctionnaires && Array.isArray(fonctionnaires) && fonctionnaires.map((fonctionnaire) => (
             <Card
               key={fonctionnaire.id}
               className={`border-l-4 ${
@@ -729,7 +731,7 @@ export default function FonctionnairesAttentePage() {
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                   <p className="text-xs font-medium text-gray-700 mb-2">Préférences d'affectation:</p>
                   <div className="flex flex-wrap gap-1">
-                    {fonctionnaire.preferences.organismes.slice(0, 2).map((org, index) => (
+                    {fonctionnaire.preferences?.organismes && Array.isArray(fonctionnaire.preferences.organismes) && fonctionnaire.preferences.organismes.slice(0, 2).map((org, index) => (
                       <Badge key={index} variant="outline" className="text-xs">
                         {org.length > 20 ? `${org.substring(0, 20)}...` : org}
                       </Badge>
@@ -850,25 +852,25 @@ export default function FonctionnairesAttentePage() {
         </div>
 
         {/* Pagination */}
-        {pagination.pages > 1 && (
+        {pagination && pagination.pages > 1 && (
           <Card className="mt-8">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-600">
-                  Page {pagination.page} sur {pagination.pages} • {pagination.total} fonctionnaires au total
+                  Page {pagination?.page || 1} sur {pagination?.pages || 1} • {pagination?.total || 0} fonctionnaires au total
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
-                    disabled={pagination.page <= 1}
+                    disabled={(pagination?.page || 1) <= 1}
                     onClick={() => setPage(prev => Math.max(1, prev - 1))}
                   >
                     Précédent
                   </Button>
                   <Button
                     variant="outline"
-                    disabled={pagination.page >= pagination.pages}
-                    onClick={() => setPage(prev => Math.min(pagination.pages, prev + 1))}
+                    disabled={(pagination?.page || 1) >= (pagination?.pages || 1)}
+                    onClick={() => setPage(prev => Math.min(pagination?.pages || 1, prev + 1))}
                   >
                     Suivant
                   </Button>
@@ -1087,7 +1089,7 @@ export default function FonctionnairesAttentePage() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
-                      {selectedFonctionnaire.diplomes.map((diplome, index) => (
+                      {selectedFonctionnaire.diplomes && Array.isArray(selectedFonctionnaire.diplomes) && selectedFonctionnaire.diplomes.map((diplome, index) => (
                         <div key={index} className="border-l-4 border-l-blue-500 pl-3">
                           <p className="font-medium">{diplome.niveau} en {diplome.intitule}</p>
                           <p className="text-sm text-gray-600">{diplome.etablissement}</p>
@@ -1098,7 +1100,7 @@ export default function FonctionnairesAttentePage() {
                       {selectedFonctionnaire.experiencePrecedente && (
                         <div className="mt-4">
                           <h4 className="font-medium mb-2">Expérience Professionnelle</h4>
-                          {selectedFonctionnaire.experiencePrecedente.map((exp, index) => (
+                          {selectedFonctionnaire.experiencePrecedente && Array.isArray(selectedFonctionnaire.experiencePrecedente) && selectedFonctionnaire.experiencePrecedente.map((exp, index) => (
                             <div key={index} className="border-l-4 border-l-green-500 pl-3 mb-2">
                               <p className="font-medium">{exp.poste}</p>
                               <p className="text-sm text-gray-600">{exp.organisme}</p>
@@ -1127,7 +1129,7 @@ export default function FonctionnairesAttentePage() {
 
             {selectedFonctionnaire && (
               <div className="space-y-4">
-                {selectedFonctionnaire.historique.map((entry, index) => (
+                {selectedFonctionnaire.historique && Array.isArray(selectedFonctionnaire.historique) && selectedFonctionnaire.historique.map((entry, index) => (
                   <div key={index} className="flex items-start gap-4 p-4 border rounded-lg">
                     <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
                     <div className="flex-1">

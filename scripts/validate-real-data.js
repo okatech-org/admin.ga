@@ -7,7 +7,7 @@
 
 const { exec } = require('child_process');
 
-console.log('🔍 VALIDATION DES DONNÉES RÉELLES - ADMIN.GA');
+console.log('🔍 VALIDATION DES DONNÉES RÉELLES - ADMINISTRATION.GA');
 console.log('=============================================\n');
 
 const validationTests = [

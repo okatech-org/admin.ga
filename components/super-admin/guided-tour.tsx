@@ -258,7 +258,7 @@ const TourWelcomeCard = () => {
             <CardTitle className="text-lg">Bienvenue ! 👋</CardTitle>
           </div>
           <CardDescription>
-            Première visite ? Laissez-nous vous guider dans ADMIN.GA
+            Première visite ? Laissez-nous vous guider dans ADMINISTRATION.GA
           </CardDescription>
         </CardHeader>
 

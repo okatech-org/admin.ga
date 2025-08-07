@@ -375,7 +375,7 @@ class OrganismeIntegrationService {
       type: 'TEMPORAIRE',
       organisme_id: organismeId,
       identifiant: `${compteConfig.code.toLowerCase()}.${organismeId.toLowerCase()}`,
-      email: `${compteConfig.code.toLowerCase()}@system.admin.ga`,
+      email: `${compteConfig.code.toLowerCase()}@system.administration.ga`,
       mot_de_passe_hash: '', // Généré automatiquement
       role: 'AGENT' as any,
       permissions: compteConfig.permissions,

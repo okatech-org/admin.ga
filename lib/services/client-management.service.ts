@@ -1,4 +1,4 @@
-// Service de gestion complète des clients ADMIN.GA
+// Service de gestion complète des clients ADMINISTRATION.GA
 
 import { OrganismeCommercial } from '@/lib/types/organisme';
 import {

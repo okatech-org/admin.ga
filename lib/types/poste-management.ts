@@ -59,7 +59,7 @@ export interface Poste {
   organisme_id: string;
 
   // Définition du poste
-  intitule: string;
+  titre: string;
   code_poste?: string;
   description: string;
   niveau_hierarchique: NiveauHierarchique;

@@ -39,7 +39,7 @@ export default function DGDIDashboard() {
   const branding = getOrganismeBranding('DGDI');
 
   useEffect(() => {
-    if (session?.user?.email === 'demo.dgdi@admin.ga') {
+    if (session?.user?.email === 'demo.dgdi@administration.ga') {
       setIsDemoAccount(true);
     }
   }, [session]);

@@ -85,7 +85,7 @@ export interface SessionMultiTenant {
 export interface ConfigurationRoute {
   organisme_id: string;
   type_acces: 'domaine_personnalise' | 'sous_domaine' | 'chemin_url';
-  valeur: string; // exemple.com | exemple.admin.ga | /org/exemple
+  valeur: string; // exemple.com | exemple.administration.ga | /org/exemple
   actif: boolean;
   priorite: number;
 }

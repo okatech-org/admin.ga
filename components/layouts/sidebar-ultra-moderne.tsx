@@ -60,7 +60,8 @@ import {
   Calendar,
   Zap,
   Wifi,
-  Server
+  Server,
+  Cog
 } from 'lucide-react';
 
 interface NavigationSection {
@@ -168,6 +169,14 @@ export function SidebarUltraModerne() {
       icon: Home,
       description: 'Vue d\'ensemble du système',
       isDirect: true
+    },
+    {
+      title: 'Interface Admin Web',
+      href: '/admin-web',
+      icon: Cog,
+      description: 'Environnement d\'administration des applications',
+      isDirect: true,
+      isNew: true
     },
          {
        title: 'Postes d\'emploi',
@@ -386,9 +395,9 @@ export function SidebarUltraModerne() {
           </div>
           <div>
             <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent">
-              ADMIN.GA
+              Centre de Contrôle
             </h2>
-            <p className="text-xs text-gray-500">Super Administration</p>
+            <p className="text-xs text-gray-500">République Gabonaise</p>
           </div>
         </div>
       </div>
@@ -601,7 +610,7 @@ export function SidebarUltraModerne() {
                 {session?.user?.firstName ? `${session.user.firstName} ${session.user.lastName}` : 'Super Admin'}
               </p>
               <p className="text-xs text-gray-600 truncate">
-                {session?.user?.email || 'admin@admin.ga'}
+                {session?.user?.email || 'admin@administration.ga'}
               </p>
             </div>
           </div>

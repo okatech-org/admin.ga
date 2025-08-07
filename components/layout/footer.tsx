@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { 
-  Flag, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Facebook, 
-  Twitter, 
+import {
+  Flag,
+  Mail,
+  Phone,
+  MapPin,
+  Facebook,
+  Twitter,
   Linkedin,
   FileText,
   Shield,
@@ -59,12 +59,12 @@ export function Footer() {
                 <Flag className="w-4 h-4 text-white" />
               </div>
               <span className="font-bold text-xl gabon-text-gradient">
-                Admin.ga
+                Administration.ga
               </span>
             </div>
             <p className="text-muted-foreground mb-6 max-w-sm">
-              La plateforme officielle des services administratifs 
-              de la République Gabonaise. Modernisation et simplification 
+              La plateforme officielle des services administratifs
+              de la République Gabonaise. Modernisation et simplification
               de vos démarches administratives.
             </p>
             <div className="space-y-2 text-sm">
@@ -78,7 +78,7 @@ export function Footer() {
               </div>
               <div className="flex items-center text-muted-foreground">
                 <Mail className="w-4 h-4 mr-2" />
-                contact@admin.ga
+                contact@administration.ga
               </div>
             </div>
           </div>
@@ -92,8 +92,8 @@ export function Footer() {
             <ul className="space-y-2">
               {services.map((service) => (
                 <li key={service.name}>
-                  <Link 
-                    href={service.href} 
+                  <Link
+                    href={service.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {service.name}
@@ -112,8 +112,8 @@ export function Footer() {
             <ul className="space-y-2">
               {administrations.map((admin) => (
                 <li key={admin.name}>
-                  <Link 
-                    href={admin.href} 
+                  <Link
+                    href={admin.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {admin.name}
@@ -132,8 +132,8 @@ export function Footer() {
             <ul className="space-y-2">
               {support.map((item) => (
                 <li key={item.name}>
-                  <Link 
-                    href={item.href} 
+                  <Link
+                    href={item.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
                   >
                     {item.name}
@@ -150,9 +150,9 @@ export function Footer() {
               Restez informé des nouveautés et mises à jour de la plateforme.
             </p>
             <div className="space-y-3">
-              <Input 
-                type="email" 
-                placeholder="Votre email" 
+              <Input
+                type="email"
+                placeholder="Votre email"
                 className="text-sm"
               />
               <Button size="sm" className="w-full">
@@ -168,7 +168,7 @@ export function Footer() {
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             {legal.map((item, index) => (
               <span key={item.name}>
-                <Link 
+                <Link
                   href={item.href}
                   className="hover:text-primary transition-colors"
                 >
@@ -201,7 +201,7 @@ export function Footer() {
 
         <div className="text-center text-sm text-muted-foreground">
           <p>
-            © 2024 République Gabonaise - Admin.ga. Tous droits réservés.
+            © 2024 République Gabonaise - Administration.ga. Tous droits réservés.
           </p>
           <p className="mt-1">
             Développé par la Direction Générale de la Modernisation de l'Administration (DGMA)

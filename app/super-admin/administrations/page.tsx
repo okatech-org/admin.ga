@@ -355,7 +355,7 @@ export default function SuperAdminAdministrationsPage() {
     try {
       const dataToExport = {
         exported_at: new Date().toISOString(),
-        source: 'Base de données système ADMIN.GA',
+        source: 'Base de données système ADMINISTRATION.GA',
         statistics: stats,
         organizations: organizationsData.organizations,
         metadata: {
@@ -485,7 +485,7 @@ export default function SuperAdminAdministrationsPage() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Building2 className="h-8 w-8 text-blue-500" />
-              Organisations Système ADMIN.GA
+              Organisations Système ADMINISTRATION.GA
               {(loadingStates.refreshing || isLoading) && <Loader2 className="h-6 w-6 animate-spin text-blue-500" />}
             </h1>
             <p className="text-muted-foreground">

@@ -192,7 +192,7 @@ Résultat attendu :
 
 Accéder à la page : `/super-admin/donnees-unifiees`
 
-### Fonctionnalités de l'interface :
+### Fonctionnalités de l'interface
 
 1. **Vue d'ensemble** : Statistiques globales en cartes
 2. **Liste des organismes** : Avec filtrage par type
@@ -245,14 +245,14 @@ export function getUsersByStatusAndRole(
 
 ## 📈 Performance
 
-### Optimisations implémentées :
+### Optimisations implémentées
 
 1. **Cache en mémoire** : Évite de régénérer les données à chaque requête
 2. **Indexation par code** : Accès rapide aux organismes
 3. **Recherche optimisée** : Utilisation de filtres JavaScript natifs
 4. **Export asynchrone** : Génération en arrière-plan pour les gros volumes
 
-### Métriques de performance :
+### Métriques de performance
 
 - Génération initiale : ~500ms pour 141 organismes
 - Requête avec cache : < 1ms

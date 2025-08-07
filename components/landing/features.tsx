@@ -1,12 +1,12 @@
 /* @ts-nocheck */
 "use client";
 
-import { 
-  Smartphone, 
-  Clock, 
-  Bell, 
-  Shield, 
-  Globe, 
+import {
+  Smartphone,
+  Clock,
+  Bell,
+  Shield,
+  Globe,
   Download,
   CheckCircle,
   Calendar
@@ -69,17 +69,17 @@ export function Features() {
       <div className="container px-4 md:px-6">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Pourquoi Choisir Admin.ga ?
+            Pourquoi Choisir Administration.ga ?
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Une plateforme moderne pensée pour simplifier vos démarches 
+            Une plateforme moderne pensée pour simplifier vos démarches
             administratives et vous faire gagner du temps
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
-            <div 
+            <div
               key={index}
               className="feature-card group p-6 rounded-lg bg-background border hover:shadow-lg transition-all duration-300 animate-fade-in"
               data-delay={index}

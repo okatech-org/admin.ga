@@ -443,7 +443,7 @@ export default function UnifiedDataViewer() {
                         <Badge variant="outline">
                           {user.organismeCode}
                         </Badge>
-                        <Badge 
+                        <Badge
                           variant={user.status === 'active' ? 'default' : 'secondary'}
                           className={user.status === 'active' ? 'bg-green-100 text-green-800 hover:bg-green-100' : ''}
                         >

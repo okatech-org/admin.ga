@@ -128,7 +128,7 @@ export const GABONESE_ORGANIZATIONS = [
 
 export const DEMO_ACCOUNTS = [
   {
-    email: 'superadmin@admin.ga',
+    email: 'superadmin@administration.ga',
     password: 'SuperAdmin2024!',
     role: 'SUPER_ADMIN' as const,
     firstName: 'Jean-Baptiste',
@@ -136,7 +136,7 @@ export const DEMO_ACCOUNTS = [
     organization: null
   },
   {
-    email: 'admin.libreville@admin.ga',
+    email: 'admin.libreville@administration.ga',
     password: 'AdminLib2024!',
     role: 'ADMIN' as const,
     firstName: 'Marie-Claire',
@@ -144,7 +144,7 @@ export const DEMO_ACCOUNTS = [
     organization: 'MAIRE_LBV'
   },
   {
-    email: 'manager.cnss@admin.ga',
+    email: 'manager.cnss@administration.ga',
     password: 'Manager2024!',
     role: 'MANAGER' as const,
     firstName: 'Paul',
@@ -152,7 +152,7 @@ export const DEMO_ACCOUNTS = [
     organization: 'CNSS'
   },
   {
-    email: 'agent.mairie@admin.ga',
+    email: 'agent.mairie@administration.ga',
     password: 'Agent2024!',
     role: 'AGENT' as const,
     firstName: 'Sophie',

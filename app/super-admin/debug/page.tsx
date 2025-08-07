@@ -360,7 +360,7 @@ export default function SuperAdminDebugPage() {
               Debug & Diagnostic Système
             </h1>
             <p className="text-muted-foreground mt-2">
-              Outils avancés de debug et diagnostic pour ADMIN.GA
+              Outils avancés de debug et diagnostic pour ADMINISTRATION.GA
             </p>
           </div>
           <div className="flex gap-2">

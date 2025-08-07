@@ -178,7 +178,7 @@ class OrganismeConfigurationService {
             'ACCES_DONNEES_SENSIBLES'
           ],
           compte: {
-            username: `dg.${organisme.code.toLowerCase()}@admin.ga`,
+            username: `dg.${organisme.code.toLowerCase()}@administration.ga`,
             type_authentification: ['PASSWORD', '2FA']
           }
         }
@@ -195,7 +195,7 @@ class OrganismeConfigurationService {
             'SIGNATURE_ELECTRONIQUE_DELEGUEE'
           ],
           compte: {
-            username: `dga.${organisme.code.toLowerCase()}@admin.ga`,
+            username: `dga.${organisme.code.toLowerCase()}@administration.ga`,
             type_authentification: ['PASSWORD', '2FA']
           }
         }
@@ -269,11 +269,11 @@ class OrganismeConfigurationService {
       notifications: {
         email: {
           actif: true,
-          serveur_smtp: 'smtp.admin.ga',
+          serveur_smtp: 'smtp.administration.ga',
           port: 587,
-          expediteur: 'noreply@admin.ga',
+          expediteur: 'noreply@administration.ga',
           templates: [
-            { type: 'BIENVENUE', objet: 'Bienvenue sur ADMIN.GA' },
+            { type: 'BIENVENUE', objet: 'Bienvenue sur ADMINISTRATION.GA' },
             { type: 'RESET_PASSWORD', objet: 'Réinitialisation de votre mot de passe' }
           ]
         }

@@ -490,7 +490,7 @@ export default function DashboardOrganismePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Globe className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm">admin.ga/org/{organisme.slug}</span>
+                    <span className="text-sm">administration.ga/org/{organisme.slug}</span>
                     <Badge className="bg-blue-100 text-blue-800 text-xs">Principal</Badge>
                   </div>
                 </div>

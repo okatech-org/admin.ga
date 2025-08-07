@@ -8,7 +8,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
   "postes": [
     {
       "id": "pres_001",
-      "intitule": "Président de la République",
+      "titre": "Président de la République",
       "niveau": "A1",
       "organisme": "Présidence",
       "type": "Direction",
@@ -18,7 +18,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "min_001",
-      "intitule": "Ministre",
+      "titre": "Ministre",
       "niveau": "A1",
       "organisme": "Ministère",
       "type": "Direction",
@@ -28,7 +28,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "sg_001",
-      "intitule": "Secrétaire Général",
+      "titre": "Secrétaire Général",
       "niveau": "A1",
       "organisme": "Ministère",
       "type": "Direction",
@@ -38,7 +38,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "dg_001",
-      "intitule": "Directeur Général",
+      "titre": "Directeur Général",
       "niveau": "A1",
       "organisme": "Direction Générale",
       "type": "Direction",
@@ -48,7 +48,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "dc_001",
-      "intitule": "Directeur Central",
+      "titre": "Directeur Central",
       "niveau": "A2",
       "organisme": "Direction Centrale",
       "type": "Direction",
@@ -58,7 +58,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "cs_001",
-      "intitule": "Chef de Service",
+      "titre": "Chef de Service",
       "niveau": "B1",
       "organisme": "Service",
       "type": "Encadrement",
@@ -68,7 +68,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "cb_001",
-      "intitule": "Chef de Bureau",
+      "titre": "Chef de Bureau",
       "niveau": "B2",
       "organisme": "Bureau",
       "type": "Encadrement",
@@ -78,7 +78,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "att_001",
-      "intitule": "Attaché Principal",
+      "titre": "Attaché Principal",
       "niveau": "B1",
       "organisme": "Service",
       "type": "Technique",
@@ -88,7 +88,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "att_002",
-      "intitule": "Attaché",
+      "titre": "Attaché",
       "niveau": "B2",
       "organisme": "Service",
       "type": "Technique",
@@ -98,7 +98,7 @@ export const POSTES_ADMINISTRATIFS_GABON = {
     },
     {
       "id": "sec_001",
-      "intitule": "Secrétaire Principal",
+      "titre": "Secrétaire Principal",
       "niveau": "C1",
       "organisme": "Bureau",
       "type": "Support",
@@ -157,10 +157,10 @@ export const genererTousLesComptes = () => {
       for (let i = 1; i <= Math.floor(Math.random() * 5) + 1; i++) {
         comptes.push({
           id: `${orgIndex}_${posteIndex}_${i}`,
-          email: `${poste.intitule.toLowerCase().replace(/\s+/g, '.')}.${i}@${organisme.toLowerCase().replace(/\s+/g, '')}.ga`,
-          nom: `${poste.intitule} ${i}`,
+          email: `${poste.titre.toLowerCase().replace(/\s+/g, '.')}.${i}@${organisme.toLowerCase().replace(/\s+/g, '')}.ga`,
+          nom: `${poste.titre} ${i}`,
           organisme: organisme,
-          poste: poste.intitule,
+          poste: poste.titre,
           niveau: poste.niveau,
           statut: Math.random() > 0.3 ? 'Actif' : 'Inactif',
           salaire: poste.salaire_base,

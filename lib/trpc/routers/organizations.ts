@@ -26,12 +26,37 @@ export const organizationsRouter = createTRPCRouter({
       offset: z.number().min(0).default(0),
     }))
     .query(async ({ ctx, input }) => {
-      console.log('🧹 Base de données vide - retour de 0 organismes');
+      // Note: La base de données est actuellement en mode lecture seule pour maintenance.
+      // Les requêtes de lecture sont connectées à Prisma.
+      // Les mutations (create, update, delete) sont désactivées.
+
+      const where = {
+        AND: [
+          input.search ? {
+            OR: [
+              { name: { contains: input.search, mode: 'insensitive' } },
+              { code: { contains: input.search, mode: 'insensitive' } },
+            ],
+          } : {},
+          input.type ? { type: input.type } : {},
+          input.isActive !== undefined ? { isActive: input.isActive } : {},
+        ],
+      };
+
+      const [organizations, total] = await Promise.all([
+        ctx.prisma.organization.findMany({
+          where,
+          take: input.limit,
+          skip: input.offset,
+          orderBy: { name: 'asc' },
+        }),
+        ctx.prisma.organization.count({ where }),
+      ]);
 
       return {
-        organizations: [],
-        total: 0,
-        hasMore: false,
+        organizations,
+        total,
+        hasMore: input.offset + organizations.length < total,
       };
     }),
 
@@ -44,11 +69,31 @@ export const organizationsRouter = createTRPCRouter({
       limit: z.number().min(1).max(50).default(10),
     }))
     .query(async ({ ctx, input }) => {
-      console.log('🧹 Base de données vide - retour de 0 résultats de recherche');
+      const where = {
+        AND: [
+          {
+            OR: [
+              { name: { contains: input.query, mode: 'insensitive' } },
+              { code: { contains: input.query, mode: 'insensitive' } },
+            ],
+          },
+          input.type ? { type: input.type } : {},
+          input.isActive !== undefined ? { isActive: input.isActive } : {},
+        ],
+      };
+
+      const organizations = await ctx.prisma.organization.findMany({
+        where,
+        take: input.limit,
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, code: true, type: true },
+      });
+
+      const total = await ctx.prisma.organization.count({ where });
 
       return {
-        organizations: [],
-        total: 0,
+        organizations,
+        total,
       };
     }),
 
@@ -58,19 +103,38 @@ export const organizationsRouter = createTRPCRouter({
       id: z.string(),
     }))
     .query(async ({ ctx, input }) => {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Aucun organisme trouvé - base de données vide',
+      const organization = await ctx.prisma.organization.findUnique({
+        where: { id: input.id },
+        include: {
+          users: {
+            select: { id: true, name: true, email: true, role: true },
+            take: 10,
+            orderBy: { name: 'asc' },
+          },
+          parent: { select: { id: true, name: true, code: true } },
+          children: { select: { id: true, name: true, code: true }, take: 10 },
+        },
       });
+
+      if (!organization) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `Organisme avec ID '${input.id}' non trouvé.`,
+        });
+      }
+
+      return organization;
     }),
 
   // Create organization (admin only)
   create: adminProcedure
     .input(organizationSchema)
     .mutation(async ({ ctx, input }) => {
+      // TODO: Activer la création après la phase de maintenance
+      // return ctx.prisma.organization.create({ data: input });
       throw new TRPCError({
         code: 'FORBIDDEN',
-        message: 'Création d\'organismes désactivée - base de données en mode nettoyage',
+        message: 'Création d\'organismes désactivée - maintenance en cours.',
       });
     }),
 
@@ -81,9 +145,14 @@ export const organizationsRouter = createTRPCRouter({
       data: organizationSchema.partial(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // TODO: Activer la mise à jour après la phase de maintenance
+      // return ctx.prisma.organization.update({
+      //   where: { id: input.id },
+      //   data: input.data,
+      // });
       throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Aucun organisme à modifier - base de données vide',
+        code: 'FORBIDDEN',
+        message: 'Modification d\'organismes désactivée - maintenance en cours.',
       });
     }),
 
@@ -93,31 +162,50 @@ export const organizationsRouter = createTRPCRouter({
       id: z.string(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // TODO: Activer la suppression après la phase de maintenance
+      // return ctx.prisma.organization.delete({ where: { id: input.id } });
       throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Aucun organisme à supprimer - base de données déjà vide',
+        code: 'FORBIDDEN',
+        message: 'Suppression d\'organismes désactivée - maintenance en cours.',
       });
     }),
 
   // Get organization statistics
   getStats: adminProcedure
     .query(async ({ ctx }) => {
-      console.log('🧹 Base de données vide - retour de statistiques vides');
+      const [total, byType, byStatus, recent] = await Promise.all([
+        ctx.prisma.organization.count(),
+        ctx.prisma.organization.groupBy({
+          by: ['type'],
+          _count: { _all: true },
+        }),
+        ctx.prisma.organization.groupBy({
+          by: ['isActive'],
+          _count: { _all: true },
+        }),
+        ctx.prisma.organization.findMany({
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, name: true, createdAt: true },
+        }),
+      ]);
+
+      const byTypeFormatted = byType.reduce((acc, group) => {
+        acc[group.type] = group._count._all;
+        return acc;
+      }, {} as Record<string, number>);
+
+      const byStatusFormatted = byStatus.reduce((acc, group) => {
+        const key = group.isActive ? 'active' : 'inactive';
+        acc[key] = group._count._all;
+        return acc;
+      }, { active: 0, inactive: 0 });
 
       return {
-        total: 0,
-        byType: {
-          MINISTERE: 0,
-          PREFECTURE: 0,
-          MAIRIE: 0,
-          ORGANISME_PUBLIC: 0,
-          ORGANISME_PARAPUBLIC: 0,
-        },
-        byStatus: {
-          active: 0,
-          inactive: 0,
-        },
-        recent: [],
+        total,
+        byType: byTypeFormatted,
+        byStatus: byStatusFormatted,
+        recent,
       };
     }),
 });

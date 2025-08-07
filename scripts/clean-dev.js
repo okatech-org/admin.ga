@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 🧹 SCRIPT DE NETTOYAGE ROBUSTE - ADMIN.GA
+ * 🧹 SCRIPT DE NETTOYAGE ROBUSTE - ADMINISTRATION.GA
  *
  * Nettoie tous les caches et références persistantes qui peuvent causer
  * des erreurs Edge Tools, TypeScript ou webpack

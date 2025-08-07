@@ -102,10 +102,10 @@ Valeur: votre-token-snyk-pour-scan-securite
 # Générer une URL de base de données
 # Format: postgresql://username:password@hostname:port/database_name
 
-# Exemple local:
+# Exemple local
 DATABASE_URL="postgresql://postgres:password@localhost:5432/administration_ga"
 
-# Exemple production:
+# Exemple production
 DATABASE_URL="postgresql://admin:secretpassword@db.administration.ga:5432/admin_ga_prod"
 ```
 
@@ -218,7 +218,7 @@ Valeur: http://localhost:3000 (développement) ou https://administration.ga (pro
 NEXTAUTH_SECRET=$(openssl rand -base64 32)
 echo "NEXTAUTH_SECRET: $NEXTAUTH_SECRET"
 
-# 2. Configurer dans GitHub:
+# 2. Configurer dans GitHub
 # Settings → Secrets → New repository secret
 # - DATABASE_URL: postgresql://postgres:password@localhost:5432/administration_ga
 # - NEXTAUTH_SECRET: [valeur générée ci-dessus]

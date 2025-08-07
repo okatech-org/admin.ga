@@ -6698,7 +6698,7 @@ export default function ClientManagementPage() {
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
                           <Mail className="h-3 w-3 text-blue-600" />
-                          <span className="font-mono">support@admin.ga</span>
+                          <span className="font-mono">support@administration.ga</span>
                           <Badge variant="outline" className="ml-auto text-xs">&lt; 2h</Badge>
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">

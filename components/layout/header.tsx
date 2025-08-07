@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
@@ -12,7 +12,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { 
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -21,12 +21,12 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { 
-  Menu, 
-  FileText, 
-  Calendar, 
-  Users, 
-  Building2, 
+import {
+  Menu,
+  FileText,
+  Calendar,
+  Users,
+  Building2,
   Shield,
   Flag
 } from 'lucide-react';
@@ -65,7 +65,7 @@ export function Header() {
               <Flag className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-xl gabon-text-gradient">
-              Admin.ga
+              Administration.ga
             </span>
           </Link>
         </div>
@@ -143,7 +143,7 @@ export function Header() {
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
                 <SheetDescription>
-                  Navigation Admin.ga
+                  Navigation Administration.ga
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6 space-y-4">

@@ -6,7 +6,7 @@ Le module d'extensions permet d'**ajouter dynamiquement** des organismes, postes
 
 ## 🎯 Capacités du système d'extensions
 
-### Ce que vous pouvez faire :
+### Ce que vous pouvez faire
 - ✅ **Ajouter des organismes personnalisés** (agences, cabinets, centres, etc.)
 - ✅ **Créer des postes spécifiques** (Innovation Officer, Data Scientist, etc.)
 - ✅ **Générer des utilisateurs supplémentaires** pour n'importe quel organisme
@@ -323,7 +323,7 @@ Avec les extensions, le système peut passer de :
 - **440 → 1000+** utilisateurs
 - **36 → 100+** types de postes
 
-### Exemple de statistiques étendues :
+### Exemple de statistiques étendues
 
 ```
 📊 SYSTÈME ÉTENDU:

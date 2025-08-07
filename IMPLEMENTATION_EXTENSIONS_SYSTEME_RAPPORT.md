@@ -12,7 +12,7 @@ L'utilisateur souhaitait pouvoir :
 2. **Créer des postes spécifiques** selon les besoins
 3. **Générer plus d'utilisateurs** pour certains organismes
 
-### Code demandé par l'utilisateur :
+### Code demandé par l'utilisateur
 ```typescript
 // Ajouter des organismes supplémentaires
 function ajouterOrganismePersonnalise() { ... }
@@ -32,7 +32,7 @@ function genererUtilisateursSupplementaires(organismeCode, nombre) { ... }
 
 **Fichier principal** : `lib/data/systeme-extensions.ts`
 
-#### Fonctionnalités développées :
+#### Fonctionnalités développées
 - ✅ **GestionnaireExtensions** : Classe singleton pour gérer toutes les extensions
 - ✅ **Ajout d'organismes** : Simple ou en masse
 - ✅ **Ajout de postes** : Pour n'importe quel type d'organisme
@@ -44,7 +44,7 @@ function genererUtilisateursSupplementaires(organismeCode, nombre) { ... }
 
 **Fichier** : `lib/data/unified-system-extended.ts`
 
-#### Capacités :
+#### Capacités
 - ✅ Fusion automatique base + extensions
 - ✅ Cache intelligent maintenu
 - ✅ Statistiques séparées (base vs extensions)
@@ -55,7 +55,7 @@ function genererUtilisateursSupplementaires(organismeCode, nombre) { ... }
 
 **Script** : `scripts/test-extensions-systeme.ts`
 
-#### Tests validés :
+#### Tests validés
 - ✅ Ajout d'organismes personnalisés
 - ✅ Création de postes spécifiques
 - ✅ Génération d'utilisateurs supplémentaires
@@ -154,7 +154,7 @@ const utilisateurs = genererUtilisateursSupplementaires(
 
 ## 📈 RÉSULTATS DES TESTS
 
-### Test d'exécution réussi :
+### Test d'exécution réussi
 
 ```
 ============================================================
@@ -231,7 +231,7 @@ await creerPoleSante();
 
 ## 🔒 SÉCURITÉ ET VALIDATION
 
-### Validations implémentées :
+### Validations implémentées
 
 1. **Unicité des codes** :
 ```typescript
@@ -240,19 +240,19 @@ if (codeExiste) {
 }
 ```
 
-2. **Existence des organismes** :
+1. **Existence des organismes** :
 ```typescript
 if (!organisme) {
   throw new Error(`Organisme avec le code "${organismeCode}" non trouvé`);
 }
 ```
 
-3. **Unicité des emails** :
+1. **Unicité des emails** :
 ```typescript
 user.email = user.email.replace('@', `_${compteur}_${index}@`);
 ```
 
-4. **Types valides** :
+1. **Types valides** :
 ```typescript
 type TypeOrganisme = 'MINISTERE' | 'DIRECTION_GENERALE' | ...
 ```
@@ -261,19 +261,19 @@ type TypeOrganisme = 'MINISTERE' | 'DIRECTION_GENERALE' | ...
 
 ## 💡 AVANTAGES DE LA SOLUTION
 
-### Pour les développeurs :
+### Pour les développeurs
 1. **API simple** : Fonctions directes et intuitives
 2. **Flexibilité** : Ajouts simples ou en masse
 3. **Type-safe** : TypeScript complet
 4. **Singleton** : Une seule instance gérée
 
-### Pour l'administration :
+### Pour l'administration
 1. **Évolutivité** : Ajouter des structures au besoin
 2. **Personnalisation** : Postes et rôles sur mesure
 3. **Scalabilité** : De 141 à 200+ organismes facilement
 4. **Traçabilité** : Statistiques détaillées
 
-### Pour le système :
+### Pour le système
 1. **Performance** : Cache maintenu
 2. **Intégrité** : Validation automatique
 3. **Compatibilité** : Format unifié préservé
@@ -357,19 +357,19 @@ await prisma.organismeExtension.createMany({
 });
 ```
 
-2. **Import/Export des extensions**
+1. **Import/Export des extensions**
 ```typescript
 extensionsSysteme.exporterExtensions('extensions.json');
 extensionsSysteme.importerExtensions('extensions.json');
 ```
 
-3. **Historique des modifications**
+1. **Historique des modifications**
 ```typescript
 extensionsSysteme.obtenirHistorique();
 // [{ date, action, organisme, user }, ...]
 ```
 
-4. **Templates d'organismes**
+1. **Templates d'organismes**
 ```typescript
 extensionsSysteme.creerDepuisTemplate('TEMPLATE_MINISTERE');
 ```
@@ -378,19 +378,19 @@ extensionsSysteme.creerDepuisTemplate('TEMPLATE_MINISTERE');
 
 ## 📊 IMPACT ET RÉSULTATS
 
-### Avant extensions :
+### Avant extensions
 - 141 organismes fixes
 - 440 utilisateurs fixes
 - 36 postes fixes
 - Aucune personnalisation
 
-### Après extensions :
+### Après extensions
 - **141 → 200+** organismes possibles
 - **440 → 1000+** utilisateurs possibles
 - **36 → 100+** postes possibles
 - **100% personnalisable**
 
-### Performances maintenues :
+### Performances maintenues
 - Cache : < 1ms requêtes
 - Génération : ~500ms
 - Export : ~50ms
@@ -409,7 +409,7 @@ Le système d'extensions est **100% opérationnel** et offre :
 - ✅ **Scénarios prédéfinis** pour cas d'usage courants
 - ✅ **Documentation complète** et tests validés
 
-### Commandes clés :
+### Commandes clés
 ```bash
 # Tester les extensions
 bun run scripts/test-extensions-systeme.ts

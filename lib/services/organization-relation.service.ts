@@ -555,7 +555,7 @@ export class OrganizationRelationService {
       errorMessage: entry.errorMessage,
       responseTime: entry.responseTime || Math.floor(Math.random() * 500) + 100,
       ipAddress: entry.ipAddress || '192.168.1.' + Math.floor(Math.random() * 255),
-      userAgent: entry.userAgent || 'Admin.GA/1.0',
+      userAgent: entry.userAgent || 'Administration.GA/1.0',
       createdAt: new Date().toISOString()
     };
 

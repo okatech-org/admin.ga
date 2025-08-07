@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 const USERS_DATA = [
   // Super Administrateurs
   {
-    email: 'superadmin@admin.ga',
+    email: 'superadmin@administration.ga',
     phone: '+241 01 44 30 00',
     firstName: 'Alexandre',
     lastName: 'NGOUA',
@@ -17,7 +17,7 @@ const USERS_DATA = [
     organizationCode: 'admin-ga'
   },
   {
-    email: 'tech.lead@admin.ga',
+    email: 'tech.lead@administration.ga',
     phone: '+241 01 44 30 01',
     firstName: 'Marie-Claire',
     lastName: 'OBAME',

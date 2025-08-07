@@ -74,6 +74,7 @@ console.log(JSON.stringify(rapport, null, 2));
 - ✅ Intégrité référentielle
 
 ### 3. Métriques de qualité
+
 | Métrique | Description | Calcul |
 |----------|-------------|--------|
 | **Score de complétude** | Couverture admin + réception | (admins + recep) / (orgs × 2) × 100 |

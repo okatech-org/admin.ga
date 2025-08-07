@@ -51,6 +51,15 @@ export const SUPER_ADMIN_SECTIONS: NavigationSection[] = [
         helpTip: 'Point central pour surveiller l\'activité de la plateforme'
       },
       {
+        title: 'Interface Admin Web',
+        href: '/admin-web',
+        icon: Cog,
+        description: 'Environnement d\'administration des applications',
+        isFrequent: true,
+        badge: { text: 'NEW', variant: 'secondary' },
+        helpTip: 'Modifiez les logos, menus, contenu et paramètres des applications'
+      },
+      {
         title: 'Actions Rapides',
         href: '/super-admin/quick-actions',
         icon: Zap,
@@ -312,7 +321,7 @@ export const QUICK_ACTIONS: QuickAction[] = [
 export const TOUR_STEPS: TourStep[] = [
   {
     id: 'welcome',
-    title: 'Bienvenue dans ADMIN.GA',
+    title: 'Bienvenue dans ADMINISTRATION.GA',
     content: 'Cette interface a été conçue pour simplifier votre travail d\'administration. Laissez-vous guider pour découvrir les fonctionnalités principales.',
     target: 'body',
     position: 'top'

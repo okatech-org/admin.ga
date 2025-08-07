@@ -1,299 +1,118 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
+import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
-import { toast } from 'sonner';
-import {
-  getOrganizationTypeLabel,
-  getOrganizationTypeColor,
-  getOrganizationBorderColor,
-  sortOrganizations,
-  generateOrganizationStats
-} from '@/lib/utils/organization-utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { KPIGrid } from '@/components/ui/kpi-card';
+import { StatsTable } from '@/components/ui/stats-table';
+import { useOrganismesStats } from '@/hooks/use-statistics';
+import { Progress } from '@/components/ui/progress';
 import {
   Building2,
   Users,
   MapPin,
-  Phone,
-  Mail,
-  Globe,
   Activity,
+  TrendingUp,
+  Target,
+  Globe,
+  RefreshCw,
+  Download,
+  Filter,
+  Plus,
   BarChart3,
   CheckCircle,
-  Clock,
-  Star,
-  TrendingUp,
-  Calendar,
-  UserCheck,
-  ArrowRight,
-  Search,
-  Filter,
-  Download,
-  Settings,
-  Edit,
-  Eye,
-  RefreshCw,
-  FileText,
-  Loader2,
-  AlertCircle,
-  Target,
-  Plus,
-  Network,
-  Crown,
-  Flag
+  Flag,
+  Crown
 } from 'lucide-react';
 
-import { useEffect } from 'react';
-
-// Types pour la gestion d'état basés sur Prisma
-interface OrganismeDisplay {
-  id: string;
-  name: string;
-  code: string;
-  type: string;
-  description?: string;
-  city?: string;
-  address?: string;
-  phone?: string;
-  email?: string;
-  website?: string;
-  isActive: boolean;
-  parentId?: string;
-  parent?: { name: string };
-  children?: { id: string; name: string }[];
-  createdAt: string;
-  updatedAt: string;
-  // Statistiques calculées
-  userCount: number;
-  requestCount: number;
-  appointmentCount: number;
-}
-
-interface OrganismesStats {
-  totalOrganismes: number;
-  organismesActifs: number;
-  organismesInactifs: number;
-  totalUsers: number;
-  totalRequests: number;
-  totalAppointments: number;
-  types: Record<string, number>;
-  cities: Record<string, number>;
-}
-
 export default function OrganismesPage() {
-  // États de base
-  const [searchTerm, setSearchTerm] = useState<string>('');
-  const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [organizationsData, setOrganizationsData] = useState<any>(null);
-  const itemsPerPage = 20;
+  const { data, loading, error, refresh } = useOrganismesStats({
+    autoRefresh: true,
+    refreshInterval: 5 * 60 * 1000
+  });
 
-  // Fonction pour récupérer les organisations via API REST
-  const fetchOrganizations = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
-      const params = new URLSearchParams({
-        limit: '500', // Augmenter pour récupérer tous les organismes
-        page: '1',
-        search: searchTerm,
-        type: selectedType === 'all' ? '' : selectedType,
-        isActive: selectedStatus === 'all' ? '' : (selectedStatus === 'ACTIF' ? 'true' : 'false')
-      });
-
-      const response = await fetch(`/api/organizations/list?${params}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setOrganizationsData(data.data);
-      } else {
-        throw new Error(data.error || 'Erreur lors du chargement des organisations');
-      }
-    } catch (err) {
-      console.error('Erreur lors du chargement des organisations:', err);
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
-    } finally {
-      setIsLoading(false);
+  // KPIs des organismes
+  const kpiData = data ? [
+    {
+      id: 'total-organismes',
+      title: 'Total Organismes',
+      value: data.overview.total_organismes,
+      trend: 0,
+      subtitle: '141 organismes gabonais',
+      icon: <Building2 className="h-4 w-4" />,
+      status: 'info' as const
+    },
+    {
+      id: 'organismes-actifs',
+      title: 'Organismes Actifs',
+      value: data.overview.organismes_actifs,
+      trend: 0,
+      subtitle: `${data.overview.taux_activite}% opérationnels`,
+      icon: <CheckCircle className="h-4 w-4" />,
+      status: 'success' as const
+    },
+    {
+      id: 'organismes-principaux',
+      title: 'Organismes Principaux',
+      value: data.overview.organismes_principaux,
+      trend: 0,
+      subtitle: 'Ministères, DG, Institutions',
+      icon: <Crown className="h-4 w-4" />,
+      status: 'info' as const
+    },
+    {
+      id: 'secteurs-representes',
+      title: 'Secteurs Représentés',
+      value: data.secteurs.total_secteurs,
+      trend: 0,
+      subtitle: 'Domaines administratifs',
+      icon: <Target className="h-4 w-4" />,
+      status: 'info' as const
     }
-  }, [searchTerm, selectedType, selectedStatus]);
+  ] : [];
 
-  // Charger les données au montage du composant et lors des changements de filtres
-  useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      fetchOrganizations();
-    }, 300); // Debounce pour éviter trop d'appels API
-
-    return () => clearTimeout(debounceTimer);
-  }, [fetchOrganizations]);
-
-  // Transformation des données de l'API
-  const organismes = useMemo((): OrganismeDisplay[] => {
-    if (!organizationsData?.organizations) return [];
-
-    return organizationsData.organizations.map(org => ({
-      id: org.id,
-      name: org.name,
-      code: org.code,
-      type: org.type,
-      description: org.description || '',
-      city: org.city || '',
-      address: org.address || '',
-      phone: org.phone || '',
-      email: org.email || '',
-      website: org.website || '',
-      isActive: org.isActive,
-      parentId: org.parentId || undefined,
-      parent: org.parent || undefined,
-      children: org.children || [],
-      createdAt: org.createdAt || new Date().toISOString(),
-      updatedAt: org.updatedAt || new Date().toISOString(),
-      // Statistiques simulées depuis l'API
-      userCount: org._count?.userMemberships || 0,
-      requestCount: org._count?.requests || 0,
-      appointmentCount: org._count?.appointments || 0,
-    }));
-  }, [organizationsData]);
-
-  // Filtrage des organismes
-  const filteredOrganismes = useMemo(() => {
-    return organismes.filter(org => {
-      const matchesSearch = !searchTerm ||
-        org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        org.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (org.city && org.city.toLowerCase().includes(searchTerm.toLowerCase())) ||
-        (org.description && org.description.toLowerCase().includes(searchTerm.toLowerCase()));
-
-      const matchesType = selectedType === 'all' || org.type === selectedType;
-      const matchesStatus = selectedStatus === 'all' || (selectedStatus === 'ACTIF' ? org.isActive : !org.isActive);
-
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [organismes, searchTerm, selectedType, selectedStatus]);
-
-  // Pagination
-  const paginatedOrganismes = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredOrganismes.slice(startIndex, endIndex);
-  }, [filteredOrganismes, currentPage, itemsPerPage]);
-
-  // Calcul des statistiques
-  const stats = useMemo((): OrganismesStats => {
-    const total = organismes.length;
-    const actifs = organismes.filter(o => o.isActive).length;
-    const inactifs = total - actifs;
-
-    // Types
-    const types: Record<string, number> = {};
-    organismes.forEach(org => {
-      types[org.type] = (types[org.type] || 0) + 1;
-    });
-
-    // Villes
-    const cities: Record<string, number> = {};
-    organismes.forEach(org => {
-      if (org.city) {
-        cities[org.city] = (cities[org.city] || 0) + 1;
-      }
-    });
-
-    const totalUsers = organismes.reduce((sum, org) => sum + org.userCount, 0);
-    const totalRequests = organismes.reduce((sum, org) => sum + org.requestCount, 0);
-    const totalAppointments = organismes.reduce((sum, org) => sum + org.appointmentCount, 0);
-
-    return {
-      totalOrganismes: total,
-      organismesActifs: actifs,
-      organismesInactifs: inactifs,
-      totalUsers,
-      totalRequests,
-      totalAppointments,
-      types,
-      cities
-    };
-  }, [organismes]);
-
-  // Options pour les filtres
-  const typeOptions = useMemo(() =>
-    Array.from(new Set(organismes.map(org => org.type))).sort()
-  , [organismes]);
-
-  const totalPages = Math.ceil(filteredOrganismes.length / itemsPerPage);
-
-  // Gestionnaires d'événements
-  const handleRefresh = useCallback(async () => {
-    try {
-      await fetchOrganizations();
-      toast.success('Données actualisées avec succès');
-    } catch (error) {
-      toast.error('Erreur lors de l\'actualisation');
+  // Colonnes pour la répartition par type
+  const repartitionColumns = [
+    { key: 'type', label: 'Type d\'Organisme', sortable: true },
+    { key: 'count', label: 'Nombre', type: 'number' as const, sortable: true },
+    {
+      key: 'pourcentage',
+      label: 'Pourcentage',
+      type: 'percentage' as const,
+      formatter: (value: number) => `${value.toFixed(1)}%`
     }
-  }, [fetchOrganizations]);
+  ];
 
-  const handleExport = useCallback(() => {
-    const csvContent = [
-      ['Nom', 'Code', 'Type', 'Ville', 'Statut', 'Utilisateurs', 'Demandes'].join(','),
-      ...filteredOrganismes.map(org => [
-        org.name,
-        org.code,
-        org.type,
-        org.city || '',
-        org.isActive ? 'Actif' : 'Inactif',
-        org.userCount,
-        org.requestCount
-      ].join(','))
-    ].join('\n');
+  const repartitionData = data ? Object.entries(data.repartition_par_type).map(([type, count]) => ({
+    type: type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+    count: count as number,
+    pourcentage: ((count as number) / data.overview.total_organismes) * 100
+  })) : [];
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'organismes.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // Colonnes pour la répartition géographique
+  const geographieColumns = [
+    { key: 'province', label: 'Province', sortable: true },
+    { key: 'organismes', label: 'Organismes', type: 'number' as const, sortable: true },
+    { key: 'pourcentage', label: 'Répartition', type: 'percentage' as const, sortable: true }
+  ];
 
-    toast.success('Export réalisé avec succès');
-  }, [filteredOrganismes]);
-
-  if (isLoading) {
-    return (
-      <AuthenticatedLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin mx-auto text-blue-500" />
-            <div>
-              <h3 className="font-semibold text-lg">Chargement des organismes...</h3>
-              <p className="text-muted-foreground">Récupération des données depuis la base</p>
-            </div>
-          </div>
-        </div>
-      </AuthenticatedLayout>
-    );
-  }
+  const geographieData = data?.graphiques?.repartition_geographique || [];
 
   if (error) {
     return (
       <AuthenticatedLayout>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-[400px]">
           <Card className="w-96">
-            <CardContent className="text-center p-6">
-              <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-              <h3 className="font-semibold text-lg mb-2">Erreur de chargement</h3>
-              <p className="text-muted-foreground mb-4">
-                {error}
-              </p>
-              <Button onClick={handleRefresh}>
+            <CardHeader>
+              <CardTitle className="text-red-600">Erreur de chargement</CardTitle>
+              <CardDescription>{error}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={refresh} className="w-full">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Réessayer
               </Button>
@@ -307,23 +126,20 @@ export default function OrganismesPage() {
   return (
     <AuthenticatedLayout>
       <div className="space-y-6">
-        {/* En-tête */}
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Building2 className="h-8 w-8 text-blue-500" />
-              Gestion des Organismes
-            </h1>
-            <p className="text-muted-foreground">
-              {stats.totalOrganismes} organismes publics gabonais
+            <h1 className="text-3xl font-bold text-gray-900">Organismes & Administrations</h1>
+            <p className="text-gray-600">
+              Vue d'ensemble des 141 organismes de l'administration gabonaise
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={refresh} disabled={loading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Actualiser
             </Button>
-            <Button variant="outline" onClick={handleExport}>
+            <Button variant="outline">
               <Download className="h-4 w-4 mr-2" />
               Exporter
             </Button>
@@ -334,229 +150,203 @@ export default function OrganismesPage() {
           </div>
         </div>
 
-        {/* Statistiques */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total</p>
-                  <h3 className="text-2xl font-bold">{stats.totalOrganismes}</h3>
-                </div>
-                <Building2 className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* KPIs */}
+        <KPIGrid
+          kpis={kpiData}
+          columns={4}
+          loading={loading}
+        />
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Actifs</p>
-                  <h3 className="text-2xl font-bold text-green-600">{stats.organismesActifs}</h3>
-                </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Analyse détaillée */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
+            <TabsTrigger value="types">Par Type</TabsTrigger>
+            <TabsTrigger value="geographie">Géographie</TabsTrigger>
+            <TabsTrigger value="performance">Performance</TabsTrigger>
+          </TabsList>
 
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Utilisateurs</p>
-                  <h3 className="text-2xl font-bold">{stats.totalUsers}</h3>
-                </div>
-                <Users className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Demandes</p>
-                  <h3 className="text-2xl font-bold">{stats.totalRequests}</h3>
-                </div>
-                <FileText className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filtres */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex gap-4 items-end">
-              <div className="flex-1">
-                <label className="text-sm font-medium mb-2 block">Recherche</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Rechercher par nom, code, ville..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Type</label>
-                <Select value={selectedType} onValueChange={setSelectedType}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Tous les types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous les types</SelectItem>
-                    {typeOptions.map(type => (
-                      <SelectItem key={type} value={type}>
-                        {getOrganizationTypeLabel(type)}
-                      </SelectItem>
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Évolution mensuelle */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Évolution Mensuelle
+                  </CardTitle>
+                  <CardDescription>
+                    Suivi des organismes actifs sur 6 mois
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {data?.graphiques?.evolution_mensuelle?.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600">{item.mois}</span>
+                        <div className="flex items-center gap-4">
+                          <span className="text-sm">Total: {item.total}</span>
+                          <span className="text-sm text-green-600">Actifs: {item.actifs}</span>
+                          <span className="text-xs text-blue-600">Nouveaux: {item.nouveaux}</span>
+                        </div>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">Statut</label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder="Statut" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Tous</SelectItem>
-                    <SelectItem value="ACTIF">Actifs</SelectItem>
-                    <SelectItem value="INACTIF">Inactifs</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Liste des organismes */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                {filteredOrganismes.length} organismes trouvés
-              </CardTitle>
-              <div className="text-sm text-muted-foreground">
-                Page {currentPage} sur {totalPages}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {paginatedOrganismes.map((org) => (
-                <Card key={org.id} className={`border-l-4 ${getOrganizationBorderColor(org.type)}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <h3 className="font-semibold text-lg">{org.name}</h3>
-                          <Badge variant="outline">{org.code}</Badge>
-                          <Badge className={getOrganizationTypeColor(org.type)}>
-                            {getOrganizationTypeLabel(org.type)}
-                          </Badge>
-                          <Badge className={org.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
-                            {org.isActive ? 'Actif' : 'Inactif'}
-                          </Badge>
+              {/* Secteurs représentés */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Secteurs Administratifs
+                  </CardTitle>
+                  <CardDescription>
+                    {data?.secteurs.total_secteurs} domaines couverts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {data && (
+                    <>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-900">
+                            {data.secteurs.principaux_secteurs.administration_generale}
+                          </div>
+                          <div className="text-xs text-blue-700">Admin. Générale</div>
                         </div>
-
-                        <div className="text-sm text-muted-foreground mb-2">
-                          {getOrganizationTypeLabel(org.type)} • {org.city || 'Ville non spécifiée'}
+                        <div className="text-center p-3 bg-green-50 rounded-lg">
+                          <div className="text-2xl font-bold text-green-900">
+                            {data.secteurs.principaux_secteurs.education_formation}
+                          </div>
+                          <div className="text-xs text-green-700">Éducation</div>
                         </div>
-
-                        {org.description && (
-                          <p className="text-sm text-gray-700 mb-3 line-clamp-2">
-                            {org.description}
-                          </p>
-                        )}
-
-                        <div className="flex items-center gap-6 text-sm">
-                          <div className="flex items-center gap-1">
-                            <Users className="h-4 w-4" />
-                            <span>{org.userCount} utilisateurs</span>
+                        <div className="text-center p-3 bg-purple-50 rounded-lg">
+                          <div className="text-2xl font-bold text-purple-900">
+                            {data.secteurs.principaux_secteurs.sante_affaires_sociales}
                           </div>
-                          <div className="flex items-center gap-1">
-                            <FileText className="h-4 w-4" />
-                            <span>{org.requestCount} demandes</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{org.appointmentCount} RDV</span>
-                          </div>
+                          <div className="text-xs text-purple-700">Santé/Social</div>
                         </div>
-
-                        {(org.phone || org.email || org.website) && (
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-2">
-                            {org.phone && (
-                              <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3" />
-                                <span>{org.phone}</span>
-                              </div>
-                            )}
-                            {org.email && (
-                              <div className="flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                <span>{org.email}</span>
-                              </div>
-                            )}
-                            {org.website && (
-                              <div className="flex items-center gap-1">
-                                <Globe className="h-3 w-3" />
-                                <span>{org.website}</span>
-                              </div>
-                            )}
+                        <div className="text-center p-3 bg-orange-50 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-900">
+                            {data.secteurs.principaux_secteurs.securite_defense}
                           </div>
-                        )}
+                          <div className="text-xs text-orange-700">Sécurité</div>
+                        </div>
                       </div>
-
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                      <div className="text-sm text-gray-600 text-center">
+                        Distribution équilibrée sur {data.secteurs.total_secteurs} secteurs
                       </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="types">
+            <StatsTable
+              title="Répartition par Type d'Organisme"
+              description="Classification détaillée des 141 organismes gabonais"
+              columns={repartitionColumns}
+              data={repartitionData}
+              loading={loading}
+              searchable={true}
+              exportable={true}
+            />
+          </TabsContent>
+
+          <TabsContent value="geographie">
+            <StatsTable
+              title="Répartition Géographique"
+              description="Distribution territoriale des organismes par province"
+              columns={geographieColumns}
+              data={geographieData}
+              loading={loading}
+              searchable={true}
+              exportable={true}
+            />
+          </TabsContent>
+
+          <TabsContent value="performance" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Indicateurs de performance */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    Indicateurs de Performance
+                  </CardTitle>
+                  <CardDescription>
+                    Métriques opérationnelles clés
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {data && (
+                    <>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Organismes avec titulaire</span>
+                          <span className="font-medium">{data.performance.organismes_avec_titulaire}%</span>
+                        </div>
+                        <Progress value={data.performance.organismes_avec_titulaire} className="h-2" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Couverture territoriale</span>
+                          <span className="font-medium">{data.performance.couverture_territoriale}%</span>
+                        </div>
+                        <Progress value={data.performance.couverture_territoriale} className="h-2" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Taux opérationnel</span>
+                          <span className="font-medium">{data.performance.taux_operationnel}%</span>
+                        </div>
+                        <Progress value={data.performance.taux_operationnel} className="h-2" />
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span>Organismes numérisés</span>
+                          <span className="font-medium">{data.performance.organismes_numerises}%</span>
+                        </div>
+                        <Progress value={data.performance.organismes_numerises} className="h-2" />
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Couverture géographique */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MapPin className="h-5 w-5" />
+                    Couverture Géographique
+                  </CardTitle>
+                  <CardDescription>
+                    Présence sur le territoire national
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <Flag className="h-4 w-4 text-emerald-600" />
+                        <span className="font-medium">Provinces couvertes</span>
+                      </div>
+                      <span className="text-lg font-bold text-emerald-800">9/9</span>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <div className="text-sm text-gray-600 text-center">
+                      Couverture complète du territoire gabonais
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-6">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Précédent
-                </Button>
-
-                <div className="text-sm text-muted-foreground">
-                  Page {currentPage} sur {totalPages}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Suivant
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </AuthenticatedLayout>
   );

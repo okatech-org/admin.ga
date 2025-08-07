@@ -1,6 +1,6 @@
 /**
  * Script pour attribuer intelligemment les utilisateurs sans organisation
- * Répartit les citoyens dans DEMARCHE.GA et les agents dans ADMIN.GA
+ * Répartit les citoyens dans DEMARCHE.GA et les agents dans ADMINISTRATION.GA
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -92,7 +92,7 @@ async function attribuerUtilisateursAuxOrganisations() {
           organisationCible = ministeres[Math.floor(Math.random() * ministeres.length)];
           break;
 
-        case 'MANAGER': // Managers → Répartir dans toutes les structures ADMIN.GA
+        case 'MANAGER': // Managers → Répartir dans toutes les structures ADMINISTRATION.GA
           const structuresAdmin = [...ministeres, ...gouvernorats, ...organismes];
           organisationCible = structuresAdmin[Math.floor(Math.random() * structuresAdmin.length)];
           break;
@@ -198,13 +198,13 @@ async function attribuerUtilisateursAuxOrganisations() {
 
     console.log(`   Utilisateurs totaux: ${validation.totalUsers}`);
     console.log(`   Avec organisation: ${validation.usersWithOrg} (${couverture}%)`);
-    console.log(`   ADMIN.GA: ${validation.adminGaUsers} agents publics`);
+    console.log(`   ADMINISTRATION.GA: ${validation.adminGaUsers} agents publics`);
     console.log(`   DEMARCHE.GA: ${validation.demarcheGaUsers} citoyens`);
 
     console.log('\n🎉 ATTRIBUTION INTELLIGENTE TERMINÉE !');
     console.log(`✨ ${attributions} utilisateurs attribués avec succès`);
     console.log('🔗 Tous les utilisateurs sont maintenant liés à une organisation');
-    console.log('🏛️ ADMIN.GA + DEMARCHE.GA = Écosystème complet !');
+    console.log('🏛️ ADMINISTRATION.GA + DEMARCHE.GA = Écosystème complet !');
 
   } catch (error) {
     console.error('❌ Erreur lors de l\'attribution:', error);

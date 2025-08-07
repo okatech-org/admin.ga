@@ -215,7 +215,7 @@ async function main() {
       const nom = NOMS_FAMILLES_GABONAIS[Math.floor(Math.random() * NOMS_FAMILLES_GABONAIS.length)];
 
       usersToCreate.push({
-        email: `superadmin${i + 1}@admin.ga`,
+        email: `superadmin${i + 1}@administration.ga`,
         phone: genererTelephone(),
         firstName: prenom,
         lastName: nom,

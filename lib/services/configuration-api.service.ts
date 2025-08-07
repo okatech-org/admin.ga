@@ -310,9 +310,9 @@ export class ConfigurationApiService {
         pushEnabled: true,
         whatsappEnabled: false,
         defaultEmailTemplate: 'modern',
-        smtpHost: 'smtp.admin.ga',
+        smtpHost: 'smtp.administration.ga',
         smtpPort: '587',
-        smtpUser: 'noreply@admin.ga',
+        smtpUser: 'noreply@administration.ga',
         smtpPassword: '',
         smsProvider: 'Airtel',
         smsApiKey: ''

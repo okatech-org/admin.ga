@@ -45,9 +45,10 @@ interface SearchItem {
 
 interface SmartSearchProps {
   className?: string;
+  onClose?: () => void;
 }
 
-export const SmartSearch = ({ className }: SmartSearchProps) => {
+export const SmartSearch = ({ className, onClose }: SmartSearchProps) => {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
@@ -169,6 +170,7 @@ export const SmartSearch = ({ className }: SmartSearchProps) => {
 
     setOpen(false);
     setQuery('');
+    if (onClose) onClose();
     router.push(item.href);
   };
 
@@ -187,27 +189,29 @@ export const SmartSearch = ({ className }: SmartSearchProps) => {
 
   return (
     <>
-      {/* Déclencheur de recherche */}
-      <Button
-        variant="outline"
-        className={cn(
-          "relative h-10 w-full max-w-sm justify-start text-left font-normal",
-          "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
-          className
-        )}
-        onClick={() => setOpen(true)}
-        data-tour="search-bar"
-      >
-        <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
-        <span className="hidden lg:inline-flex">Rechercher dans ADMIN.GA...</span>
-        <span className="inline-flex lg:hidden">Rechercher...</span>
-        <CommandShortcut className="ml-auto">
-          <Command className="mr-1 h-3 w-3" />K
-        </CommandShortcut>
-      </Button>
+      {/* Déclencheur de recherche seulement si pas onClose */}
+      {!onClose && (
+        <Button
+          variant="outline"
+          className={cn(
+            "relative h-10 w-full max-w-sm justify-start text-left font-normal",
+            "bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60",
+            className
+          )}
+          onClick={() => setOpen(true)}
+          data-tour="search-bar"
+        >
+          <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+          <span className="hidden lg:inline-flex">Rechercher dans ADMINISTRATION.GA...</span>
+          <span className="inline-flex lg:hidden">Rechercher...</span>
+          <CommandShortcut className="ml-auto">
+            <Command className="mr-1 h-3 w-3" />K
+          </CommandShortcut>
+        </Button>
+      )}
 
       {/* Modal de recherche */}
-      <CommandDialog open={open} onOpenChange={setOpen}>
+      <CommandDialog open={onClose ? true : open} onOpenChange={onClose ? () => onClose() : setOpen}>
         <CommandInput
           placeholder="Tapez pour rechercher dans toutes les fonctionnalités..."
           value={query}
