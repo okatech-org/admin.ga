@@ -79,12 +79,6 @@ export default function AdminWebInterface() {
     }
   ]);
 
-  const handleSave = () => {
-    // Ici on sauvegarderait les modifications
-    setHasChanges(false);
-    alert('✅ Modifications sauvegardées avec succès !');
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, type: string) => {
     const file = event.target.files?.[0];
     if (file) {

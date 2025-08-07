@@ -1,4 +1,4 @@
-# ✅ Menu "Interface Admin Web" Ajouté avec Succès !
+# ✅ Menu "Interface Admin Web" Ajouté avec Succès
 
 ## 🎯 **Modifications Effectuées**
 

@@ -39,8 +39,8 @@ export default function HomePage() {
     },
     {
       icon: Users,
-      titre: "Interface Citoyenne Unifiée",
-      description: "Vos citoyens accèdent à tous vos services via une seule plateforme : DEMARCHE.GA"
+      titre: "Interfaces Citoyennes Unifiées",
+      description: "DEMARCHE.GA pour les démarches administratives et TRAVAIL.GA pour l'emploi public"
     },
     {
       icon: Shield,

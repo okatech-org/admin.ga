@@ -20,20 +20,20 @@ http://localhost:3000/admin-web
 
 ### 1. 📷 Logos & Assets
 
-**Gestion des éléments visuels**
+### Gestion des éléments visuels
 
-#### Fonctionnalités :
+#### Fonctionnalités principales
 - **Upload de logos** pour ADMINISTRATION.GA et DEMARCHE.GA
 - **Gestion des favicons** 
 - **Configuration des couleurs** du thème (primaire, secondaire, accent)
 - **Aperçu en temps réel** des modifications
 
-#### Types de fichiers supportés :
+#### Types de fichiers supportés
 - **Logos** : PNG, SVG, JPG (recommandé : PNG avec transparence)
 - **Favicon** : ICO, PNG 16x16, 32x32
 - **Tailles recommandées** : 512x512px pour les logos principaux
 
-#### Couleurs par défaut :
+#### Couleurs par défaut
 - **ADMINISTRATION.GA** : Couleurs du drapeau gabonais
   - Vert : `#009E49`
   - Jaune : `#FFD700` 
@@ -46,57 +46,57 @@ http://localhost:3000/admin-web
 
 ### 2. 🎨 Apparence
 
-**Configuration des textes et descriptions**
+### Configuration des textes et descriptions
 
-#### Paramètres modifiables :
+#### Paramètres modifiables
 - **Nom de l'application**
 - **Sous-titre** (ex: "République Gabonaise")
 - **Description** détaillée
 - **Métadonnées** pour le SEO
 
-#### Aperçu immédiat :
+#### Aperçu immédiat
 Les modifications sont visibles instantanément dans la section d'aperçu.
 
 ### 3. 📋 Menus
 
-**Gestion de la navigation**
+### Gestion de la navigation
 
-#### Fonctionnalités :
+#### Fonctionnalités de navigation
 - **Réorganisation par glisser-déposer** des éléments de menu
 - **Ajout/suppression** d'éléments de menu
 - **Visibilité** (masquer/afficher les éléments)
 - **Configuration des icônes** (bibliothèque d'icônes intégrée)
 - **Gestion séparée** pour ADMIN.GA et DEMARCHE.GA
 
-#### Propriétés des menus :
+#### Propriétés des menus
 - **Libellé** : Texte affiché
 - **URL** : Lien de destination
 - **Icône** : Choisie parmi 12+ options
 - **Visibilité** : Actif/Inactif
 - **Ordre** : Position dans le menu
 
-#### Icônes disponibles :
+#### Icônes disponibles
 - Home, Users, Building2, BarChart3
 - Settings, FileText, Bell, Globe
 - Shield, Database, Layout, Search
 
 ### 4. 📄 Contenu
 
-**Gestion des pages et articles**
+### Gestion des pages et articles
 
-#### Types de contenu :
+#### Types de contenu
 - **Pages** : Contenu statique (À propos, Aide, etc.)
 - **Actualités** : Articles d'information
 - **Annonces** : Communications importantes
 
-#### Fonctionnalités d'édition :
+#### Fonctionnalités d'édition
 - **Éditeur de texte** complet
 - **Système de tags** pour la catégorisation
 - **Publication/brouillon**
 - **Génération automatique de slug** (URL)
 - **Multi-application** (ADMIN.GA, DEMARCHE.GA ou les deux)
 
-#### Métadonnées :
+#### Métadonnées
 - **Titre**, **contenu**, **auteur**
 - **Date de création/modification**
 - **Tags** pour la recherche
@@ -104,16 +104,16 @@ Les modifications sont visibles instantanément dans la section d'aperçu.
 
 ### 5. 📢 Actualités
 
-**Gestion des news et communications**
+### Gestion des news et communications
 
-#### Fonctionnalités :
+#### Fonctionnalités d'actualités
 - **Publication d'actualités**
 - **Annonces système**
 - **Gestion des catégories**
 - **Planification de publication**
 - **Notifications push** (optionnel)
 
-#### Workflow :
+#### Workflow
 1. **Rédaction** en mode brouillon
 2. **Prévisualisation** du contenu
 3. **Publication** immédiate ou programmée
@@ -121,15 +121,15 @@ Les modifications sont visibles instantanément dans la section d'aperçu.
 
 ### 6. ⚙️ Paramètres
 
-**Configuration système**
+### Configuration système
 
-#### Paramètres généraux :
+#### Paramètres généraux
 - **Mode maintenance** : Désactiver temporairement l'accès
 - **Notifications email** : Activer/désactiver les alertes
 - **Analytics** : Suivi de l'utilisation
 - **Logs système** : Enregistrement des événements
 
-#### Sécurité :
+#### Paramètres de sécurité
 - **Authentification 2FA** : Double authentification
 - **Session timeout** : Durée des sessions (30min à 4h)
 - **Logs de sécurité** : Traçabilité des connexions
@@ -215,7 +215,7 @@ Les modifications sont visibles instantanément dans la section d'aperçu.
 - **Organisez logiquement** la hiérarchie
 - **Testez la navigation** sur mobile
 
-### Sécurité
+### Bonnes pratiques de sécurité
 - **Sauvegardez régulièrement** vos modifications
 - **Utilisez le mode maintenance** pour les gros changements
 - **Vérifiez les permissions** des utilisateurs
