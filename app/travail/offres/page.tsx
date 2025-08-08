@@ -130,9 +130,9 @@ export default function OffresEmploiPage() {
     if (!offre.salaire) return 'Salaire non précisé';
     const { min, max, devise, periode } = offre.salaire;
     if (min && max) {
-      return `${min.toLocaleString()} - ${max.toLocaleString()} ${devise}/${periode}`;
+      return `${min.toLocaleString('fr-FR')} - ${max.toLocaleString('fr-FR')} ${devise}/${periode}`;
     } else if (min) {
-      return `À partir de ${min.toLocaleString()} ${devise}/${periode}`;
+      return `À partir de ${min.toLocaleString('fr-FR')} ${devise}/${periode}`;
     }
     return 'Salaire à négocier';
   };
@@ -225,7 +225,7 @@ export default function OffresEmploiPage() {
         <h3 className="font-semibold mb-3">Salaire mensuel (FCFA)</h3>
         <div className="space-y-4">
           <div>
-            <Label>Min: {filtres.salaireMin?.toLocaleString() || '0'} FCFA</Label>
+                            <Label>Min: {filtres.salaireMin?.toLocaleString('fr-FR') || '0'} FCFA</Label>
             <Slider
               value={[filtres.salaireMin || 0]}
               onValueChange={([value]) => handleFiltreChange('salaireMin', value)}
@@ -235,7 +235,7 @@ export default function OffresEmploiPage() {
             />
           </div>
           <div>
-            <Label>Max: {filtres.salaireMax?.toLocaleString() || '5,000,000'} FCFA</Label>
+                            <Label>Max: {filtres.salaireMax?.toLocaleString('fr-FR') || '5,000,000'} FCFA</Label>
             <Slider
               value={[filtres.salaireMax || 5000000]}
               onValueChange={([value]) => handleFiltreChange('salaireMax', value)}

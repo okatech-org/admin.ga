@@ -42,7 +42,7 @@ import {
   DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import type { OffreEmploi, TypeContrat, NiveauEtude } from '@/lib/types/emploi';
 
 export default function DetailOffrePage() {
@@ -217,9 +217,9 @@ export default function DetailOffrePage() {
     if (!offre.salaire) return 'Salaire non précisé';
     const { min, max, devise, periode } = offre.salaire;
     if (min && max) {
-      return `${min.toLocaleString()} - ${max.toLocaleString()} ${devise}/${periode}`;
-    } else if (min) {
-      return `À partir de ${min.toLocaleString()} ${devise}/${periode}`;
+          return `${min.toLocaleString('fr-FR')} - ${max.toLocaleString('fr-FR')} ${devise}/${periode}`;
+  } else if (min) {
+    return `À partir de ${min.toLocaleString('fr-FR')} ${devise}/${periode}`;
     }
     return 'Salaire à négocier';
   };

@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import InterAppNavigation from '@/components/layout/inter-app-navigation';
 
 export default function HomePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -425,6 +426,9 @@ export default function HomePage() {
           </Card>
         </div>
       )}
+
+      {/* Navigation inter-applications */}
+      <InterAppNavigation currentApp="administration" />
     </div>
   );
 }

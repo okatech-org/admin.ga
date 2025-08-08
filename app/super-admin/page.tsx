@@ -301,7 +301,8 @@ export default function SuperAdminHomePage() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[
                 { href: '/admin-web', title: 'Interface Admin Web', icon: Settings, description: 'Personnalisation complète', isNew: true },
-                { href: '/super-admin/utilisateurs', title: 'Utilisateurs', icon: Users, description: 'Gestion des comptes' },
+                { href: '/super-admin/utilisateurs-demarche', title: 'Utilisateurs DEMARCHE.GA', icon: Users, description: 'Gestion des comptes', isNew: true, isSpecial: true },
+                { href: '/super-admin/utilisateurs', title: 'Utilisateurs Système', icon: Users, description: 'Gestion des comptes' },
                 { href: '/super-admin/administrations', title: 'Administrations', icon: Building2, description: 'Organismes publics' },
                 { href: '/super-admin/organismes-vue-ensemble', title: 'Organismes', icon: Building2, description: 'Vue d\'ensemble' },
                 { href: '/super-admin/postes-emploi', title: 'Postes', icon: Target, description: 'Emplois publics' },
@@ -315,11 +316,20 @@ export default function SuperAdminHomePage() {
                   className="group"
                 >
                   <div className={`p-4 rounded-lg border transition-all duration-200 cursor-pointer relative ${
-                    section.isNew
+                    section.isSpecial
+                      ? 'border-blue-300 bg-blue-50 hover:bg-blue-100'
+                      : section.isNew
                       ? 'border-green-300 bg-green-50 hover:bg-green-100'
                       : 'border-gray-200 hover:border-indigo-300 bg-white hover:bg-indigo-50'
                   }`}>
-                    {section.isNew && (
+                    {section.isSpecial && (
+                      <div className="absolute -top-2 -right-2">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          DEMARCHE.GA
+                        </span>
+                      </div>
+                    )}
+                    {section.isNew && !section.isSpecial && (
                       <div className="absolute -top-2 -right-2">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                           NEW
@@ -328,11 +338,14 @@ export default function SuperAdminHomePage() {
                   )}
                     <div className="flex items-center gap-3">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                        section.isNew
+                        section.isSpecial
+                          ? 'bg-blue-200 group-hover:bg-blue-300'
+                          : section.isNew
                           ? 'bg-green-200 group-hover:bg-green-300'
                           : 'bg-indigo-100 group-hover:bg-indigo-200'
                       }`}>
                         <section.icon className={`w-4 h-4 ${
+                          section.isSpecial ? 'text-blue-700' :
                           section.isNew ? 'text-green-700' : 'text-indigo-600'
                         }`} />
                           </div>
