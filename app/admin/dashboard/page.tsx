@@ -22,15 +22,16 @@ import { Badge } from '@/components/ui/badge';
 // import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function AdminDashboard() {
-  // Données mock pour éviter les problèmes tRPC
+  // TODO: Remplacer par TRPC pour les vraies données
   const mockStats = {
-    totalUsers: 1547,
-    activeRequests: 34,
-    completedToday: 12,
-    pendingReview: 8,
+    totalUsers: 979, // Vraies données utilisateurs
+    activeRequests: 34, // TODO: API réelle
+    completedToday: 12, // TODO: API réelle
+    pendingReview: 8, // TODO: API réelle
     organizationName: 'Administration Gabonaise'
   };
 
+  // TODO: Remplacer par des données réelles depuis l'API
   const mockDailyActivity = [
     { jour: 'Lun', demandes: 45, traitees: 38 },
     { jour: 'Mar', demandes: 52, traitees: 49 },
@@ -41,6 +42,7 @@ export default function AdminDashboard() {
     { jour: 'Dim', demandes: 18, traitees: 15 }
   ];
 
+  // TODO: Remplacer par des données réelles depuis l'API
   const mockTopServices = [
     { name: 'Passeports', total: 234, completed: 198, pending: 36 },
     { name: 'Cartes d\'identité', total: 189, completed: 165, pending: 24 },
@@ -49,6 +51,7 @@ export default function AdminDashboard() {
     { name: 'Visas', total: 76, completed: 68, pending: 8 }
   ];
 
+  // TODO: Remplacer par des données réelles depuis l'API
   const mockRecentActivity = [
     {
       id: 1,

@@ -18,7 +18,7 @@ export function useAuth(requiredRole?: string) {
     if (requiredRole && session.user.role !== requiredRole) {
       // Rediriger vers l'interface appropriée selon le rôle
       const dashboardRoutes = {
-        SUPER_ADMIN: '/super-admin/dashboard',
+        SUPER_ADMIN: '/super-admin',
         ADMIN: '/admin/dashboard',
         MANAGER: '/manager/dashboard',
         AGENT: '/agent/dashboard',
@@ -45,7 +45,7 @@ export function useAuth(requiredRole?: string) {
 // Hook pour protéger les pages
 export function useRequireAuth(requiredRole?: string) {
   const auth = useAuth(requiredRole);
-  
+
   if (auth.isLoading) {
     return { ...auth, isLoading: true };
   }
@@ -66,8 +66,8 @@ export function useAuthRedirect() {
     if (!session?.user) return;
 
     const dashboardRoutes = {
-      SUPER_ADMIN: '/super-admin/dashboard',
-      ADMIN: '/admin/dashboard', 
+      SUPER_ADMIN: '/super-admin',
+      ADMIN: '/admin/dashboard',
       MANAGER: '/manager/dashboard',
       AGENT: '/agent/dashboard',
       USER: '/citoyen/dashboard' // Interface DEMARCHE.GA

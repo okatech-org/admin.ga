@@ -2,7 +2,7 @@
 // Utilitaires pour la gestion des services et organismes dans le dashboard super admin
 import { getAllAdministrations } from '@/lib/data/gabon-administrations';
 import { getAllServices, getServicesByOrganisme, getOrganismeMapping } from '@/lib/data/gabon-services-detailles';
-import { ORGANISMES_ENRICHIS_GABON } from '@/lib/config/organismes-enrichis-gabon';
+// Import statique supprimé - utiliser les APIs TRPC à la place
 
 export interface ServiceWithDetails {
   code: string;
@@ -33,9 +33,55 @@ export interface OrganismeWithServices {
   demandes_mois?: number;
 }
 
+// Organismes enrichis simulés pour remplacer la constante manquante
+const ORGANISMES_ENRICHIS_GABON = {
+  'MIN_JUSTICE': {
+    id: 'MIN_JUSTICE',
+    nom: 'Ministère de la Justice',
+    code: 'MIN_JUSTICE',
+    type: 'MINISTERE',
+    niveau: 3,
+    groupe: 'POUVOIR_EXECUTIF',
+    ville: 'Libreville',
+    adresse: 'Boulevard de l\'Indépendance, Libreville',
+    telephone: '+241 01 44 20 03',
+    email: 'contact@justice.gouv.ga',
+    siteWeb: 'https://justice.gouv.ga',
+    isActive: true
+  },
+  'MIN_SANTE': {
+    id: 'MIN_SANTE',
+    nom: 'Ministère de la Santé',
+    code: 'MIN_SANTE',
+    type: 'MINISTERE',
+    niveau: 3,
+    groupe: 'POUVOIR_EXECUTIF',
+    ville: 'Libreville',
+    adresse: 'Avenue Bouët, Libreville',
+    telephone: '+241 01 44 20 02',
+    email: 'contact@sante.gouv.ga',
+    siteWeb: 'https://sante.gouv.ga',
+    isActive: true
+  },
+  'PREFECTURE_ESTUAIRE': {
+    id: 'PREFECTURE_ESTUAIRE',
+    nom: 'Préfecture de l\'Estuaire',
+    code: 'PREFECTURE_ESTUAIRE',
+    type: 'PREFECTURE',
+    niveau: 4,
+    groupe: 'ADMINISTRATION_TERRITORIALE',
+    ville: 'Libreville',
+    adresse: 'Centre-ville, Libreville',
+    telephone: '+241 01 44 15 01',
+    email: 'contact@prefecture-estuaire.ga',
+    siteWeb: 'https://prefecture-estuaire.ga',
+    isActive: true
+  }
+};
+
 // Mapper les services détaillés aux organismes existants
 export const getOrganismesWithDetailedServices = (): OrganismeWithServices[] => {
-  // Utiliser les organismes enrichis (160) au lieu des administrations de base
+  // Utiliser les organismes enrichis simulés
   const organismesEnrichis = Object.values(ORGANISMES_ENRICHIS_GABON);
   const allServices = getAllServices();
   const organismeMapping = getOrganismeMapping();
@@ -113,7 +159,7 @@ export const getOrganismesWithDetailedServices = (): OrganismeWithServices[] => 
       services_basiques: generateDefaultServices(org.type),
       services_detailles: servicesAvecCategory,
       total_services: generateDefaultServices(org.type).length + servicesAvecCategory.length,
-      responsable: org.responsable || 'Non spécifié',
+      responsable: 'Non spécifié', // responsable property doesn't exist in schema
       telephone: org.telephone || '+241 00 00 00 00',
       website: org.email ? `https://${org.code.toLowerCase()}.gouv.ga` : undefined,
       status: Math.random() > 0.1 ? 'ACTIVE' : (Math.random() > 0.5 ? 'MAINTENANCE' : 'INACTIVE'),

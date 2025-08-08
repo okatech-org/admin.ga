@@ -9,12 +9,8 @@ export default function DashboardRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    // Redirection automatique après 2 secondes
-    const timer = setTimeout(() => {
-      router.replace('/super-admin/dashboard-unified');
-    }, 2000);
-
-    return () => clearTimeout(timer);
+    // Redirection immédiate vers la nouvelle interface moderne
+    router.replace('/super-admin');
   }, [router]);
 
   return (
@@ -28,16 +24,16 @@ export default function DashboardRedirect() {
         </CardHeader>
         <CardContent className="text-center space-y-4">
           <p className="text-gray-600">
-            Cette page a été remplacée par le nouveau<br />
-            <strong>Dashboard Unifié</strong>
+            Chargement de la nouvelle<br />
+            <strong>Interface Super Admin Moderne</strong>
           </p>
           <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-            <span>Redirection automatique</span>
+            <span>Interface simplifiée</span>
             <ArrowRight className="h-4 w-4" />
-            <span>Dashboard Unifié</span>
+            <span>Pour novices</span>
           </div>
           <button
-            onClick={() => router.replace('/super-admin/dashboard-unified')}
+            onClick={() => router.replace('/super-admin')}
             className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Accéder maintenant

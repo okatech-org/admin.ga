@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   Users,
-  Database,
+  Database as DatabaseIcon,
   Check,
   X,
   AlertTriangle,
@@ -620,7 +620,7 @@ export function AIDataValidationModal({
                 disabled={stats.approved + stats.modified === 0}
                 className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
               >
-                <Database className="h-4 w-4 mr-2" />
+                                    <DatabaseIcon className="h-4 w-4 mr-2" />
                 Sauvegarder en base ({stats.approved + stats.modified})
               </Button>
             </div>

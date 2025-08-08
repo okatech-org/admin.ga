@@ -53,12 +53,12 @@ function LoginForm() {
   // Compte de démonstration pour connexion directe (super admin uniquement)
   const compteSysteme = {
     title: 'Super Administrateur',
-    email: 'superadmin@admin.ga',
+    email: 'superadmin@administration.ga',
     password: 'SuperAdmin2024!',
-    description: 'Accès complet système ADMIN.GA',
+    description: 'Accès complet système ADMINISTRATION.GA',
     icon: Settings,
     color: 'bg-gray-800',
-    destination: 'Dashboard Super Admin'
+    destination: 'Interface Super Admin Moderne'
   };
 
   // Fonction pour déterminer la redirection selon le rôle
@@ -66,7 +66,7 @@ function LoginForm() {
     const { role } = user;
 
     if (role === 'SUPER_ADMIN') {
-      return '/super-admin/dashboard';
+      return '/super-admin'; // Nouvelle interface moderne
     }
 
     // Par défaut, rediriger vers DEMARCHE.GA pour les autres
@@ -146,7 +146,7 @@ function LoginForm() {
                         <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                         <Input
                           type="email"
-                          placeholder="admin@admin.ga"
+                          placeholder="admin@administration.ga"
                           className="pl-10"
                           {...field}
                         />
@@ -254,7 +254,7 @@ export default function LoginPage() {
                   <Building2 className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900">ADMIN.GA</h1>
+                  <h1 className="text-xl font-bold text-gray-900">ADMINISTRATION.GA</h1>
                   <p className="text-xs text-gray-500">Accès administrateur système</p>
                 </div>
               </div>
@@ -279,7 +279,7 @@ export default function LoginPage() {
               Connexion Administrateur
             </h1>
             <p className="text-xl text-gray-600 mb-8">
-              Accès réservé aux administrateurs système ADMIN.GA
+              Accès réservé aux administrateurs système ADMINISTRATION.GA
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 max-w-2xl mx-auto">
               <p className="text-blue-800 text-sm">

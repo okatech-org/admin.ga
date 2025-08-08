@@ -33,7 +33,7 @@ import {
   Shield
 } from 'lucide-react';
 import Link from 'next/link';
-import { getOrganismeDetails } from '@/lib/data/organismes-detailles';
+import { getOrganismeDetails } from '@/lib/data/gabon-services-detailles';
 
 const loginSchema = z.object({
   email: z.string().email('Adresse email invalide'),
@@ -170,7 +170,7 @@ export default function MinistereJusticeHomePage() {
             Ministère de la Justice
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-            {organismeDetails?.description || 'Justice, Équité et État de Droit'}
+            Justice, Équité et État de Droit
           </p>
           <div className="flex justify-center gap-6 text-sm text-gray-600">
             <div className="flex items-center">
@@ -391,7 +391,10 @@ export default function MinistereJusticeHomePage() {
             <div>
               <h3 className="font-semibold mb-4">Comptes Disponibles</h3>
               <div className="space-y-3">
-                {organismeDetails?.comptesDisponibles?.map((compte, index) => (
+                {[
+                  { titre: "Magistrat", description: "Magistrat du siège", role: "MAGISTRAT", email: "magistrat@justice.ga" },
+                  { titre: "Greffier", description: "Greffier en chef", role: "GREFFIER", email: "greffier@justice.ga" }
+                ].map((compte, index) => (
                   <Card
                     key={index}
                     className="hover:shadow-md transition-shadow cursor-pointer group"

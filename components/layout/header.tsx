@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { 
+import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
@@ -12,7 +12,7 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
-import { 
+import {
   Sheet,
   SheetContent,
   SheetDescription,
@@ -21,14 +21,15 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { 
-  Menu, 
-  FileText, 
-  Calendar, 
-  Users, 
-  Building2, 
+import {
+  Menu,
+  FileText,
+  Calendar,
+  Users,
+  Building2,
   Shield,
-  Flag
+  Flag,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -54,6 +55,12 @@ export function Header() {
       description: "Permis de construire, Autorisations",
       icon: Building2,
     },
+    {
+      title: "Emploi Public",
+      href: "/travail",
+      description: "Offres d'emploi dans l'administration",
+      icon: Briefcase,
+    },
   ];
 
   return (
@@ -65,7 +72,7 @@ export function Header() {
               <Flag className="w-4 h-4 text-white" />
             </div>
             <span className="font-bold text-xl gabon-text-gradient">
-              Admin.ga
+              Administration.ga
             </span>
           </Link>
         </div>
@@ -102,6 +109,13 @@ export function Header() {
                   ))}
                 </ul>
               </NavigationMenuContent>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <Link href="/travail" legacyBehavior passHref>
+                <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
+                  TRAVAIL.GA
+                </NavigationMenuLink>
+              </Link>
             </NavigationMenuItem>
             <NavigationMenuItem>
               <Link href="/rendez-vous" legacyBehavior passHref>
@@ -143,7 +157,7 @@ export function Header() {
               <SheetHeader>
                 <SheetTitle>Menu</SheetTitle>
                 <SheetDescription>
-                  Navigation Admin.ga
+                  Navigation Administration.ga
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-6 space-y-4">

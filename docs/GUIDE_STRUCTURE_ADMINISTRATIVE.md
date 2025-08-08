@@ -39,7 +39,7 @@ URL : /super-admin/relations (onglet structure-complete)
 - **Métriques** : Volume d'échanges et efficacité par type de flux
 
 #### **4. 💾 Systèmes SIG**
-- **6 Plateformes** : ADMIN.GA, GRH_INTÉGRÉ, SIG_IDENTITÉ, etc.
+- **6 Plateformes** : ADMINISTRATION.GA, GRH_INTÉGRÉ, SIG_IDENTITÉ, etc.
 - **Taux de Connexion** : Pourcentage d'organismes connectés
 - **Gestionnaires** : Organisme responsable de chaque système
 - **Missions** : Description du rôle de chaque plateforme
@@ -162,12 +162,12 @@ URL : /super-admin/relations (onglet structure-complete)
 #### **Top 10 Centralité Administrative**
 1. **PRIMATURE** (32 relations) - Coordination gouvernementale
 2. **MIN_INTÉRIEUR** (28 relations) - Tutelle territoriale
-3. **DGDI** (24 relations) - Gestionnaire ADMIN.GA
+3. **DGDI** (24 relations) - Gestionnaire ADMINISTRATION.GA
 4. **DGI** (22 relations) - Système fiscal national
 5. **MIN_ÉCONOMIE** (21 relations) - Tutelle financière
 
 #### **Systèmes d'Information Gouvernementaux**
-- **ADMIN.GA** : 100% connexion (117/117 organismes)
+- **ADMINISTRATION.GA** : 100% connexion (117/117 organismes)
 - **GRH_INTÉGRÉ** : 76% connexion (89/117 organismes)
 - **SIG_IDENTITÉ** : 57% connexion (67/117 organismes)
 - **STAT_NATIONAL** : 36% connexion (42/117 organismes)

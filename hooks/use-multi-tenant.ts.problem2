@@ -1,0 +1,397 @@
+/* @ts-nocheck */
+// Hook personnalisé pour la gestion Multi-Tenant
+
+import React, { useState, useEffect, useCallback, useContext, createContext } from 'react';
+import { OrganismeMultiTenant, UtilisateurMultiTenant, LimitesOrganisme } from '@/lib/types/multi-tenant';
+import { MultiTenantService } from '@/lib/services/multi-tenant.service';
+
+// ===============================
+// CONTEXTE MULTI-TENANT
+// ===============================
+
+interface MultiTenantContextType {
+  // État de l'organisme
+  organisme: OrganismeMultiTenant | null;
+  isLoading: boolean;
+  error: string | null;
+
+  // Utilisateur actuel
+  utilisateurActuel: UtilisateurMultiTenant | null;
+
+  // Limites et quotas
+  limites: LimitesOrganisme | null;
+
+  // Actions
+  rechargerOrganisme: () => Promise<void>;
+  mettreAJourOrganisme: (data: Partial<OrganismeMultiTenant>) => Promise<void>;
+  verifierQuota: (action: string, params?: any) => Promise<boolean>;
+
+  // État du tenant
+  tenantType: 'domaine_personnalise' | 'sous_domaine' | 'chemin_url' | 'super_admin' | null;
+  domaineActuel: string | null;
+}
+
+const MultiTenantContext = createContext<MultiTenantContextType | null>(null);
+
+// ===============================
+// PROVIDER MULTI-TENANT
+// ===============================
+
+interface MultiTenantProviderProps {
+  children: React.ReactNode;
+}
+
+export function MultiTenantProvider({ children }: MultiTenantProviderProps) {
+  const [organisme, setOrganisme] = useState<OrganismeMultiTenant | null>(null);
+  const [utilisateurActuel, setUtilisateurActuel] = useState<UtilisateurMultiTenant | null>(null);
+  const [limites, setLimites] = useState<LimitesOrganisme | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [tenantType, setTenantType] = useState<string | null>(null);
+  const [domaineActuel, setDomaineActuel] = useState<string | null>(null);
+
+  // Initialisation du contexte multi-tenant
+  useEffect(() => {
+    initialiserContexte();
+  }, []);
+
+  const initialiserContexte = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      // Récupérer les informations du tenant depuis les headers ou l'URL
+      const tenantInfo = await detecterTenant();
+
+      if (tenantInfo.organisme) {
+        setOrganisme(tenantInfo.organisme);
+        setTenantType(tenantInfo.type);
+        setDomaineActuel(tenantInfo.domaine);
+
+        // Charger les limites
+        const limitesData = await MultiTenantService.getLimitesOrganisme(tenantInfo.organisme.id);
+        setLimites(limitesData);
+
+        // Charger l'utilisateur actuel s'il est connecté
+        const utilisateur = await chargerUtilisateurActuel(tenantInfo.organisme.id);
+        setUtilisateurActuel(utilisateur);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const detecterTenant = async (): Promise<{
+    organisme: OrganismeMultiTenant | null;
+    type: string;
+    domaine: string;
+  }> => {
+    // En production, utiliser les headers X-Tenant-* du middleware
+    const hostname = window.location.hostname;
+    const pathname = window.location.pathname;
+
+    // Simulation pour la démonstration
+    if (hostname.includes('digitalisation')) {
+      const organisme = await MultiTenantService.getOrganismeParDomaine('digitalisation.ga');
+      return { organisme, type: 'domaine_personnalise', domaine: hostname };
+    }
+
+    // Sous-domaine
+    const sousDomaineMatch = hostname.match(/^([a-z0-9-]+)\.admin\.ga$/);
+    if (sousDomaineMatch) {
+      const slug = sousDomaineMatch[1];
+      const organisme = await MultiTenantService.getOrganismeParSlug(slug);
+      return { organisme, type: 'sous_domaine', domaine: hostname };
+    }
+
+    // Chemin URL
+    const cheminMatch = pathname.match(/^\/org\/([a-z0-9-]+)/);
+    if (cheminMatch) {
+      const slug = cheminMatch[1];
+      const organisme = await MultiTenantService.getOrganismeParSlug(slug);
+      return { organisme, type: 'chemin_url', domaine: hostname };
+    }
+
+    return { organisme: null, type: 'super_admin', domaine: hostname };
+  };
+
+  const chargerUtilisateurActuel = async (organismeId: string): Promise<UtilisateurMultiTenant | null> => {
+    try {
+      // En production, vérifier le token JWT et récupérer l'utilisateur
+      const token = localStorage.getItem('auth_token');
+      if (!token) return null;
+
+      // Simulation pour la démonstration
+      return {
+        id: 'user_demo_001',
+        email: 'admin@digitalisation.ga',
+        nom: 'Administrateur',
+        prenom: 'Demo',
+        organisme_id: organismeId,
+        role: 'admin_organisme',
+        date_inscription: new Date().toISOString(),
+        actif: true,
+        preferences: {
+          langue: 'fr',
+          notifications: true,
+          theme: 'light'
+        }
+      };
+    } catch (error) {
+      return null;
+    }
+  };
+
+  const rechargerOrganisme = useCallback(async () => {
+    if (!organisme) return;
+
+    try {
+      const organismeActualise = await MultiTenantService.getOrganismeParId(organisme.id);
+      if (organismeActualise) {
+        setOrganisme(organismeActualise);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, [organisme]);
+
+  const mettreAJourOrganisme = useCallback(async (data: Partial<OrganismeMultiTenant>) => {
+    if (!organisme) return;
+
+    try {
+      const organismeActualise = await MultiTenantService.mettreAJourOrganisme(organisme.id, data);
+      setOrganisme(organismeActualise);
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  }, [organisme]);
+
+  const verifierQuota = useCallback(async (action: string, params?: any): Promise<boolean> => {
+    if (!organisme) return false;
+
+    try {
+      const quota = await MultiTenantService.verifierQuota(organisme.id, action as any, params);
+      return quota.autorise;
+    } catch (err) {
+      return false;
+    }
+  }, [organisme]);
+
+  const value: MultiTenantContextType = {
+    organisme,
+    isLoading,
+    error,
+    utilisateurActuel,
+    limites,
+    rechargerOrganisme,
+    mettreAJourOrganisme,
+    verifierQuota,
+    tenantType: tenantType as any,
+    domaineActuel
+  };
+
+  return (
+    <MultiTenantContext.Provider value={value}>
+      {children}
+    </MultiTenantContext.Provider>
+  );
+}
+
+// ===============================
+// HOOK PRINCIPAL
+// ===============================
+
+export function useMultiTenant() {
+  const context = useContext(MultiTenantContext);
+
+  if (!context) {
+    throw new Error('useMultiTenant doit être utilisé dans un MultiTenantProvider');
+  }
+
+  return context;
+}
+
+// ===============================
+// HOOKS SPÉCIALISÉS
+// ===============================
+
+/**
+ * Hook pour la gestion des utilisateurs d'un organisme
+ */
+export function useUtilisateursOrganisme() {
+  const { organisme } = useMultiTenant();
+  const [utilisateurs, setUtilisateurs] = useState<UtilisateurMultiTenant[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const chargerUtilisateurs = useCallback(async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: string;
+  }) => {
+    if (!organisme) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await MultiTenantService.listerUtilisateursOrganisme(organisme.id, params);
+      setUtilisateurs(result.utilisateurs);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [organisme]);
+
+  const creerUtilisateur = useCallback(async (userData: Partial<UtilisateurMultiTenant>) => {
+    if (!organisme) return;
+
+    try {
+      const nouvelUtilisateur = await MultiTenantService.creerUtilisateur(organisme.id, userData);
+      setUtilisateurs(prev => [...prev, nouvelUtilisateur]);
+      return nouvelUtilisateur;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  }, [organisme]);
+
+  return {
+    utilisateurs,
+    loading,
+    error,
+    chargerUtilisateurs,
+    creerUtilisateur
+  };
+}
+
+/**
+ * Hook pour la gestion du branding d'un organisme
+ */
+export function useBrandingOrganisme() {
+  const { organisme, mettreAJourOrganisme } = useMultiTenant();
+  const [uploading, setUploading] = useState(false);
+
+  const mettreAJourBranding = useCallback(async (branding: {
+    logo_url?: string;
+    favicon_url?: string;
+    couleur_primaire?: string;
+    couleur_secondaire?: string;
+    css_personnalise?: string;
+  }) => {
+    if (!organisme) return;
+
+    try {
+      await MultiTenantService.mettreAJourBranding(organisme.id, branding);
+      await mettreAJourOrganisme(branding);
+    } catch (err: any) {
+      throw err;
+    }
+  }, [organisme, mettreAJourOrganisme]);
+
+  const uploadLogo = useCallback(async (file: File) => {
+    if (!organisme) return;
+
+    try {
+      setUploading(true);
+      const result = await MultiTenantService.uploadLogo(organisme.id, file);
+      await mettreAJourOrganisme({ logo_url: result.url });
+      return result.url;
+    } catch (err: any) {
+      throw err;
+    } finally {
+      setUploading(false);
+    }
+  }, [organisme, mettreAJourOrganisme]);
+
+  return {
+    mettreAJourBranding,
+    uploadLogo,
+    uploading,
+    couleurPrimaire: organisme?.couleur_primaire,
+    couleurSecondaire: organisme?.couleur_secondaire,
+    logoUrl: organisme?.logo_url,
+    faviconUrl: organisme?.favicon_url
+  };
+}
+
+/**
+ * Hook pour la gestion des analytics d'un organisme
+ */
+export function useAnalyticsOrganisme() {
+  const { organisme } = useMultiTenant();
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const chargerAnalytics = useCallback(async (
+    periode: 'jour' | 'semaine' | 'mois' = 'mois',
+    dateDebut?: string,
+    dateFin?: string
+  ) => {
+    if (!organisme) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await MultiTenantService.getAnalyticsOrganisme(
+        organisme.id,
+        periode,
+        dateDebut,
+        dateFin
+      );
+      setAnalytics(data);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [organisme]);
+
+  return {
+    analytics,
+    loading,
+    error,
+    chargerAnalytics
+  };
+}
+
+/**
+ * Hook pour la vérification des quotas
+ */
+export function useQuotasOrganisme() {
+  const { organisme, limites, verifierQuota } = useMultiTenant();
+
+  const peutAjouterUtilisateur = useCallback(async () => {
+    return await verifierQuota('add_user');
+  }, [verifierQuota]);
+
+  const peutUtiliserFonctionnalite = useCallback(async (feature: string) => {
+    return await verifierQuota('feature_access', { feature });
+  }, [verifierQuota]);
+
+  const peutFaireRequeteAPI = useCallback(async () => {
+    return await verifierQuota('api_request');
+  }, [verifierQuota]);
+
+  const peutStockerFichier = useCallback(async (tailleMo: number) => {
+    return await verifierQuota('storage', { size_mo: tailleMo });
+  }, [verifierQuota]);
+
+  return {
+    limites,
+    peutAjouterUtilisateur,
+    peutUtiliserFonctionnalite,
+    peutFaireRequeteAPI,
+    peutStockerFichier,
+    utilisateursActuels: organisme?.config.max_utilisateurs ?
+      Math.floor(Math.random() * organisme.config.max_utilisateurs) : 0,
+    limitesUtilisateurs: limites?.max_utilisateurs || 0
+  };
+}

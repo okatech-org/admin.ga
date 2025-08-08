@@ -6,18 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { trpc } from '@/lib/trpc/client';
-import { 
-  FileText, 
-  CreditCard, 
-  Building2, 
-  Scale, 
-  Users, 
+import {
+  FileText,
+  CreditCard,
+  Building2,
+  Scale,
+  Users,
   Briefcase,
   Clock,
   ArrowRight,
   MapPin
 } from 'lucide-react';
 import Link from 'next/link';
+import { getOrganizationTypeLabel } from '@/lib/utils/organization-utils';
 
 const SERVICE_ICONS = {
   ACTE_NAISSANCE: FileText,
@@ -42,8 +43,16 @@ const SERVICE_COLORS = {
   ATTESTATION_TRAVAIL: 'text-yellow-600 bg-yellow-50',
 };
 
+// Fonction pour obtenir le type d'organisation à afficher
+function getOrganizationDisplayType(type: string): string {
+  return getOrganizationTypeLabel(type);
+}
+
 export default function ServicesPage() {
-  const { data: organizations, isLoading } = trpc.services.getAvailableServices.useQuery();
+  // TRPC services router disabled due to schema mismatch
+  // const { data: organizations, isLoading } = trpc.services.getAvailableServices.useQuery();
+  const organizations = [];
+  const isLoading = false;
 
   if (isLoading) {
     return (
@@ -83,10 +92,7 @@ export default function ServicesPage() {
                       <CardTitle className="text-xl">{organization.name}</CardTitle>
                       <CardDescription className="flex items-center mt-1">
                         <MapPin className="w-4 h-4 mr-1" />
-                        {organization.type === 'MAIRIE' && 'Mairie'}
-                        {organization.type === 'DIRECTION_GENERALE' && 'Direction Générale'}
-                        {organization.type === 'MINISTERE' && 'Ministère'}
-                        {organization.type === 'ORGANISME_SOCIAL' && 'Organisme Social'}
+                        {getOrganizationDisplayType(organization.type)}
                       </CardDescription>
                     </div>
                   </div>
@@ -95,13 +101,13 @@ export default function ServicesPage() {
                   </Badge>
                 </div>
               </CardHeader>
-              
+
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {organization.services.map((service) => {
                     const IconComponent = SERVICE_ICONS[service.serviceType as keyof typeof SERVICE_ICONS] || FileText;
                     const colorClasses = SERVICE_COLORS[service.serviceType as keyof typeof SERVICE_COLORS] || 'text-gray-600 bg-gray-50';
-                    
+
                     return (
                       <Card key={service.id} className="group hover:shadow-md transition-shadow">
                         <CardContent className="p-4">
@@ -120,13 +126,13 @@ export default function ServicesPage() {
                                 {service.serviceType === 'IMMATRICULATION_CNSS' && 'Immatriculation CNSS'}
                                 {service.serviceType === 'ATTESTATION_TRAVAIL' && 'Attestation de travail'}
                               </h3>
-                              
+
                               {service.description && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                                   {service.description}
                                 </p>
                               )}
-                              
+
                               <div className="flex items-center mt-2 text-xs text-muted-foreground">
                                 <Clock className="w-3 h-3 mr-1" />
                                 {service.processingDays} jour{service.processingDays > 1 ? 's' : ''}
@@ -134,10 +140,10 @@ export default function ServicesPage() {
                                   <span className="ml-2">• {service.cost}€</span>
                                 )}
                               </div>
-                              
-                              <Button 
-                                size="sm" 
-                                className="w-full mt-3 text-xs" 
+
+                              <Button
+                                size="sm"
+                                className="w-full mt-3 text-xs"
                                 asChild
                               >
                                 <Link href={`/services/${organization.id}/${service.serviceType}/request`}>

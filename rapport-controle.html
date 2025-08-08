@@ -1,0 +1,203 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Rapport de Contrôle du Système</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 { color: #333; border-bottom: 3px solid #4CAF50; padding-bottom: 10px; }
+    h2 { color: #666; margin-top: 30px; }
+    .metric { display: inline-block; margin: 10px 20px; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+    .metric-value { font-size: 24px; font-weight: bold; color: #4CAF50; }
+    .validation { margin: 10px 0; }
+    .valid { color: green; }
+    .invalid { color: red; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #4CAF50; color: white; }
+    .score { font-size: 18px; font-weight: bold; }
+    .good { color: green; }
+    .medium { color: orange; }
+    .bad { color: red; }
+  </style>
+</head>
+<body>
+  <h1>📊 Rapport de Contrôle du Système</h1>
+  
+  <h2>📋 Résumé Général</h2>
+  <div>
+    <div class="metric">
+      <div>Total organismes</div>
+      <div class="metric-value">141</div>
+    </div>
+    <div class="metric">
+      <div>Total utilisateurs</div>
+      <div class="metric-value">442</div>
+    </div>
+    <div class="metric">
+      <div>Organismes avec admin</div>
+      <div class="metric-value">141</div>
+    </div>
+    <div class="metric">
+      <div>Organismes avec réceptionniste</div>
+      <div class="metric-value">141</div>
+    </div>
+    <div class="metric">
+      <div>Moyenne utilisateurs/organisme</div>
+      <div class="metric-value">3.13</div>
+    </div>
+  </div>
+  
+  <h2>✅ Validation</h2>
+  <div><div class="validation valid">✅ Tous les organismes ont un admin</div><div class="validation valid">✅ Tous les organismes ont un réceptionniste</div><div class="validation valid">✅ Emails uniques</div><div class="validation valid">✅ Codes organismes uniques</div><div class="validation valid">✅ Tous les utilisateurs ont un organisme valide</div>
+  </div>
+  
+  <h2>📊 Métriques de Qualité</h2>
+  <div>
+    <div class="metric">
+      <div>scoreCompletude</div>
+      <div class="metric-value good">100%</div>
+    </div>
+    <div class="metric">
+      <div>scoreValidation</div>
+      <div class="metric-value good">100%</div>
+    </div>
+    <div class="metric">
+      <div>scoreCouverture</div>
+      <div class="metric-value good">104%</div>
+    </div>
+    <div class="metric">
+      <div>scoreGlobal</div>
+      <div class="metric-value good">101%</div>
+    </div>
+  </div>
+  
+  <h2>📈 TOP 10 Organismes par Utilisateurs</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Rang</th>
+        <th>Organisme</th>
+        <th>Code</th>
+        <th>Type</th>
+        <th>Utilisateurs</th>
+        <th>Admins</th>
+        <th>Users</th>
+        <th>Réceptionnistes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Ministère de l'Éducation Nationale</td>
+        <td>MIN_EDU_NAT</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Ministère de la Réforme et des Relations avec les Institutions</td>
+        <td>MIN_REF_REL_INST</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Ministère de l'Intérieur et de la Sécurité</td>
+        <td>MIN_INT_SEC</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Ministère de la Santé et des Affaires Sociales</td>
+        <td>MIN_SAN_AFF_SOC</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>Ministère du Travail et de l'Emploi</td>
+        <td>MIN_TRAV_EMP</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>Ministère de l'Industrie et de la Transformation</td>
+        <td>MIN_IND_TRANS</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Ministère de l'Entrepreneuriat et du Commerce</td>
+        <td>MIN_ENT_COM</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>Ministère de l'Environnement et de l'Écologie</td>
+        <td>MIN_ENV_ECO</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>Ministère de la Jeunesse et des Sports</td>
+        <td>MIN_JEUN_SPO</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>Ministère du Tourisme et de l'Artisanat</td>
+        <td>MIN_TOUR_ART</td>
+        <td>MINISTERE</td>
+        <td><strong>5</strong></td>
+        <td>1</td>
+        <td>3</td>
+        <td>1</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <h2>⚠️ Anomalies Détectées</h2>
+  <ul><li>Aucune anomalie détectée ✅</li>
+  </ul>
+  
+  <footer style="margin-top: 50px; padding-top: 20px; border-top: 1px solid #ddd; color: #666;">
+    <p>Rapport généré le 06/08/2025 14:21:21</p>
+    <p>Système de Gestion Administrative - Gabon</p>
+  </footer>
+</body>
+</html>

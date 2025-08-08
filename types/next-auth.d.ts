@@ -1,5 +1,5 @@
 // types/next-auth.d.ts
-import { UserRole } from '@prisma/client';
+// import { UserRole } from '@prisma/client'; // UserRole is a string in current schema
 import NextAuth from 'next-auth';
 
 declare module 'next-auth' {
@@ -9,7 +9,7 @@ declare module 'next-auth' {
       email: string;
       firstName: string;
       lastName: string;
-      role: UserRole;
+      role: string;
       organizationId?: string;
       organization?: {
         id: string;
@@ -22,7 +22,7 @@ declare module 'next-auth' {
   }
 
   interface User {
-    role: UserRole;
+    role: string;
     organizationId?: string;
     organization?: {
       id: string;
@@ -38,7 +38,7 @@ declare module 'next-auth' {
 
 declare module 'next-auth/jwt' {
   interface JWT {
-    role: UserRole;
+    role: string;
     organizationId?: string;
     organization?: {
       id: string;

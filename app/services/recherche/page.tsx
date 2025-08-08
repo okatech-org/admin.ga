@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Search, 
-  MapPin, 
-  Clock, 
+import {
+  Search,
+  MapPin,
+  Clock,
   DollarSign,
   FileText,
   Building2,
@@ -17,12 +17,13 @@ import {
   Filter,
   Star
 } from 'lucide-react';
-import { 
-  GABON_ADMINISTRATIVE_DATA, 
-  getAllAdministrations, 
-  getServicesByCategory,
-  type ServiceCategory 
+import {
+  GABON_ADMINISTRATIVE_DATA,
+  getAllAdministrations,
+  getServicesByType
 } from '@/lib/data/gabon-administrations';
+
+type ServiceCategory = 'etat_civil' | 'identite' | 'judiciaire' | 'municipaux' | 'sociaux' | 'professionnels' | 'fiscaux';
 
 const SERVICE_CATEGORIES: Record<ServiceCategory, { label: string; icon: string; color: string }> = {
   etat_civil: { label: 'État Civil', icon: '👶', color: 'bg-blue-100 text-blue-800' },
@@ -52,11 +53,11 @@ export default function RechercheServicesPage() {
   const [sortBy, setSortBy] = useState<string>('name');
 
   const administrations = getAllAdministrations();
-  
+
   // Créer une liste complète des services avec leurs informations
   const allServices = useMemo(() => {
     const services: ServiceInfo[] = [];
-    
+
     administrations.forEach(admin => {
       admin.services.forEach(serviceName => {
         const category = getServiceCategory(serviceName);
@@ -72,7 +73,7 @@ export default function RechercheServicesPage() {
         });
       });
     });
-    
+
     return services;
   }, [administrations]);
 
@@ -89,7 +90,7 @@ export default function RechercheServicesPage() {
                            service.organization.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || service.category === selectedCategory;
       const matchesLocation = selectedLocation === 'all' || service.location === selectedLocation;
-      
+
       return matchesSearch && matchesCategory && matchesLocation;
     });
 
@@ -121,7 +122,7 @@ export default function RechercheServicesPage() {
       acc[service.category] = (acc[service.category] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     return { totalServices, avgDuration, freeServices, categoryStats };
   }, [allServices]);
 
@@ -237,7 +238,7 @@ export default function RechercheServicesPage() {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Localisation</label>
               <Select value={selectedLocation} onValueChange={setSelectedLocation}>
@@ -252,7 +253,7 @@ export default function RechercheServicesPage() {
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Trier par</label>
               <Select value={sortBy} onValueChange={setSortBy}>
@@ -270,8 +271,8 @@ export default function RechercheServicesPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Actions</label>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full"
                 onClick={() => {
                   setSearchTerm('');
@@ -355,8 +356,8 @@ export default function RechercheServicesPage() {
               <p className="text-muted-foreground">
                 Aucun service trouvé avec les critères sélectionnés.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="mt-4"
                 onClick={() => {
                   setSearchTerm('');
@@ -377,7 +378,7 @@ export default function RechercheServicesPage() {
 // Utilitaires (réutilisés du script d'import)
 function getServiceCategory(serviceName: string): string {
   const service = serviceName.toLowerCase();
-  
+
   if (service.includes('acte') || service.includes('état civil') || service.includes('naissance') || service.includes('mariage') || service.includes('décès')) {
     return 'etat_civil';
   }
@@ -399,25 +400,25 @@ function getServiceCategory(serviceName: string): string {
   if (service.includes('fiscal') || service.includes('déclaration') || service.includes('impôt') || service.includes('quitus')) {
     return 'fiscaux';
   }
-  
+
   return 'autres';
 }
 
 function getEstimatedDuration(serviceName: string): number {
   const service = serviceName.toLowerCase();
-  
+
   if (service.includes('certificat') && !service.includes('médical')) return 1;
   if (service.includes('acte') || service.includes('état civil')) return 3;
   if (service.includes('carte') || service.includes('passeport') || service.includes('permis')) return 10;
   if (service.includes('autorisation') || service.includes('permis') || service.includes('licence')) return 14;
   if (service.includes('registre') || service.includes('concession') || service.includes('titre foncier')) return 30;
-  
+
   return 7;
 }
 
 function getServiceCost(serviceName: string): number {
   const service = serviceName.toLowerCase();
-  
+
   if (service.includes('certificat de vie') || service.includes('certificat de résidence')) return 0;
   if (service.includes('acte')) return 2000;
   if (service.includes('carte nationale')) return 5000;
@@ -425,6 +426,6 @@ function getServiceCost(serviceName: string): number {
   if (service.includes('permis de conduire')) return 15000;
   if (service.includes('permis de construire')) return 50000;
   if (service.includes('registre de commerce')) return 30000;
-  
+
   return 5000;
-} 
+}

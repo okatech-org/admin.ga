@@ -29,7 +29,7 @@ export class MoovMoneyService {
   private config: MoovMoneyConfig;
   private sessionToken?: string;
   private sessionExpiry?: Date;
-  
+
   constructor(config: MoovMoneyConfig) {
     this.config = config;
   }
@@ -155,7 +155,7 @@ export class MoovMoneyService {
       .createHmac('sha256', this.config.secretKey)
       .update(JSON.stringify(payload))
       .digest('hex');
-    
+
     return signature === expectedSignature;
   }
 
@@ -173,8 +173,8 @@ export class MoovMoneyService {
     try {
       // TODO: Implémenter la création de session
       console.log('Creating Moov Money session');
-      
-      this.sessionToken = 'mock-session-token';
+
+      this.sessionToken = 'session-token-placeholder';
       this.sessionExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
     } catch (error) {
       console.error('Failed to create Moov Money session:', error);
@@ -185,7 +185,7 @@ export class MoovMoneyService {
   private formatPhoneNumber(phone: string): string {
     // Retirer tous les espaces et tirets
     let cleaned = phone.replace(/[\s-]/g, '');
-    
+
     // Retirer le préfixe international si présent
     if (cleaned.startsWith('+241')) {
       cleaned = cleaned.substring(4);
@@ -194,7 +194,7 @@ export class MoovMoneyService {
     } else if (cleaned.startsWith('0')) {
       cleaned = cleaned.substring(1);
     }
-    
+
     // Moov Money attend le format avec préfixe
     return `241${cleaned}`;
   }
@@ -241,4 +241,4 @@ export class MoovMoneyService {
       return false;
     }
   }
-} 
+}

@@ -8,32 +8,32 @@ import { Providers } from './providers';
 // import * as Sentry from "@sentry/nextjs";
 // Sentry.init({...});
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Admin.ga - Services Administratifs du Gabon',
-    template: '%s | Admin.ga',
+    default: 'Administration.ga - Services Administratifs du Gabon',
+    template: '%s | Administration.ga',
   },
   description: 'Plateforme numérique des services administratifs de la République Gabonaise. Demandes de documents, prise de rendez-vous, suivi en temps réel.',
   keywords: ['Gabon', 'Administration', 'Services publics', 'Documents administratifs', 'Rendez-vous'],
   authors: [{ name: 'République Gabonaise' }],
   creator: 'Direction Générale de la Modernisation de l\'Administration',
-  metadataBase: new URL('https://admin.ga'),
+  metadataBase: new URL('https://administration.ga'),
   openGraph: {
     type: 'website',
     locale: 'fr_GA',
-    url: 'https://admin.ga',
-    title: 'Admin.ga - Services Administratifs du Gabon',
+    url: 'https://administration.ga',
+    title: 'Administration.ga - Services Administratifs du Gabon',
     description: 'Plateforme numérique des services administratifs de la République Gabonaise',
-    siteName: 'Admin.ga',
+    siteName: 'Administration.ga',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Admin.ga - Services Administratifs du Gabon',
+    title: 'Administration.ga - Services Administratifs du Gabon',
     description: 'Plateforme numérique des services administratifs de la République Gabonaise',
   },
   robots: {

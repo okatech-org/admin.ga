@@ -82,22 +82,22 @@ async function validateAndSaveAIData(aiData: any[], dataType: string, organizati
       }
     });
 
-    // Enregistrer l'activité de validation IA
-    await prisma.auditLog.create({
-      data: {
-        userId: validatedById,
-        action: 'AI_DATA_VALIDATION',
-        resource: dataType,
-        resourceId: organizationId,
-        newValues: {
-          dataType,
-          itemsProcessed: aiData.length,
-          itemsCreated: results.created,
-          itemsUpdated: results.updated,
-          errors: results.errors
-        }
-      }
-    });
+    // TODO: Enregistrer l'activité de validation IA quand le modèle auditLog sera ajouté au schéma Prisma
+    // await prisma.auditLog.create({
+    //   data: {
+    //     userId: validatedById,
+    //     action: 'AI_DATA_VALIDATION',
+    //     resource: dataType,
+    //     resourceId: organizationId,
+    //     newValues: {
+    //       dataType,
+    //       itemsProcessed: aiData.length,
+    //       itemsCreated: results.created,
+    //       itemsUpdated: results.updated,
+    //       errors: results.errors
+    //     }
+    //   }
+    // });
 
     return NextResponse.json({
       success: true,
@@ -327,20 +327,22 @@ async function checkDuplicates(data: any[], dataType: string) {
 
       switch (dataType) {
         case 'users':
-          existingItems = await prisma.user.findMany({
-            where: {
-              OR: [
-                { email: item.email },
-                {
-                  AND: [
-                    { firstName: { contains: item.prenom || item.nom.split(' ')[0], mode: 'insensitive' } },
-                    { lastName: { contains: item.nom.split(' ').slice(1).join(' ') || item.nom, mode: 'insensitive' } }
-                  ]
-                }
-              ]
-            },
-            select: { id: true, firstName: true, lastName: true, email: true }
-          });
+          // TODO: Réactiver quand le modèle User sera ajouté au schéma Prisma
+          // existingItems = await prisma.user.findMany({
+          //   where: {
+          //     OR: [
+          //       { email: item.email },
+          //       {
+          //         AND: [
+          //           { firstName: { contains: item.prenom || item.nom.split(' ')[0], mode: 'insensitive' } },
+          //           { lastName: { contains: item.nom.split(' ').slice(1).join(' ') || item.nom, mode: 'insensitive' } }
+          //         ]
+          //       }
+          //     ]
+          //   },
+          //   select: { id: true, firstName: true, lastName: true, email: true }
+          // });
+          existingItems = []; // Temporaire jusqu'à ce que le modèle User soit disponible
           break;
 
         case 'organizations':

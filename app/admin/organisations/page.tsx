@@ -7,12 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Building2, 
-  Search, 
-  MapPin, 
-  Phone, 
-  Mail, 
+import {
+  Building2,
+  Search,
+  MapPin,
+  Phone,
+  Mail,
   Globe,
   Users,
   FileText,
@@ -34,6 +34,11 @@ const ORGANIZATION_TYPE_LABELS: Record<OrganizationType, string> = {
   PROVINCE: 'Province',
   PRESIDENCE: 'Présidence',
   PRIMATURE: 'Primature',
+  ORGANISME_PUBLIC: 'Organisme Public',
+  ORGANISME_PARAPUBLIC: 'Organisme Parapublic',
+  SECRETARIAT_ETAT: 'Secrétariat d\'État',
+  SOUS_PREFECTURE: 'Sous-Préfecture',
+  INSTITUTION_INDEPENDANTE: 'Institution Indépendante',
   AUTRE: 'Autre'
 };
 
@@ -49,6 +54,11 @@ const TYPE_COLORS: Record<OrganizationType, string> = {
   PROVINCE: 'bg-pink-500',
   PRESIDENCE: 'bg-gray-800',
   PRIMATURE: 'bg-gray-600',
+  ORGANISME_PUBLIC: 'bg-cyan-500',
+  ORGANISME_PARAPUBLIC: 'bg-emerald-500',
+  SECRETARIAT_ETAT: 'bg-violet-500',
+  SOUS_PREFECTURE: 'bg-amber-500',
+  INSTITUTION_INDEPENDANTE: 'bg-rose-500',
   AUTRE: 'bg-gray-400'
 };
 
@@ -58,7 +68,7 @@ export default function OrganisationsPage() {
   const [selectedLocation, setSelectedLocation] = useState<string>('all');
 
   const administrations = getAllAdministrations();
-  
+
   // Extraire les localisations uniques
   const locations = useMemo(() => {
     const uniqueLocations = new Set(administrations.map(admin => admin.localisation));
@@ -73,7 +83,7 @@ export default function OrganisationsPage() {
       acc[admin.type] = (acc[admin.type] || 0) + 1;
       return acc;
     }, {} as Record<string, number>);
-    
+
     return { totalOrganizations, totalServices, typeStats };
   }, [administrations]);
 
@@ -84,7 +94,7 @@ export default function OrganisationsPage() {
                            admin.services.some(service => service.toLowerCase().includes(searchTerm.toLowerCase()));
       const matchesType = selectedType === 'all' || admin.type === selectedType;
       const matchesLocation = selectedLocation === 'all' || admin.localisation === selectedLocation;
-      
+
       return matchesSearch && matchesType && matchesLocation;
     });
   }, [administrations, searchTerm, selectedType, selectedLocation]);
@@ -180,7 +190,7 @@ export default function OrganisationsPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Type d'organisation</label>
                   <Select value={selectedType} onValueChange={setSelectedType}>
@@ -195,7 +205,7 @@ export default function OrganisationsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Localisation</label>
                   <Select value={selectedLocation} onValueChange={setSelectedLocation}>
@@ -250,7 +260,7 @@ export default function OrganisationsPage() {
                         <span className="font-medium">Maire:</span> {admin.maire}
                       </div>
                     )}
-                    
+
                     {/* Services */}
                     <div>
                       <div className="text-sm font-medium mb-2">
@@ -269,7 +279,7 @@ export default function OrganisationsPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     {/* Actions */}
                     <div className="flex space-x-2 pt-2">
                       <Button size="sm" variant="outline" className="flex-1">
@@ -312,7 +322,7 @@ export default function OrganisationsPage() {
                         <div className={`w-3 h-3 rounded ${TYPE_COLORS[type as OrganizationType]}`} />
                         <span className="text-sm">{ORGANIZATION_TYPE_LABELS[type as OrganizationType]}</span>
                       </div>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Badge variant="secondary">{count as number}</Badge>
                     </div>
                   ))}
                 </div>
@@ -383,7 +393,7 @@ export default function OrganisationsPage() {
                         <div>
                           <span className="font-medium">Organisations:</span>
                           <br />
-                          {administrations.filter(admin => 
+                          {administrations.filter(admin =>
                             admin.localisation === province.chef_lieu ||
                             admin.localisation.includes(province.chef_lieu)
                           ).length} administration(s)
@@ -399,4 +409,4 @@ export default function OrganisationsPage() {
       </Tabs>
     </div>
   );
-} 
+}

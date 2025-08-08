@@ -1,4 +1,8 @@
-/* @ts-nocheck */
+/*
+  This file is now cleaned up, but we keep the comment to avoid re-introducing @ts-nocheck.
+  The `as any` casts in the context creation are a pragmatic choice to avoid deep type modifications
+  in the NextAuth session object for now. A more robust solution would involve module augmentation.
+*/
 import { initTRPC, TRPCError } from '@trpc/server';
 import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
 import { getServerSession } from 'next-auth/next';
@@ -11,6 +15,28 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
   const { req, res } = opts;
   const session = await getServerSession(req, res, authOptions);
 
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (user && user.role) {
+      (session.user as any).roleName = user.role.name;
+      (session.user as any).permissions = user.role.permissions.map(p => p.permission.name);
+    }
+  }
+
   return {
     session,
     prisma,
@@ -22,6 +48,28 @@ export const createTRPCContext = async (opts: CreateNextContextOptions) => {
 // Context creator for fetch adapter
 export const createTRPCFetchContext = async () => {
   const session = await getServerSession(authOptions);
+
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (user && user.role) {
+      (session.user as any).roleName = user.role.name;
+      (session.user as any).permissions = user.role.permissions.map(p => p.permission.name);
+    }
+  }
 
   return {
     session,
@@ -64,12 +112,12 @@ const enforceUserIsAgent = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  
+
   const allowedRoles = ['AGENT', 'MANAGER', 'ADMIN', 'SUPER_ADMIN'];
   if (!allowedRoles.includes(ctx.session.user.role)) {
     throw new TRPCError({ code: 'FORBIDDEN' });
   }
-  
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
@@ -81,12 +129,12 @@ const enforceUserIsAdmin = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  
+
   const allowedRoles = ['ADMIN', 'SUPER_ADMIN'];
   if (!allowedRoles.includes(ctx.session.user.role)) {
     throw new TRPCError({ code: 'FORBIDDEN' });
   }
-  
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
@@ -98,12 +146,12 @@ const enforceUserIsManager = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
-  
+
   const allowedRoles = ['MANAGER', 'ADMIN', 'SUPER_ADMIN'];
   if (!allowedRoles.includes(ctx.session.user.role)) {
     throw new TRPCError({ code: 'FORBIDDEN' });
   }
-  
+
   return next({
     ctx: {
       session: { ...ctx.session, user: ctx.session.user },
@@ -112,6 +160,26 @@ const enforceUserIsManager = t.middleware(({ ctx, next }) => {
 });
 
 export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
-export const agentProcedure = t.procedure.use(enforceUserIsAgent);
-export const adminProcedure = t.procedure.use(enforceUserIsAdmin);
-export const managerProcedure = t.procedure.use(enforceUserIsManager);
+
+export const permissionProcedure = (...requiredPermissions: string[]) => {
+  return t.procedure.use(enforceUserIsAuthed).use(
+    t.middleware(({ ctx, next }) => {
+      const userPermissions = ctx.session.user.permissions || [];
+      const hasPermission = requiredPermissions.every(p => userPermissions.includes(p));
+
+      if (!hasPermission) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: `Permissions requises: ${requiredPermissions.join(', ')}`,
+        });
+      }
+
+      return next();
+    })
+  );
+};
+
+// Replace old role-based procedures with permission-based ones for backward compatibility
+export const agentProcedure = permissionProcedure('read:users', 'read:organizations');
+export const adminProcedure = permissionProcedure('manage:users', 'manage:organizations');
+export const managerProcedure = permissionProcedure('update:users', 'update:organizations');

@@ -1,5 +1,6 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { domainManager } from '@/lib/domain-config';
 
 // Liste des codes d'organismes valides (vous pouvez l'étendre)
 const VALID_ORGANISMES = [
@@ -31,12 +32,66 @@ export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const { pathname } = req.nextUrl;
+    const hostname = req.headers.get('host') || '';
+
+    // Gestion des domaines dynamiques
+    const domainConfig = domainManager.getDomainConfig(hostname);
+
+    // Si c'est un domaine configuré
+    if (domainConfig) {
+      // Vérifier si le domaine est actif
+      if (!domainConfig.isActive) {
+        return new NextResponse('Service temporairement indisponible', { status: 503 });
+      }
+
+      // Vérifier le mode maintenance
+      if (domainConfig.features.maintenanceMode) {
+        // Autoriser les super admins même en mode maintenance
+        if (!token || token.role !== 'SUPER_ADMIN') {
+          return new NextResponse(
+            `<!DOCTYPE html>
+            <html>
+            <head>
+              <title>Maintenance - ${domainConfig.customization.title}</title>
+              <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: ${domainConfig.customization.primaryColor}10; }
+                .container { max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                h1 { color: ${domainConfig.customization.primaryColor}; margin-bottom: 20px; }
+                p { color: #666; line-height: 1.6; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Maintenance en cours</h1>
+                <p>Le portail ${domainConfig.customization.title} est temporairement indisponible pour maintenance.</p>
+                <p>Nous vous prions de nous excuser pour la gêne occasionnée. Le service sera rétabli dans les plus brefs délais.</p>
+              </div>
+            </body>
+            </html>`,
+            {
+              status: 503,
+              headers: { 'Content-Type': 'text/html; charset=utf-8' }
+            }
+          );
+        }
+      }
+
+      // Appliquer la configuration spécifique au domaine
+      const response = NextResponse.next();
+      response.headers.set('X-Domain-Config', JSON.stringify({
+        domain: domainConfig.domain,
+        title: domainConfig.customization.title,
+        primaryColor: domainConfig.customization.primaryColor,
+        organizationId: domainConfig.organizationId,
+        features: domainConfig.features,
+      }));
+    }
 
     // Redirections pour le menu optimisé du super admin
     const superAdminRedirects: Record<string, string> = {
       '/super-admin/administrations': '/super-admin/organismes',
-      '/super-admin/dashboard': '/super-admin/dashboard-unified',
-      '/super-admin/dashboard-v2': '/super-admin/dashboard-unified'
+      '/super-admin/dashboard': '/super-admin',
+      '/super-admin/dashboard-unified': '/super-admin',
     };
 
     if (superAdminRedirects[pathname]) {
@@ -47,6 +102,7 @@ export default withAuth(
     const isAuthPage = pathname.startsWith('/auth');
     const isApiAuthRoute = pathname.startsWith('/api/auth');
     const isDemarcheRoute = pathname.startsWith('/demarche');
+    const isTravailRoute = pathname.startsWith('/travail');
     const isPublicRoute = ['/', '/services', '/aide', '/contact'].includes(pathname);
     const isApiRoute = pathname.startsWith('/api/');
 
@@ -57,6 +113,11 @@ export default withAuth(
 
     // Interface DEMARCHE.GA (accessible sans connexion)
     if (isDemarcheRoute) {
+      return NextResponse.next();
+    }
+
+    // Interface TRAVAIL.GA (accessible sans connexion)
+    if (isTravailRoute) {
       return NextResponse.next();
     }
 
@@ -142,7 +203,7 @@ export default withAuth(
     if (!hasAccess) {
       // Redirection intelligente selon le rôle et l'organisme
       if (userRole === 'SUPER_ADMIN') {
-        return NextResponse.redirect(new URL('/super-admin/dashboard', req.url));
+        return NextResponse.redirect(new URL('/super-admin', req.url));
       }
 
       // Pour les autres rôles, rediriger vers leur organisme s'ils en ont un

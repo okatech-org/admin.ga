@@ -20,7 +20,7 @@ Context access might be invalid: PRODUCTION_HOST
 Le script a généré vos valeurs :
 
 ```bash
-# Secrets OBLIGATOIRES :
+# Secrets OBLIGATOIRES
 DATABASE_URL = postgresql://postgres:password@localhost:5432/administration_ga
 NEXTAUTH_SECRET = xcVeVlMXoZ7FFakt//V38TtnFrr5+KCmPzkM4B8CpnE=
 NEXTAUTH_URL = https://administration.ga
@@ -72,7 +72,7 @@ Une fois ces 3 secrets configurés :
 Les autres secrets peuvent être ajoutés quand vous serez prêt pour le déploiement automatique :
 
 ```bash
-# Pour déploiement automatique (plus tard) :
+# Pour déploiement automatique (plus tard)
 PRODUCTION_HOST = administration.ga
 PRODUCTION_USER = deploy
 PRODUCTION_SSH_KEY = [clé SSH pour déploiement]
@@ -98,9 +98,9 @@ J'ai créé un script pour vous aider :
 - **[Guide Détaillé](docs/GITHUB_SECRETS_SETUP.md)** - Instructions complètes
 - **[Guide CI/CD](docs/DEPLOYMENT_GUIDE.md)** - Infrastructure complète
 
-## 🎉 **C'est Tout !**
+## 🎉 **C'est Tout**
 
-**En configurant ces 3 secrets dans GitHub, tous vos warnings disparaîtront et votre CI/CD fonctionnera parfaitement !**
+## En configurant ces 3 secrets dans GitHub, tous vos warnings disparaîtront et votre CI/CD fonctionnera parfaitement
 
 ---
 

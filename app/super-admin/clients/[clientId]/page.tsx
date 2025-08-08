@@ -55,7 +55,7 @@ import {
   Award,
   Crown,
   Zap,
-  Database,
+  Database as DatabaseIcon,
   Headphones,
   BookOpen,
   ChevronRight,
@@ -121,8 +121,9 @@ interface ServiceConfig {
   dependencies?: string[];
   sla?: string;
 }
-import { getOrganismeDetails, hasOrganismeDetails } from '@/lib/data/organismes-detailles';
+import { getOrganismeDetails } from '@/lib/data/gabon-services-detailles';
 import { ORGANISMES_BRANDING } from '@/lib/config/organismes-branding';
+// Import supprimé - utiliser les APIs TRPC
 
 // Types pour la gestion complète du client
 interface ClientThemeConfig {
@@ -393,9 +394,9 @@ export default function ClientManagementPage() {
     expireDays: 7
   });
   const [userGroups, setUserGroups] = useState([
-    { id: 'admin_group', name: 'Administrateurs', description: 'Accès complet au système', userCount: 2, permissions: ['ADMIN_ACCESS', 'USER_MANAGEMENT'] },
-    { id: 'agents_group', name: 'Agents', description: 'Accès aux demandes et guichet', userCount: 5, permissions: ['VIEW_REQUESTS', 'PROCESS_REQUESTS'] },
-    { id: 'managers_group', name: 'Responsables', description: 'Supervision et reporting', userCount: 2, permissions: ['VIEW_ANALYTICS', 'MANAGE_TEAM'] }
+    { id: 'admin_group', name: 'Administrateurs', description: 'Accès complet au système', userCount: 0, permissions: ['ADMIN_ACCESS', 'USER_MANAGEMENT'] },
+    { id: 'agents_group', name: 'Agents', description: 'Accès aux demandes et guichet', userCount: 0, permissions: ['VIEW_REQUESTS', 'PROCESS_REQUESTS'] },
+    { id: 'managers_group', name: 'Responsables', description: 'Supervision et reporting', userCount: 0, permissions: ['VIEW_ANALYTICS', 'MANAGE_TEAM'] }
   ]);
   const [bulkAction, setBulkAction] = useState('');
 
@@ -3654,13 +3655,13 @@ export default function ClientManagementPage() {
   };
 
   const getBrandingForClient = (clientCode: string) => {
-    return Object.values(ORGANISMES_BRANDING).find(b => b.code === clientCode) || {
-      code: 'DEFAULT',
-      nom: 'Organisme',
-      couleurPrimaire: '#3B82F6',
-      couleurSecondaire: '#10B981',
-      gradientClasses: 'from-blue-600 to-blue-800',
-      icon: Building2,
+    return ORGANISMES_BRANDING[clientCode] || ORGANISMES_BRANDING['default'] || {
+      name: 'Organisme',
+      shortName: 'Org',
+      colors: {
+        primary: '#3B82F6',
+        secondary: '#10B981',
+      },
       description: 'Au service du citoyen'
     };
   };
@@ -3717,7 +3718,7 @@ export default function ClientManagementPage() {
             <Separator orientation="vertical" className="h-6" />
             <div
               className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
-              style={{ backgroundColor: branding.couleurPrimaire }}
+              style={{ backgroundColor: branding.colors.primary }}
             >
               <Building2 className="h-6 w-6" />
             </div>
@@ -5787,7 +5788,7 @@ export default function ClientManagementPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+                  <DatabaseIcon className="h-5 w-5" />
                   Sauvegarde et Maintenance
                 </CardTitle>
               </CardHeader>
@@ -6228,7 +6229,7 @@ export default function ClientManagementPage() {
                     onClick={() => handleExportAnalytics('JSON')}
                     disabled={loadingStates.exportingAnalytics}
                   >
-                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseIcon className="mr-2 h-4 w-4" />}
                     Export données brutes
                   </Button>
                 </div>
@@ -6303,7 +6304,7 @@ export default function ClientManagementPage() {
                     }}
                     disabled={loadingStates.exportingAnalytics}
                   >
-                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Database className="mr-2 h-4 w-4" />}
+                    {loadingStates.exportingAnalytics ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <DatabaseIcon className="mr-2 h-4 w-4" />}
                     Export JSON (Données brutes)
                   </Button>
                 </div>
@@ -6697,7 +6698,7 @@ export default function ClientManagementPage() {
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">
                           <Mail className="h-3 w-3 text-blue-600" />
-                          <span className="font-mono">support@admin.ga</span>
+                          <span className="font-mono">support@administration.ga</span>
                           <Badge variant="outline" className="ml-auto text-xs">&lt; 2h</Badge>
                         </div>
                         <div className="flex items-center gap-2 p-2 bg-gray-50 rounded text-sm">

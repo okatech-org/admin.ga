@@ -343,7 +343,8 @@ export class OrganizationRelationService {
     });
 
     // Retourner des données simulées
-    return this.generateMockData(dataType, action);
+          // ⚠️ DONNÉES FICTIVES SUPPRIMÉES - Retour d'erreur explicite
+      return this.generateMockData(dataType, action);
   }
 
   /**
@@ -554,7 +555,7 @@ export class OrganizationRelationService {
       errorMessage: entry.errorMessage,
       responseTime: entry.responseTime || Math.floor(Math.random() * 500) + 100,
       ipAddress: entry.ipAddress || '192.168.1.' + Math.floor(Math.random() * 255),
-      userAgent: entry.userAgent || 'Admin.GA/1.0',
+      userAgent: entry.userAgent || 'Administration.GA/1.0',
       createdAt: new Date().toISOString()
     };
 
@@ -562,28 +563,15 @@ export class OrganizationRelationService {
   }
 
   private generateMockData(dataType: string, action: AccessAction): any {
-    const mockData: Record<string, any> = {
-      'service_statistics': {
-        totalRequests: Math.floor(Math.random() * 10000) + 1000,
-        processedRequests: Math.floor(Math.random() * 8000) + 800,
-        pendingRequests: Math.floor(Math.random() * 200) + 20,
-        avgProcessingTime: Math.floor(Math.random() * 72) + 24,
-        satisfactionRate: Math.floor(Math.random() * 30) + 70
-      },
-      'cni_reports': {
-        totalIssued: Math.floor(Math.random() * 5000) + 500,
-        renewals: Math.floor(Math.random() * 1000) + 100,
-        firstTimeApplications: Math.floor(Math.random() * 2000) + 200,
-        avgProcessingDays: Math.floor(Math.random() * 10) + 5
-      },
-      'user_counts': {
-        totalUsers: Math.floor(Math.random() * 50000) + 10000,
-        activeUsers: Math.floor(Math.random() * 40000) + 8000,
-        newRegistrations: Math.floor(Math.random() * 500) + 50
-      }
+    // ⚠️ DONNÉES FICTIVES SUPPRIMÉES - Ces données polluantes ont été retirées
+    return {
+      error: 'DONNÉES_FICTIVES_SUPPRIMÉES',
+      message: `Les données mock pour '${dataType}' ont été supprimées du code.`,
+      solution: 'Implémenter une vraie API avec données PostgreSQL',
+      dataType,
+      action,
+      timestamp: new Date().toISOString()
     };
-
-    return mockData[dataType] || { message: 'Données non disponibles pour ce type' };
   }
 
   private getTopAccessedOrganizations(audits: DataShareAuditEntry[]): Array<{

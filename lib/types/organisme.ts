@@ -93,3 +93,23 @@ export interface StatistiquesCommerciales {
     pipeline: number; // prospects qualifiés
   };
 }
+
+// Type étendu pour les organismes gabonais avec informations spécifiques
+export interface OrganismeCommercialGabon extends OrganismeCommercial {
+  // Informations spécifiques au contexte gabonais
+  secteur?: string;
+  province?: string;
+  groupe?: string;
+  niveau_hierarchique?: number;
+  est_organisme_principal?: boolean;
+
+  // Informations budgétaires pour le pipeline
+  budget?: {
+    estimation: number;
+    devise: string;
+  };
+
+  // Informations temporelles additionnelles
+  dateCreation?: string;
+  dateMiseAJour?: string;
+}

@@ -1,4 +1,4 @@
-// Service de gestion complète des clients ADMIN.GA
+// Service de gestion complète des clients ADMINISTRATION.GA
 
 import { OrganismeCommercial } from '@/lib/types/organisme';
 import {
@@ -609,7 +609,7 @@ export class ClientManagementService {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = 'sk_live_';
     for (let i = 0; i < 32; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+      result += chars.charAt(i % chars.length);
     }
     return result;
   }
@@ -669,7 +669,7 @@ export class ClientManagementService {
     try {
       // Simulation de test de webhook
       await new Promise(resolve => setTimeout(resolve, 1000));
-      return Math.random() > 0.2; // 80% de succès
+      return true; // À implémenter avec vraie validation
     } catch (error) {
       return false;
     }

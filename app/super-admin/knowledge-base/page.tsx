@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import {
   Brain,
-  Database,
+  Database as DatabaseIcon,
   Search,
   Filter,
   RefreshCw,
@@ -175,7 +175,7 @@ export default function KnowledgeBasePage() {
                     <p className="text-sm font-medium text-gray-600">Total Organismes</p>
                     <p className="text-2xl font-bold text-gray-900">{stats.totalOrganismes}</p>
                   </div>
-                  <Database className="h-8 w-8 text-purple-500" />
+                  <DatabaseIcon className="h-8 w-8 text-purple-500" />
                 </div>
               </CardContent>
             </Card>

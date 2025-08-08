@@ -228,17 +228,8 @@ async function getTableData(tableName: string, limit = 1000) {
       });
 
     case 'service_requests':
-      return await prisma.serviceRequest.findMany({
-        take: limit,
-        select: {
-          id: true,
-          type: true,
-          status: true,
-          trackingNumber: true,
-          submittedAt: true,
-          completedAt: true
-        }
-      });
+      // Table service_requests n'existe pas dans le schéma Prisma actuel
+      return [];
 
     // Pour les nouvelles tables, utiliser des requêtes raw
     case 'api_configurations':

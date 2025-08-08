@@ -1,197 +1,154 @@
-/**
- * Script de seeding pour Administration.GA
- * Initialise la base de données avec les données de base et les configurations IA
- */
-
-// @ts-nocheck
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-// Organisations de base
-const baseOrganizations = [
-  {
-    name: 'Présidence de la République',
-    code: 'PRESIDENCE',
-    type: 'INSTITUTION_SUPREME',
-    address: 'Libreville, Gabon',
-    email: 'contact@presidence.ga',
-    phone: '+241 01 44 30 00',
-    website: 'https://presidence.ga',
-    isActive: true,
-  },
-  {
-    name: 'Primature',
-    code: 'PRIMATURE',
-    type: 'INSTITUTION_SUPREME',
-    address: 'Libreville, Gabon',
-    email: 'contact@primature.ga',
-    phone: '+241 01 44 30 01',
-    website: 'https://primature.ga',
-    isActive: true,
-  },
-  {
-    name: 'Ministère de l\'Intérieur',
-    code: 'MIN_INTERIEUR',
-    type: 'MINISTERE',
-    address: 'Libreville, Gabon',
-    email: 'contact@interieur.gouv.ga',
-    phone: '+241 01 44 20 01',
-    website: 'https://interieur.gouv.ga',
-    isActive: true,
-  },
-  {
-    name: 'Ministère de la Santé',
-    code: 'MIN_SANTE',
-    type: 'MINISTERE',
-    address: 'Libreville, Gabon',
-    email: 'contact@sante.gouv.ga',
-    phone: '+241 01 44 20 02',
-    website: 'https://sante.gouv.ga',
-    isActive: true,
-  },
-  {
-    name: 'Ministère de l\'Éducation Nationale',
-    code: 'MIN_EDUCATION',
-    type: 'MINISTERE',
-    address: 'Libreville, Gabon',
-    email: 'contact@education.gouv.ga',
-    phone: '+241 01 44 20 03',
-    website: 'https://education.gouv.ga',
-    isActive: true,
-  },
-  {
-    name: 'Préfecture du Haut-Ogooué',
-    code: 'PREF_HAUT_OGOOUE',
-    type: 'PREFECTURE',
-    address: 'Franceville, Gabon',
-    email: 'contact@prefecture-haut-ogooue.ga',
-    phone: '+241 01 67 30 01',
-    isActive: true,
-  },
-  {
-    name: 'Mairie de Libreville',
-    code: 'MAIRIE_LIBREVILLE',
-    type: 'MAIRIE',
-    address: 'Libreville, Gabon',
-    email: 'contact@mairie-libreville.ga',
-    phone: '+241 01 44 25 01',
-    website: 'https://mairie-libreville.ga',
-    isActive: true,
-  },
-];
-
-// Utilisateurs de base
-const baseUsers = [
-  {
-    email: 'admin@administration.ga',
-    firstName: 'Super',
-    lastName: 'Admin',
-    role: 'SUPER_ADMIN',
-    password: 'admin123',
-  },
-  {
-    email: 'demo.citoyen@administration.ga',
-    firstName: 'Demo',
-    lastName: 'Citoyen',
-    role: 'CITOYEN',
-    password: 'demo123',
-  },
-  {
-    email: 'demo.agent@administration.ga',
-    firstName: 'Demo',
-    lastName: 'Agent',
-    role: 'AGENT',
-    password: 'demo123',
-  },
-];
-
-async function seedOrganizations() {
-  console.log('🏢 Seeding organizations...');
-
-  for (const org of baseOrganizations) {
-    await prisma.organization.upsert({
-      where: { code: org.code },
-      update: org,
-      create: org,
-    });
-  }
-
-  console.log(`✅ ${baseOrganizations.length} organizations created`);
-}
-
-async function seedUsers() {
-  console.log('👥 Seeding users...');
-
-  for (const user of baseUsers) {
-    const hashedPassword = await bcrypt.hash(user.password, 12);
-
-    const userData = {
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role as any,
-      password: hashedPassword,
-      isVerified: true,
-      emailVerifiedAt: new Date(),
-    };
-
-    const createdUser = await prisma.user.upsert({
-      where: { email: user.email },
-      update: userData,
-      create: userData,
-    });
-
-    // Créer le profil utilisateur
-    await prisma.profile.upsert({
-      where: { userId: createdUser.id },
-      update: {
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      },
-      create: {
-        userId: createdUser.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-      },
-    });
-  }
-
-  console.log(`✅ ${baseUsers.length} users created with profiles`);
-}
-
 async function main() {
-  console.log('🚀 Starting seed...\n');
+  console.log('🌱 Start seeding...');
 
-  try {
-    await seedOrganizations();
-    await seedUsers();
+  // 1. Create Permissions
+  const permissions = [
+    // User Management
+    'manage:users',
+    'read:users',
+    'create:users',
+    'update:users',
+    'delete:users',
 
-    console.log('\n🎉 Seed completed successfully!');
+    // Organization Management
+    'manage:organizations',
+    'read:organizations',
+    'create:organizations',
+    'update:organizations',
+    'delete:organizations',
 
-    // Statistiques
-    const orgCount = await prisma.organization.count();
-    const userCount = await prisma.user.count();
-    const profileCount = await prisma.profile.count();
+    // System Configuration
+    'manage:system',
+    'read:configuration',
+    'update:configuration',
 
-    console.log('\n📊 Statistics:');
-    console.log(`   Organizations: ${orgCount}`);
-    console.log(`   Users: ${userCount}`);
-    console.log(`   Profiles: ${profileCount}`);
+    // Reporting and Analytics
+    'read:reports',
+    'read:analytics',
+    'export:data',
+  ];
 
-  } catch (error) {
-    console.error('❌ Error during seeding:', error);
-    throw error;
-  } finally {
-    await prisma.$disconnect();
+  for (const name of permissions) {
+    await prisma.permission.upsert({
+      where: { name },
+      update: {},
+      create: { name },
+    });
   }
+  console.log('✅ Permissions created');
+
+  // 2. Create Roles
+  const superAdminRole = await prisma.role.upsert({
+    where: { name: 'SUPER_ADMIN' },
+    update: {},
+    create: {
+      name: 'SUPER_ADMIN',
+      description: 'Full access to all system features',
+    },
+  });
+
+  const adminRole = await prisma.role.upsert({
+    where: { name: 'ADMIN' },
+    update: {},
+    create: {
+      name: 'ADMIN',
+      description: 'Administrative access to most features',
+    },
+  });
+
+  const userRole = await prisma.role.upsert({
+    where: { name: 'USER' },
+    update: {},
+    create: {
+      name: 'USER',
+      description: 'Standard user access',
+    },
+  });
+  console.log('✅ Roles created');
+
+  // 3. Assign Permissions to Roles
+  const allPermissions = await prisma.permission.findMany();
+
+  // Super Admin gets all permissions
+  for (const permission of allPermissions) {
+    await prisma.rolesOnPermissions.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: superAdminRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: superAdminRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // Admin gets most permissions (except system management)
+  const adminPermissions = allPermissions.filter(p => !p.name.startsWith('manage:system'));
+  for (const permission of adminPermissions) {
+    await prisma.rolesOnPermissions.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: adminRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: adminRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+
+  // User gets read-only permissions
+  const userPermissions = allPermissions.filter(p => p.name.startsWith('read:'));
+  for (const permission of userPermissions) {
+    await prisma.rolesOnPermissions.upsert({
+      where: {
+        roleId_permissionId: {
+          roleId: userRole.id,
+          permissionId: permission.id,
+        },
+      },
+      update: {},
+      create: {
+        roleId: userRole.id,
+        permissionId: permission.id,
+      },
+    });
+  }
+  console.log('✅ Permissions assigned to roles');
+
+  // 4. Create a default Super Admin user
+  const superAdminUser = await prisma.user.upsert({
+    where: { email: 'superadmin@administration.ga' },
+    update: {},
+    create: {
+      email: 'superadmin@administration.ga',
+      firstName: 'Super',
+      lastName: 'Admin',
+      roleId: superAdminRole.id,
+      isVerified: true,
+    },
+  });
+  console.log('✅ Super Admin user created:', superAdminUser.email);
+
+  console.log('🌱 Seeding finished.');
 }
 
 main()
   .catch((e) => {
     console.error(e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
   });

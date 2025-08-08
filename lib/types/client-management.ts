@@ -1,4 +1,4 @@
-// Types pour la gestion complète des clients ADMIN.GA
+// Types pour la gestion complète des clients ADMINISTRATION.GA
 
 export interface ClientThemeConfig {
   primaryColor: string;

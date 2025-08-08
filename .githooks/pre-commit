@@ -1,0 +1,39 @@
+#!/bin/sh
+# Git hook pre-commit pour vérifier le format Markdown
+
+echo "🔍 Vérification du format Markdown..."
+
+# Vérifier s'il y a des fichiers markdown modifiés
+MARKDOWN_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.md$')
+
+if [ -z "$MARKDOWN_FILES" ]; then
+    echo "✅ Aucun fichier Markdown modifié"
+    exit 0
+fi
+
+# Vérifier les erreurs MD036 (emphase utilisée comme titre)
+MD036_ERRORS=0
+for file in $MARKDOWN_FILES; do
+    if [ -f "$file" ]; then
+        # Rechercher les patterns d'emphase utilisée comme titre
+        if grep -qE '^\*\*.*[!✨🎉✅].*\*\*$' "$file" || \
+           grep -qE '^\*\*[A-Z][A-Z\s]*[A-Z]\*\*$' "$file" || \
+           grep -qE '^\*\*(✅|🎉|✨|🇬🇦|🎯|🏆|🔧)\s+.*\*\*$' "$file"; then
+            echo "❌ Erreur MD036 dans $file : Emphase utilisée comme titre"
+            echo "   Utilisez ## ou ### au lieu de **texte**"
+            MD036_ERRORS=$((MD036_ERRORS + 1))
+        fi
+    fi
+done
+
+if [ $MD036_ERRORS -gt 0 ]; then
+    echo ""
+    echo "💡 Pour corriger automatiquement ces erreurs :"
+    echo "   node scripts/fix-markdown-emphasis.js"
+    echo ""
+    echo "❌ Commit rejeté à cause d'erreurs de format Markdown"
+    exit 1
+fi
+
+echo "✅ Format Markdown correct"
+exit 0

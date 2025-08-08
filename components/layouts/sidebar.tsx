@@ -1,6 +1,7 @@
 /* @ts-nocheck */
 "use client";
 
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -15,205 +16,357 @@ import {
   UserPlus,
   Briefcase,
   Award,
-  Database,
+  Bug,
+  Database as DatabaseIcon,
   TrendingUp,
   UserCheck,
   Network,
   Crown,
-  Home
+  Home,
+  Target,
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  Clock
 } from 'lucide-react';
 
 const navigationItems = [
+  // 📊 DASHBOARD
   {
-    title: 'Tableau de Bord',
+    title: 'Dashboard',
     href: '/super-admin/dashboard-unified',
     icon: Home,
-    description: 'Vue d\'ensemble complète du système'
+    description: 'Vue d\'ensemble du système',
+    count: 0,
+    countColor: 'gray',
+    section: 'dashboard',
+    sectionColor: 'slate'
   },
+
+  // 🏛️ GESTION ORGANISMES
   {
-    title: 'Gestion Organismes',
-    href: '/super-admin/organismes',
-    icon: Building,
-    description: 'Administrations et organismes'
+    title: 'Organismes',
+    icon: Building2,
+    description: 'Gestion complète des organismes publics (Base vide)',
+    count: 0,
+    countColor: 'gray',
+    section: 'gestion',
+    sectionColor: 'gray',
+    isSection: true,
+    children: [
+      {
+        title: 'Vue d\'Ensemble',
+        href: '/super-admin/organismes',
+        icon: BarChart3,
+        description: 'Dashboard des organismes (0)',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Structure Administrative',
+        href: '/super-admin/structure-administrative',
+        icon: Crown,
+        description: 'Hiérarchie vide'
+      },
+      {
+        title: 'Relations Inter-Organismes',
+        href: '/super-admin/relations',
+        icon: Network,
+        description: 'Aucune relation'
+      }
+    ]
   },
-          {
-          title: 'Clients',
-          href: '/super-admin/clients',
-          icon: UserCheck,
-          description: 'Organismes clients ADMIN.GA'
-        },
-        {
-          title: 'Relations Inter-Organismes',
-          href: '/super-admin/relations',
-          icon: Network,
-          description: 'Gestion des relations et partage de données'
-        },
-  {
-    title: 'Structure Administrative',
-    href: '/super-admin/structure-administrative',
-    icon: Crown,
-                  description: 'Structure officielle gabonaise complète (160 organismes)'
-  },
-  {
-    title: 'Administrations',
-    href: '/super-admin/administrations',
-    icon: Shield,
-    description: 'Liste des administrations'
-  },
-  {
-    title: 'Diagnostic Admins',
-    href: '/super-admin/diagnostic-administrations',
-    icon: TrendingUp,
-    description: 'Diagnostic et analyse'
-  },
-  // Nouvelle section RH et Postes
-  {
-    title: 'Postes Administratifs',
-    href: '/super-admin/postes-administratifs',
-    icon: Briefcase,
-    description: 'Base de données des postes et fonctions',
-    isNew: true
-  },
-  {
-    title: 'Gestion Comptes',
-    href: '/super-admin/gestion-comptes',
-    icon: UserPlus,
-    description: 'Création et gestion des collaborateurs',
-    isNew: true
-  },
-  {
-    title: 'Connexion DEMO',
-    href: '/super-admin/connexion-demo',
-    icon: Award,
-    description: 'Interface de test organismes',
-    isNew: true
-  },
+
+  // 👥 ADMINISTRATION UTILISATEURS
   {
     title: 'Utilisateurs',
-    href: '/super-admin/utilisateurs',
     icon: Users,
-    description: 'Gestion des utilisateurs'
+    description: 'Administration des comptes utilisateurs (Base vide)',
+    count: 0,
+    countColor: 'gray',
+    section: 'administration',
+    sectionColor: 'gray',
+    isSection: true,
+    children: [
+      {
+        title: 'Vue d\'Ensemble',
+        href: '/super-admin/utilisateurs',
+        icon: Users,
+        description: 'Gestion des utilisateurs (0)',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Création Comptes',
+        href: '/super-admin/gestion-comptes',
+        icon: UserPlus,
+        description: 'Base vide'
+      },
+      {
+        title: 'Fonctionnaires en Attente',
+        href: '/super-admin/fonctionnaires-attente',
+        icon: Clock,
+        description: 'Aucun en attente',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Postes & Fonctions',
+        href: '/super-admin/postes-administratifs',
+        icon: Briefcase,
+        description: 'Base des postes vide'
+      }
+    ]
   },
+
+  // 🔧 SERVICES
   {
     title: 'Services',
-    href: '/super-admin/services',
     icon: FileText,
-    description: 'Services administratifs'
+    description: 'Gestion des services administratifs (Base vide)',
+    count: 0,
+    countColor: 'gray',
+    section: 'administration',
+    sectionColor: 'gray',
+    isSection: true,
+    children: [
+      {
+        title: 'Vue d\'Ensemble',
+        href: '/super-admin/services',
+        icon: FileText,
+        description: 'Gestion des services (0)',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Configuration',
+        href: '/super-admin/configuration',
+        icon: Settings,
+        description: 'Configuration système'
+      }
+    ]
   },
+
+  // 💼 POSTES D'EMPLOI
+  {
+    title: 'Postes d\'emploi',
+    href: '/super-admin/postes-emploi',
+    icon: Briefcase,
+    description: 'Gestion des offres d\'emploi public',
+    count: 0,
+    countColor: 'gray',
+    section: 'emploi',
+    sectionColor: 'blue'
+  },
+
+  // 📈 ANALYTICS & MONITORING
+  {
+    title: 'Analytics',
+    icon: BarChart3,
+    description: 'Analyses et métriques (Données vides)',
+    count: 0,
+    countColor: 'gray',
+    section: 'analytics',
+    sectionColor: 'gray',
+    isSection: true,
+    children: [
+      {
+        title: 'Dashboard Analytics',
+        href: '/super-admin/analytics',
+        icon: BarChart3,
+        description: 'Métriques générales (0)',
+        count: 0,
+        countColor: 'gray'
+      },
+      {
+        title: 'Métriques Avancées',
+        href: '/super-admin/metrics-advanced',
+        icon: Target,
+        description: 'Analyses détaillées (0)'
+      }
+    ]
+  },
+
+  // 🗄️ BASE DE DONNÉES
   {
     title: 'Base de Données',
-    href: '/super-admin/base-donnees',
-    icon: Database,
-    description: 'Gestion et visualisation de la base de données',
-    isNew: true
-  },
-  {
-    title: 'Configuration',
-    href: '/super-admin/configuration',
-    icon: Settings,
-    description: 'Paramètres système'
-  },
-  {
-    title: 'Système',
-    href: '/super-admin/systeme',
-    icon: Shield,
-    description: 'Administration système'
+    icon: DatabaseIcon,
+    description: 'Gestion et monitoring BDD (Vide)',
+    count: 0,
+    countColor: 'gray',
+    section: 'system',
+    sectionColor: 'gray',
+    isSection: true,
+    children: [
+      {
+        title: 'Vue d\'Ensemble',
+        href: '/super-admin/base-donnees',
+        icon: DatabaseIcon,
+        description: 'État de la base (Vide)'
+      },
+      {
+        title: 'Logs Système',
+        href: '/super-admin/logs',
+        icon: FileText,
+        description: 'Journaux d\'activité'
+      },
+      {
+        title: 'Diagnostic',
+        href: '/super-admin/debug',
+        icon: Bug,
+        description: 'Outils de débogage'
+      }
+    ]
   }
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string;
+}
+
+export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
+  const [expandedSections, setExpandedSections] = React.useState<Set<string>>(new Set(['dashboard', 'gestion']));
 
-  // Vérifier si l'utilisateur est super admin
+  const toggleSection = (section: string) => {
+    const newExpanded = new Set(expandedSections);
+    if (newExpanded.has(section)) {
+      newExpanded.delete(section);
+    } else {
+      newExpanded.add(section);
+    }
+    setExpandedSections(newExpanded);
+  };
+
+  const isActive = (href: string) => {
+    if (href === '/super-admin' && pathname === '/super-admin') return true;
+    if (href !== '/super-admin' && pathname.startsWith(href)) return true;
+    return false;
+  };
+
+  const getCountBadge = (count: number | null, color: string) => {
+    if (count === null || count === 0) return null;
+
+    const colorClasses = {
+      blue: 'bg-blue-100 text-blue-800 border-blue-200',
+      emerald: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+      orange: 'bg-orange-100 text-orange-800 border-orange-200',
+      red: 'bg-red-100 text-red-800 border-red-200',
+      purple: 'bg-purple-100 text-purple-800 border-purple-200',
+      gray: 'bg-gray-100 text-gray-500 border-gray-200'
+    };
+
+    return (
+      <span className={cn(
+        'ml-auto px-2 py-1 text-xs font-medium rounded-full border text-center min-w-[2rem]',
+        colorClasses[color as keyof typeof colorClasses] || colorClasses.gray
+      )}>
+        {count === 0 ? '0' : count.toLocaleString()}
+      </span>
+    );
+  };
+
   if (session?.user?.role !== 'SUPER_ADMIN') {
     return null;
   }
 
   return (
-    <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
-      <div className="p-6">
-        <div className="flex items-center space-x-2 mb-8">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">ADMIN.GA</h2>
-            <p className="text-xs text-gray-600">Super Admin</p>
-          </div>
+    <div className={cn(
+      "flex h-full w-64 flex-col overflow-y-auto border-r bg-white px-3 py-4",
+      className
+    )}>
+      <div className="space-y-1">
+        <div className="px-3 py-2">
+          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight text-gray-900">
+            🧹 Admin Nettoyé
+          </h2>
+          <p className="px-4 text-sm text-gray-500">
+            Base de données entièrement vide
+          </p>
         </div>
 
-        <nav className="space-y-2">
-          {navigationItems.map((item) => {
-            const isActive = pathname === item.href;
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors group relative',
-                  isActive
-                    ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                )}
-              >
-                <Icon className={cn(
-                  'w-5 h-5',
-                  isActive ? 'text-blue-600' : 'text-gray-500 group-hover:text-gray-700'
-                )} />
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span>{item.title}</span>
-                    {item.isNew && (
-                      <span className="bg-green-100 text-green-700 text-xs px-2 py-0.5 rounded-full font-medium">
-                        Nouveau
-                      </span>
+        <div className="space-y-1">
+          {navigationItems.map((item, index) => {
+            if (item.isSection) {
+              const isExpanded = expandedSections.has(item.section || '');
+              return (
+                <div key={index} className="space-y-1">
+                  <button
+                    onClick={() => toggleSection(item.section || '')}
+                    className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    <span className="flex-1 text-left">{item.title}</span>
+                    {getCountBadge(item.count, item.countColor)}
+                    {isExpanded ? (
+                      <ChevronDown className="ml-2 h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="ml-2 h-4 w-4" />
                     )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {item.description}
-                  </p>
+                  </button>
+
+                  {isExpanded && item.children && (
+                    <div className="ml-4 space-y-1 border-l border-gray-200 pl-4">
+                      {item.children.map((child, childIndex) => (
+                        <Link
+                          key={childIndex}
+                          href={child.href || '#'}
+                          className={cn(
+                            "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive(child.href || '')
+                              ? "bg-gray-100 text-gray-900"
+                              : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                          )}
+                        >
+                          <child.icon className="mr-2 h-4 w-4" />
+                          <span className="flex-1">{child.title}</span>
+                          {getCountBadge(child.count, child.countColor)}
+                          {'isNew' in child && child.isNew && (
+                            <span className="ml-2 rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                              Nouveau
+                            </span>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                {isActive && (
-                  <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-l"></div>
-                )}
-              </Link>
-            );
+              );
+            } else {
+              return (
+                <Link
+                  key={index}
+                  href={item.href || '#'}
+                  className={cn(
+                    "flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    isActive(item.href || '')
+                      ? "bg-gray-100 text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  )}
+                >
+                  <item.icon className="mr-2 h-4 w-4" />
+                  <span className="flex-1">{item.title}</span>
+                  {getCountBadge(item.count, item.countColor)}
+                </Link>
+              );
+            }
           })}
-        </nav>
+        </div>
+      </div>
 
-        {/* Section Information */}
-        <div className="mt-8 pt-8 border-t border-gray-200">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <Award className="w-5 h-5 text-blue-600" />
-              <h3 className="font-medium text-gray-900">Système RH</h3>
+      <div className="mt-auto">
+        <div className="rounded-lg bg-gray-50 p-4">
+          <div className="flex items-center text-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200">
+              <Shield className="h-4 w-4 text-gray-600" />
             </div>
-            <p className="text-xs text-gray-600 leading-relaxed">
-              Nouvelle fonctionnalité de gestion des postes administratifs et création de comptes collaborateurs intégrée.
-            </p>
+            <div className="ml-3">
+              <p className="font-medium text-gray-900">🧹 Base Nettoyée</p>
+              <p className="text-gray-500">0 éléments</p>
+            </div>
           </div>
         </div>
-
-        {/* Session info */}
-                 <div className="mt-6 pt-6 border-t border-gray-200">
-           <div className="flex items-center space-x-3">
-             <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-               {session?.user?.firstName?.charAt(0) || 'S'}
-             </div>
-             <div>
-               <p className="text-sm font-medium text-gray-900">
-                 {session?.user?.firstName ? `${session.user.firstName} ${session.user.lastName}` : 'Super Admin'}
-               </p>
-               <p className="text-xs text-gray-600">
-                 {session?.user?.email || 'admin@admin.ga'}
-               </p>
-             </div>
-           </div>
-         </div>
       </div>
     </div>
   );

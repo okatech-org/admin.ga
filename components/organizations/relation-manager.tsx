@@ -59,7 +59,7 @@ import {
   Target,
   Zap,
   TrendingUp,
-  Database
+  Database as DatabaseIcon
 } from 'lucide-react';
 
 import {
@@ -1728,7 +1728,7 @@ export function RelationManager({ organizationId, canManage, currentUser }: Rela
                 <SelectContent>
                   <SelectItem value="excel">
                     <div className="flex items-center gap-2">
-                      <Database className="h-4 w-4" />
+                      <DatabaseIcon className="h-4 w-4" />
                       Excel (.xlsx)
                     </div>
                   </SelectItem>
@@ -1740,7 +1740,7 @@ export function RelationManager({ organizationId, canManage, currentUser }: Rela
                   </SelectItem>
                   <SelectItem value="json">
                     <div className="flex items-center gap-2">
-                      <Database className="h-4 w-4" />
+                      <DatabaseIcon className="h-4 w-4" />
                       JSON (Données)
                     </div>
                   </SelectItem>

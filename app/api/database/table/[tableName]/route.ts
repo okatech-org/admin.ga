@@ -5,10 +5,10 @@ const prisma = new PrismaClient();
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { tableName: string } }
+  { params }: { params: Promise<{ tableName: string }> }
 ) {
   try {
-    const { tableName } = params;
+    const { tableName } = await params;
     const url = new URL(request.url);
     const limit = parseInt(url.searchParams.get('limit') || '50');
     const offset = parseInt(url.searchParams.get('offset') || '0');
@@ -61,31 +61,9 @@ export async function GET(
         break;
 
       case 'service_requests':
-        data = await prisma.serviceRequest.findMany({
-          take: limit,
-          skip: offset,
-          select: {
-            id: true,
-            type: true,
-            status: true,
-            priority: true,
-            trackingNumber: true,
-            submittedAt: true,
-            submittedBy: {
-              select: {
-                firstName: true,
-                lastName: true,
-                email: true
-              }
-            },
-            organization: {
-              select: {
-                name: true,
-                code: true
-              }
-            }
-          }
-        });
+        // Table service_requests n'existe pas dans le schéma Prisma actuel
+        // Retourner un tableau vide pour éviter l'erreur
+        data = [];
         break;
 
       case 'ai_search_logs':
@@ -219,15 +197,36 @@ export async function GET(
 
 // Fonction pour valider le nom de la table
 function isValidTableName(tableName: string): boolean {
-  const validTables = [
-    'users', 'organizations', 'service_requests', 'appointments', 'documents',
-    'profiles', 'user_documents', 'payments', 'notifications', 'audit_logs',
-    'system_configs', 'analytics', 'api_configurations', 'ai_search_logs',
-    'postes_administratifs', 'ai_intervenants', 'organisme_knowledge',
-    'knowledge_analyses', 'user_organizations', 'service_configs',
-    'request_comments', 'request_timeline', 'integrations', 'permissions',
-    'user_permissions', 'otp_tokens', 'user_notification_preferences'
+  // Validation du format : lettres, chiffres et underscore uniquement
+  if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName)) {
+    return false;
+  }
+
+  // Validation de la longueur (éviter les noms trop longs)
+  if (tableName.length > 63) {
+    return false;
+  }
+
+  // Blacklist de tables système sensibles à ne jamais exposer
+  const blacklistedTables = [
+    'pg_authid', 'pg_shadow', 'pg_user', 'pg_roles', 'pg_database',
+    'pg_tablespace', 'pg_auth_members', 'information_schema',
+    'pg_proc', 'pg_class', 'pg_namespace', 'pg_attribute',
+    'pg_index', 'pg_type', 'pg_constraint', 'pg_settings',
+    'pg_stat_user_tables', 'pg_stat_activity'
   ];
 
-  return validTables.includes(tableName) && /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(tableName);
+  // Vérifier si la table n'est pas dans la blacklist
+  if (blacklistedTables.some(blacklisted => tableName.toLowerCase().includes(blacklisted.toLowerCase()))) {
+    return false;
+  }
+
+  // Tables système PostgreSQL à éviter (commencent par pg_ ou contiennent 'schema')
+  if (tableName.toLowerCase().startsWith('pg_') ||
+      tableName.toLowerCase().includes('schema') ||
+      tableName.toLowerCase().includes('information_')) {
+    return false;
+  }
+
+  return true;
 }

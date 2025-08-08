@@ -9,10 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { useAuth } from '@/hooks/use-auth';
-import { 
+import {
   Calendar,
-  Clock, 
-  MapPin, 
+  Clock,
+  MapPin,
   Search,
   Filter,
   Plus,
@@ -30,7 +30,7 @@ export default function AppointmentsPage() {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mock data - À remplacer par de vraies données
+  // ⚠️ TODO: Implémenter API pour récupérer les vrais rendez-vous
   const appointments = [
     {
       id: 'RDV-001',
@@ -125,14 +125,14 @@ export default function AppointmentsPage() {
 
   const filteredAppointments = appointments.filter(appointment => {
     const matchesFilter = filter === 'all' || appointment.status.toLowerCase() === filter;
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       appointment.service.toLowerCase().includes(searchTerm.toLowerCase()) ||
       appointment.organization.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     return matchesFilter && matchesSearch;
   });
 
-  const upcomingAppointments = appointments.filter(apt => 
+  const upcomingAppointments = appointments.filter(apt =>
     apt.date > new Date() && ['CONFIRMED', 'PENDING', 'SCHEDULED'].includes(apt.status)
   );
 
@@ -172,7 +172,7 @@ export default function AppointmentsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -186,7 +186,7 @@ export default function AppointmentsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -200,7 +200,7 @@ export default function AppointmentsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -257,7 +257,7 @@ export default function AppointmentsPage() {
                 <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-medium text-lg mb-2">Aucun rendez-vous trouvé</h3>
                 <p className="text-muted-foreground mb-4">
-                  {searchTerm || filter !== 'all' 
+                  {searchTerm || filter !== 'all'
                     ? 'Essayez de modifier vos critères de recherche'
                     : 'Vous n\'avez pas encore de rendez-vous programmé'
                   }
@@ -283,7 +283,7 @@ export default function AppointmentsPage() {
                         </div>
                         {getStatusBadge(appointment.status)}
                       </div>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div className="flex items-center space-x-2">
                           <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -306,7 +306,7 @@ export default function AppointmentsPage() {
                           <span>Agent: {appointment.agent}</span>
                         </div>
                       </div>
-                      
+
                       <div className="bg-accent/20 p-3 rounded-lg">
                         <p className="text-sm"><strong>Motif:</strong> {appointment.purpose}</p>
                       </div>

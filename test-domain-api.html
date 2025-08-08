@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Domain Management API</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+        }
+        .success { background: #f0fdf4; border-color: #22c55e; }
+        .error { background: #fef2f2; border-color: #ef4444; }
+        .pending { background: #fefce8; border-color: #eab308; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled { background: #9ca3af; cursor: not-allowed; }
+        pre {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+        .status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        .loading {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test API Domain Management</h1>
+        <p>Test des fonctionnalités de gestion des domaines ADMINISTRATION.GA</p>
+
+        <div id="global-status" class="test-section">
+            <h3>📊 Statut Global</h3>
+            <div id="status-content">
+                <span class="status pending">⏳ En attente de tests</span>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔌 Tests API</h3>
+            <button onclick="testListDomains()">📋 Lister les domaines</button>
+            <button onclick="testCreateDomain()">➕ Créer un domaine test</button>
+            <button onclick="testVerifyDNS()">🌐 Vérifier DNS</button>
+            <button onclick="testProvisionSSL()">🔒 Tester SSL</button>
+            <button onclick="testHealthCheck()">💓 Health Check</button>
+            <button onclick="runAllTests()">🚀 Tous les tests</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📝 Configuration Test</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label>Domaine de test:</label>
+                    <input type="text" id="testDomain" value="test-administration.ga" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+                </div>
+                <div>
+                    <label>IP de test:</label>
+                    <input type="text" id="testIP" value="192.168.1.100" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+                </div>
+            </div>
+        </div>
+
+        <div id="results" class="test-section">
+            <h3>📊 Résultats des Tests</h3>
+            <div id="results-content">
+                <p>Aucun test exécuté</p>
+            </div>
+        </div>
+
+        <div id="logs" class="test-section">
+            <h3>📜 Logs</h3>
+            <pre id="log-content">Prêt pour les tests...</pre>
+        </div>
+    </div>
+
+    <script>
+        let testResults = [];
+        let logContent = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            logContent.push(logMessage);
+            document.getElementById('log-content').textContent = logContent.join('\n');
+            console.log(logMessage);
+        }
+
+        function updateGlobalStatus(status, message) {
+            const statusEl = document.getElementById('status-content');
+            const statusClass = status === 'success' ? 'success' :
+                              status === 'error' ? 'error' : 'pending';
+            const statusIcon = status === 'success' ? '✅' :
+                              status === 'error' ? '❌' :
+                              status === 'loading' ? '⏳' : '⏳';
+
+            statusEl.innerHTML = `<span class="status ${statusClass}">${statusIcon} ${message}</span>`;
+        }
+
+        function addResult(testName, success, details) {
+            testResults.push({ testName, success, details, timestamp: new Date() });
+            updateResultsDisplay();
+        }
+
+        function updateResultsDisplay() {
+            const resultsEl = document.getElementById('results-content');
+            if (testResults.length === 0) {
+                resultsEl.innerHTML = '<p>Aucun test exécuté</p>';
+                return;
+            }
+
+            const passed = testResults.filter(r => r.success).length;
+            const total = testResults.length;
+
+            let html = `<div style="margin-bottom: 1rem;"><strong>Score: ${passed}/${total}</strong></div>`;
+
+            testResults.forEach(result => {
+                const icon = result.success ? '✅' : '❌';
+                const details = typeof result.details === 'object' ?
+                    JSON.stringify(result.details, null, 2) : result.details;
+
+                html += `
+                    <div style="margin: 0.5rem 0; padding: 0.5rem; background: ${result.success ? '#f0fdf4' : '#fef2f2'}; border-radius: 4px;">
+                        <strong>${icon} ${result.testName}</strong>
+                        <pre style="margin: 0.5rem 0; font-size: 0.75rem;">${details}</pre>
+                    </div>
+                `;
+            });
+
+            resultsEl.innerHTML = html;
+        }
+
+        async function apiCall(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    headers: { 'Content-Type': 'application/json' }
+                };
+
+                if (body) {
+                    options.body = JSON.stringify(body);
+                }
+
+                log(`API Call: ${method} ${endpoint}`);
+                const response = await fetch(endpoint, options);
+                const data = await response.json();
+
+                log(`Response: ${response.status} ${response.statusText}`);
+                return { success: response.ok, data, status: response.status };
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testListDomains() {
+            updateGlobalStatus('loading', 'Test en cours...');
+            log('🧪 Test: Liste des domaines');
+
+            const result = await apiCall('/api/domain-management?action=list');
+
+            if (result.success) {
+                log('✅ API domaines fonctionne');
+                addResult('Liste domaines', true, `${result.data.data?.length || 0} domaines trouvés`);
+                updateGlobalStatus('success', 'API accessible');
+            } else {
+                log('❌ Erreur API domaines', 'error');
+                addResult('Liste domaines', false, result.error || result.data?.error);
+                updateGlobalStatus('error', 'API non accessible');
+            }
+        }
+
+        async function testCreateDomain() {
+            updateGlobalStatus('loading', 'Création domaine test...');
+            log('🧪 Test: Création domaine');
+
+            const testDomain = document.getElementById('testDomain').value;
+            const testIP = document.getElementById('testIP').value;
+
+            const domainConfig = {
+                action: 'setup_domain',
+                domainConfig: {
+                    domain: testDomain,
+                    applicationId: 'administration',
+                    status: 'pending',
+                    dnsRecords: [
+                        { type: 'A', name: '@', value: testIP, ttl: 3600 }
+                    ],
+                    deploymentConfig: {
+                        serverId: `test_${Date.now()}`,
+                        serverType: 'vps',
+                        ipAddress: testIP,
+                        port: 80,
+                        nginxConfig: {
+                            serverName: testDomain,
+                            documentRoot: `/var/www/${testDomain}`,
+                            sslEnabled: true,
+                            proxyPass: 'http://localhost:3000'
+                        }
+                    }
+                }
+            };
+
+            const result = await apiCall('/api/domain-management', 'POST', domainConfig);
+
+            if (result.success) {
+                log('✅ Création domaine réussie');
+                addResult('Création domaine', true, result.data.data?.domainId || 'ID généré');
+            } else {
+                log('❌ Erreur création domaine', 'error');
+                addResult('Création domaine', false, result.error || result.data?.error);
+            }
+        }
+
+        async function testVerifyDNS() {
+            updateGlobalStatus('loading', 'Vérification DNS...');
+            log('🧪 Test: Vérification DNS');
+
+            const testDomain = document.getElementById('testDomain').value;
+            const testIP = document.getElementById('testIP').value;
+
+            const result = await apiCall('/api/domain-management', 'POST', {
+                action: 'verify_dns',
+                domain: testDomain,
+                expectedIP: testIP
+            });
+
+            if (result.success) {
+                log('✅ Vérification DNS fonctionne');
+                addResult('Vérification DNS', true, `Vérifié: ${result.data.data?.verified}`);
+            } else {
+                log('❌ Erreur vérification DNS', 'error');
+                addResult('Vérification DNS', false, result.error || result.data?.error);
+            }
+        }
+
+        async function testProvisionSSL() {
+            updateGlobalStatus('loading', 'Test SSL...');
+            log('🧪 Test: Provisioning SSL');
+
+            const testDomain = document.getElementById('testDomain').value;
+
+            const result = await apiCall('/api/domain-management/ssl', 'POST', {
+                domain: testDomain,
+                deploymentConfig: {
+                    serverId: 'test_server',
+                    ipAddress: document.getElementById('testIP').value
+                }
+            });
+
+            if (result.success) {
+                log('✅ API SSL fonctionne');
+                addResult('Provisioning SSL', true, result.data.data?.certificate?.id || 'Certificat généré');
+            } else {
+                log('❌ Erreur API SSL', 'error');
+                addResult('Provisioning SSL', false, result.error || result.data?.error);
+            }
+        }
+
+        async function testHealthCheck() {
+            updateGlobalStatus('loading', 'Health check...');
+            log('🧪 Test: Health check');
+
+            const result = await apiCall('/api/domain-management?action=health&serverId=test_server');
+
+            if (result.success) {
+                log('✅ Health check fonctionne');
+                addResult('Health check', true, `CPU: ${result.data.data?.cpuUsage}%, Mem: ${result.data.data?.memoryUsage}%`);
+            } else {
+                log('❌ Erreur health check', 'error');
+                addResult('Health check', false, result.error || result.data?.error);
+            }
+        }
+
+        async function runAllTests() {
+            testResults = [];
+            logContent = [];
+            log('🚀 Démarrage de tous les tests...');
+
+            await testListDomains();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testCreateDomain();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testVerifyDNS();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testProvisionSSL();
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            await testHealthCheck();
+
+            const passed = testResults.filter(r => r.success).length;
+            const total = testResults.length;
+
+            if (passed === total) {
+                updateGlobalStatus('success', `🎉 Tous les tests passent! (${passed}/${total})`);
+                log('🎉 Tous les tests sont réussis!', 'success');
+            } else {
+                updateGlobalStatus('error', `⚠️ ${passed}/${total} tests passent`);
+                log(`⚠️ ${passed}/${total} tests ont réussi`, 'warning');
+            }
+        }
+
+        // Auto-test au chargement
+        document.addEventListener('DOMContentLoaded', () => {
+            log('Page chargée, prêt pour les tests');
+            testListDomains();
+        });
+    </script>
+</body>
+</html>

@@ -96,14 +96,14 @@ export default function RegisterPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Retour à l'accueil</span>
           </Link>
-          
+
           <div className="flex items-center justify-center space-x-2 mb-4">
             <div className="w-10 h-10 gabon-gradient rounded-full flex items-center justify-center">
               <Flag className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-2xl gabon-text-gradient">Admin.ga</span>
+            <span className="font-bold text-2xl gabon-text-gradient">Administration.ga</span>
           </div>
-          
+
           <h1 className="text-2xl font-bold mb-2">Créer un compte</h1>
           <p className="text-muted-foreground">
             Rejoignez la plateforme administrative gabonaise

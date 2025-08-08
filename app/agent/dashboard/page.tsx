@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AuthenticatedLayout } from '@/components/layouts/authenticated-layout';
 import { useAuth } from '@/hooks/use-auth';
-import { 
-  FileText, 
-  Calendar, 
-  Clock, 
+import {
+  FileText,
+  Calendar,
+  Clock,
   CheckCircle,
   Users,
   AlertCircle,
@@ -28,7 +28,7 @@ export default function AgentDashboard() {
     return <div>Chargement...</div>;
   }
 
-  // Mock data - À remplacer par de vraies données
+  // ⚠️ TODO: Implémenter API pour récupérer les vraies données d'activité
   const stats = {
     enAttente: 8,
     enCours: 5,
@@ -340,7 +340,7 @@ export default function AgentDashboard() {
                   </div>
                   <span className="text-lg font-bold">{statistiquesPersonnelles.demandesTraitees}</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Clock className="h-4 w-4 text-blue-500" />
@@ -348,7 +348,7 @@ export default function AgentDashboard() {
                   </div>
                   <span className="text-lg font-bold">{statistiquesPersonnelles.tempsMoyenTraitement} jours</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <CheckCircle className="h-4 w-4 text-green-500" />
@@ -356,7 +356,7 @@ export default function AgentDashboard() {
                   </div>
                   <span className="text-lg font-bold text-green-600">{statistiquesPersonnelles.tauxSatisfaction}%</span>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Users className="h-4 w-4 text-purple-500" />

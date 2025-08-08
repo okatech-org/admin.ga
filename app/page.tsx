@@ -19,7 +19,7 @@ import {
   Star,
   Clock,
   Smartphone,
-  Database,
+  Database as DatabaseIcon,
   Settings,
   TrendingUp,
   Award,
@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import InterAppNavigation from '@/components/layout/inter-app-navigation';
 
 export default function HomePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -39,8 +40,8 @@ export default function HomePage() {
     },
     {
       icon: Users,
-      titre: "Interface Citoyenne Unifiée",
-      description: "Vos citoyens accèdent à tous vos services via une seule plateforme : DEMARCHE.GA"
+      titre: "Interfaces Citoyennes Unifiées",
+      description: "DEMARCHE.GA pour les démarches administratives et TRAVAIL.GA pour l'emploi public"
     },
     {
       icon: Shield,
@@ -58,7 +59,7 @@ export default function HomePage() {
       description: "Vos services disponibles en permanence, depuis n'importe quel appareil"
     },
     {
-      icon: Database,
+      icon: DatabaseIcon,
       titre: "Gestion Centralisée",
       description: "Base de données unifiée avec sauvegarde automatique et récupération de données"
     }
@@ -75,7 +76,7 @@ export default function HomePage() {
     {
       nom: "Direction Générale de la Documentation",
       logo: "🆔",
-      temoignage: "Depuis notre intégration à ADMIN.GA, nous avons réduit les délais de traitement des passeports de 15 jours à 3 jours.",
+      temoignage: "Depuis notre intégration à ADMINISTRATION.GA, nous avons réduit les délais de traitement des passeports de 15 jours à 3 jours.",
       personne: "Directeur Général DGDI"
     },
     {
@@ -102,7 +103,7 @@ export default function HomePage() {
               <Building2 className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">ADMIN.GA</h1>
+              <h1 className="text-xl font-bold text-gray-900">ADMINISTRATION.GA</h1>
               <p className="text-xs text-gray-600">Plateforme Administrative du Gabon</p>
             </div>
           </div>
@@ -116,7 +117,7 @@ export default function HomePage() {
               className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700"
               onClick={() => setIsFormOpen(true)}
             >
-              Rejoindre ADMIN.GA
+              Rejoindre ADMINISTRATION.GA
             </Button>
           </div>
         </div>
@@ -131,7 +132,7 @@ export default function HomePage() {
 
           <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
             Modernisez Votre Administration avec
-            <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent"> ADMIN.GA</span>
+            <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent"> ADMINISTRATION.GA</span>
           </h1>
 
           <p className="text-xl text-gray-600 mb-8 leading-relaxed">
@@ -181,7 +182,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-gray-900 mb-4">
-              Pourquoi Choisir ADMIN.GA ?
+              Pourquoi Choisir ADMINISTRATION.GA ?
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Une solution complète qui révolutionne la gestion administrative et améliore l'expérience citoyenne
@@ -257,7 +258,7 @@ export default function HomePage() {
             Prêt à Moderniser Votre Administration ?
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Rejoignez les 117+ administrations qui ont déjà fait le choix de l'excellence numérique avec ADMIN.GA
+            Rejoignez les 117+ administrations qui ont déjà fait le choix de l'excellence numérique avec ADMINISTRATION.GA
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -292,7 +293,7 @@ export default function HomePage() {
             <div>
               <div className="flex items-center space-x-2 mb-4">
                 <Building2 className="w-6 h-6 text-blue-400" />
-                <span className="text-xl font-bold text-white">ADMIN.GA</span>
+                <span className="text-xl font-bold text-white">ADMINISTRATION.GA</span>
               </div>
               <p className="text-sm text-gray-400 leading-relaxed">
                 Plateforme officielle de modernisation administrative de la République Gabonaise
@@ -312,7 +313,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Mail className="w-4 h-4" />
-                  <span>contact@admin.ga</span>
+                  <span>contact@administration.ga</span>
                 </div>
               </div>
             </div>
@@ -339,7 +340,7 @@ export default function HomePage() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 ADMIN.GA - République Gabonaise. Tous droits réservés.</p>
+            <p>&copy; 2024 ADMINISTRATION.GA - République Gabonaise. Tous droits réservés.</p>
           </div>
         </div>
       </footer>
@@ -361,7 +362,7 @@ export default function HomePage() {
                 </Button>
               </CardTitle>
               <CardDescription>
-                Remplissez ce formulaire pour rejoindre ADMIN.GA
+                Remplissez ce formulaire pour rejoindre ADMINISTRATION.GA
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -425,6 +426,9 @@ export default function HomePage() {
           </Card>
         </div>
       )}
+
+      {/* Navigation inter-applications */}
+      <InterAppNavigation currentApp="administration" />
     </div>
   );
 }

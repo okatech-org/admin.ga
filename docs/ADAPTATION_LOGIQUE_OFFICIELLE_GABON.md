@@ -2,7 +2,7 @@
 
 ## 📋 **Vue d'Ensemble de l'Adaptation**
 
-Le système de **Relations Inter-Organismes** d'Admin.ga a été **complètement restructuré** pour respecter fidèlement la **logique administrative officielle gabonaise** avec ses **117 organismes publics** organisés en **7 groupes (A-G)** selon la classification gouvernementale.
+Le système de **Relations Inter-Organismes** d'Administration.ga a été **complètement restructuré** pour respecter fidèlement la **logique administrative officielle gabonaise** avec ses **117 organismes publics** organisés en **7 groupes (A-G)** selon la classification gouvernementale.
 
 ## 🎯 **Objectifs de l'Adaptation**
 
@@ -125,7 +125,7 @@ MIN_TRAVAUX_PUB ←→ MIN_TRANSPORTS ←→ MIN_HABITAT
 #### **SIG Gouvernementaux Officiels :**
 
 ```
-🏛️ ADMIN.GA (Plateforme Gouvernementale Unifiée)
+🏛️ ADMINISTRATION.GA (Plateforme Gouvernementale Unifiée)
 PRÉSIDENCE ← → PRIMATURE ← → TOUS_MINISTÈRES
 
 💰 SIGEFI (Système Intégré de Gestion des Finances)

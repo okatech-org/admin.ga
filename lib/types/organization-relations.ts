@@ -1,4 +1,4 @@
-// Types pour les relations inter-organismes dans Admin.ga
+// Types pour les relations inter-organismes dans Administration.ga
 export enum RelationType {
   HIERARCHICAL = 'HIERARCHICAL',    // Relation parent-enfant
   COLLABORATIVE = 'COLLABORATIVE',  // Partage d'informations entre pairs
